@@ -5,6 +5,7 @@ import pathlib
 import operator
 import json
 from internal_functions import *
+from frames_filter import *
 
 class l7:
      class http:
@@ -34,19 +35,16 @@ class l2:
         sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(0x0003))
         sock.bind((ifname, 0))
         return sock
-
     class ieee802_11:
-        class FrameStructure:
-            @staticmethod
-            def boolean_fields_to_hex(bitmap_fields):
-                result = 0
-                for i, (field, active) in enumerate(bitmap_fields.items()):
-                    if active:
-                        result |= (1 << i)
-                return result
-
+        class FramesStructure:
             @staticmethod
             def radiotap_header():
+                def boolean_fields_to_hex(bitmap_fields):
+                    result = 0
+                    for i, (field, active) in enumerate(bitmap_fields.items()):
+                        if active:
+                            result |= (1 << i)
+                    return result
                 rth_version = struct.pack("<B", 0)
                 rth_pad = struct.pack("<B", 0)
                 rth_btm_present = {
@@ -56,7 +54,7 @@ class l2:
                     "Channel": False,
                     "AntennaSignal": True,
                 }
-                rth_btm_present_int = struct.pack("<I", l2.ieee802_11.FrameStructure.boolean_fields_to_hex(rth_btm_present))
+                rth_btm_present_int = struct.pack("<I", boolean_fields_to_hex(rth_btm_present))
                 rth_mac_timestamp = struct.pack("<Q", 0)
 
                 rth_btm_flags = {
@@ -64,20 +62,20 @@ class l2:
                     "Preamble": False,
                     "WEP": False,
                     "Fragmentation": False,
-                    "FCS at end": False,
-                    "Data Pad": False,
-                    "Bad FCS": False,
-                    "Short GI": False
+                    "FCS": False,
+                    "DataPad": False,
+                    "BadFCS": False,
+                    "ShortGI": False
                 }
-                rth_btm_flags_int = struct.pack("<B", l2.ieee802_11.FrameStructure.boolean_fields_to_hex(rth_btm_flags))
+                rth_btm_flags_int = struct.pack("<B", l2.ieee802_11.FramesStructure.boolean_fields_to_hex(rth_btm_flags))
 
                 rth_data_rate = struct.pack("<B", 5)
 
                 rth_btm_channels = {
-                    "2 Ghz Spectrum Channel": True,
-                    "5 Ghz Spectrum Channel": True
+                    "2GHZ": True,
+                    "5GHZ": True
                 }
-                rth_btm_channels_int = struct.pack("<H", l2.ieee802_11.FrameStructure.boolean_fields_to_hex(rth_btm_channels))
+                rth_btm_channels_int = struct.pack("<H", l2.ieee802_11.FramesStructure.boolean_fields_to_hex(rth_btm_channels))
                 rth_antenna_signal = struct.pack("<b", -60)
 
                 radiotap_data = rth_mac_timestamp + rth_btm_flags_int + rth_data_rate + rth_btm_channels_int + rth_antenna_signal
@@ -114,9 +112,9 @@ class l2:
                 self.sock = sock
 
             def send_deauthentication(self, dst_mac, src_mac, reason_code, count: int = 1, delay: int = 1):
-                rth_hdr = l2.ieee802_11.FrameStructure.radiotap_header()
+                rth_hdr = l2.ieee802_11.FramesStructure.radiotap_header()
                 frame_control = struct.pack("<H", 0x00C0)
-                mac_hdr = l2.ieee802_11.FrameStructure.mac_header(frame_control, dst_mac, src_mac)
+                mac_hdr = l2.ieee802_11.FramesStructure.mac_header(frame_control, dst_mac, src_mac)
                 reason = struct.pack("<H", reason_code)
                 frame = rth_hdr + mac_hdr + reason
                 for _ in range(count):
@@ -127,10 +125,10 @@ class l2:
                     time.sleep(delay)
 
             def send_probe_request(self, src_mac: str = RandomMac(), dst_mac: str = "ff:ff:ff:ff:ff:ff", ssid: str = "", count: int = 1, delay: int = 1):
-                rth_hdr = l2.ieee802_11.FrameStructure.radiotap_header()
+                rth_hdr = l2.ieee802_11.FramesStructure.radiotap_header()
                 frame_control = struct.pack("<H", 0x0040)
-                mac_hdr = l2.ieee802_11.FrameStructure.mac_header(frame_control, dst_mac, src_mac)
-                tagged_params = l2.ieee802_11.FrameStructure.wireless_management_tagged_parameters(ssid)
+                mac_hdr = l2.ieee802_11.FramesStructure.mac_header(frame_control, dst_mac, src_mac)
+                tagged_params = l2.ieee802_11.FramesStructure.wireless_management_tagged_parameters(ssid)
                 frame = rth_hdr + mac_hdr + tagged_params
                 for _ in range(count):
                     try:
@@ -140,9 +138,9 @@ class l2:
                     time.sleep(delay)
 
             def send_beacon(self, dst_mac: str = "ff:ff:ff:ff:ff:ff", src_mac: str = RandomMac(), ssid: str = "", count: int = 1, delay: int = 1):
-                rth_hdr = l2.ieee802_11.FrameStructure.radiotap_header()
+                rth_hdr = l2.ieee802_11.FramesStructure.radiotap_header()
                 frame_control = struct.pack("<H", 0x0080)
-                mac_hdr = l2.ieee802_11.FrameStructure.mac_header(frame_control, dst_mac, src_mac)
+                mac_hdr = l2.ieee802_11.FramesStructure.mac_header(frame_control, dst_mac, src_mac)
                 timestamp = struct.pack("<Q", int(time.time() * 1_000_000))
                 beacon_interval = struct.pack("<H", 100)
                 capabilities = struct.pack("<H", 0x0431)
@@ -156,7 +154,7 @@ class l2:
                         pass
                     time.sleep(delay)
 
-        class FrameParser:
+        class FramesParser:
             @staticmethod
             def parser_radiotap_header(frame):
                 def align_offset(offset, alignment):
@@ -254,7 +252,7 @@ class l2:
                 try:
                     mac_header_size = struct.calcsize("<HH6s6s6sH")
                     if len(frame) < offset + mac_header_size:
-                        return None
+                        return None, None
             
                     frame_control, duration_id, addr1, addr2, addr3, sequence_number = struct.unpack_from(
                         "<HH6s6s6sH", frame, offset
@@ -354,10 +352,10 @@ class l2:
 
             @staticmethod
             def parser_llc(frame, offset):
-                size = struct.calcsize("<BBB3sH")
+                size = struct.calcsize("!BBB3sH")
                 if offset + size > len(frame):
                     return None, offset
-                dsap, ssap, control_field, organization_code, llc_type = struct.unpack_from("<BBB3sH", frame, offset)
+                dsap, ssap, control_field, organization_code, llc_type = struct.unpack_from("!BBB3sH", frame, offset)
                 offset += size
                 return {
                     "DSAP": hex(dsap),
@@ -366,6 +364,7 @@ class l2:
                     "OrganizationCode": bytes_for_mac(organization_code),
                     #"LLCType": f"{hex(llc_type)} 802.1X Authentication" if llc_type == 0x8e88 else f"{hex(llc_type)} Unknown"
                     "LLCType": hex(llc_type)
+                    #"LLCType": hex(llc_type)
                 }, offset
 
             @staticmethod
@@ -417,77 +416,9 @@ class l2:
                 }, offset
 
             @staticmethod
-            def _get_nested(path: str, dct: dict):
-                keys = path.split(".")
-                current = dct
-                for key in keys:
-                    key_lower = key.lower()
-                    found = False
-                    for dct_key, dct_value in current.items():
-                        if dct_key.lower() == key_lower:
-                            current = dct_value
-                            found = True
-                            break
-                    if not found:
-                        return None
-                return current
-
-            @staticmethod
-            def _multi_get(paths: str, dct: dict):
-                if not paths:
-                    return None
-                paths = [path.strip() for path in paths.split(",")]
-                result = {}
-                for path in paths:
-                    result[path] = l2.ieee802_11.FrameParser._get_nested(path, dct)
-                return result
-
-            @staticmethod
-            def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
-                ops = {
-                    "==": operator.eq,
-                    "!=": operator.ne,
-                    ">": operator.gt,
-                    "<": operator.lt,
-                    ">=": operator.ge,
-                    "<=": operator.le
-                }
-                
-                for op_str, op_func in ops.items():
-                    if op_str in condition:
-                        left, right = condition.split(op_str, 1)
-                        left = left.strip()
-                        right = right.strip()
-                        left_val = l2.ieee802_11.FrameParser._get_nested(left, parsed_frame)
-                        if left_val is None:
-                            return False
-                        try:
-                            right_val = int(right)
-                        except ValueError:
-                            try:
-                                right_val = float(right)
-                            except ValueError:
-                                right_val = right.strip('"').strip("'")
-                                if isinstance(left_val, str):
-                                    left_val = left_val.lower()
-                                    right_val = right_val.lower()
-                        #print(f"Comparing: '{left_val}' {op_str} '{right_val}'")
-                        #print(f"Types: {type(left_val)} vs {type(right_val)}")
-                        return op_func(left_val, right_val)
-                return False
-
-            @staticmethod
-            def _parse_filter_expr(filter_expr: str, parsed_frame: dict) -> bool:
-                if " and " in filter_expr:
-                    return all(l2.ieee802_11.FrameParser._parse_filter_expr(f, parsed_frame) for f in filter_expr.split(" and "))
-                if " or " in filter_expr:
-                    return any(l2.ieee802_11.FrameParser._parse_filter_expr(f, parsed_frame) for f in filter_expr.split(" or "))
-                return l2.ieee802_11.FrameParser._evaluate_condition(filter_expr, parsed_frame)
-
-            @staticmethod
             def frames_parser(raw_frame: bytes) -> dict:
-                rth, rth_len = l2.ieee802_11.FrameParser.parser_radiotap_header(raw_frame)
-                mac_hdr_result = l2.ieee802_11.FrameParser.parser_mac_header(raw_frame, rth_len)
+                rth, rth_len = l2.ieee802_11.FramesParser.parser_radiotap_header(raw_frame)
+                mac_hdr_result = l2.ieee802_11.FramesParser.parser_mac_header(raw_frame, rth_len)
                 if not mac_hdr_result:
                     return {
                         "Raw": raw_frame.hex(),
@@ -506,18 +437,18 @@ class l2:
                     ftype = mac_hdr.get("Type")
                     subtype = mac_hdr.get("Subtype")
                     if ftype == 0:
-                        wireless_management, wireless_offset = l2.ieee802_11.FrameParser.parser_wireless_management(raw_frame, mac_hdr_offset)
+                        wireless_management, wireless_offset = l2.ieee802_11.FramesParser.parser_wireless_management(raw_frame, mac_hdr_offset)
                         parsed_frame["WirelessManagement"] = wireless_management
                     elif ftype == 1:
                         parsed_frame["ControlFrame"] = {
                             "Info": "Control frame - no LLC/EAPOL parsing"
                         }
                     elif ftype == 2:
-                        llc, llc_offset = l2.ieee802_11.FrameParser.parser_llc(raw_frame, mac_hdr_offset)
+                        llc, llc_offset = l2.ieee802_11.FramesParser.parser_llc(raw_frame, mac_hdr_offset)
                         if llc:
                             parsed_frame["LLC"] = llc
-                            if llc.get("LLCType") == '0x8e88':
-                                eapol, eapol_offset = l2.ieee802_11.FrameParser.parser_eapol(raw_frame, llc_offset)
+                            if llc.get("LLCType") == '0x888e':
+                                eapol, eapol_offset = l2.ieee802_11.FramesParser.parser_eapol(raw_frame, llc_offset)
                                 if eapol:
                                     parsed_frame["EAPOL"] = eapol
                     else:
@@ -533,7 +464,7 @@ class l2:
                 if store_filter == "":
                     store_filter_result = True
                 else:
-                    store_filter_result = l2.ieee802_11.FrameParser._parse_filter_expr(store_filter, parsed_frame)
+                    store_filter_result = parse_filter_expr(store_filter, parsed_frame)
                 if display_filter == "":
                     display_filter_result = {
                         "BSSID": parsed_frame.get("MacHeader", {}).get("BSSID"),
@@ -541,12 +472,12 @@ class l2:
                         "FrameControl": parsed_frame.get("MacHeader", {}).get("FrameControl")
                     }
                 else:
-                    display_filter_result = l2.ieee802_11.FrameParser._multi_get(display_filter, parsed_frame)
+                    display_filter_result = l2.ieee802_11.FramesParser._multi_get(display_filter, parsed_frame)
             
                 return store_filter_result, display_filter_result
 
         def sniff(sock, store_filter: str = "", display_filter: str = "", output_file: str = None):
-            base = "WPAGCrack-capture"
+            base = "framesniff-capture"
             ext = ".json" 
         
             output_file_path = new_file_path(base, ext, output_file)
@@ -556,9 +487,9 @@ class l2:
             try:
                 while True:
                     frame, _ = sock.recvfrom(65535)
-                    parsed_frame = l2.ieee802_11.FrameParser.frames_parser(frame)
+                    parsed_frame = l2.ieee802_11.FramesParser.frames_parser(frame)
         
-                    store_result, display_result = l2.ieee802_11.FrameParser.frames_filter(store_filter, display_filter, parsed_frame)
+                    store_result, display_result = l2.ieee802_11.FramesParser.frames_filter(store_filter, display_filter, parsed_frame)
         
                     if store_result:
                         captured_frames.append(parsed_frame)
@@ -577,15 +508,15 @@ class l2:
                 msg1 = bytes.fromhex(eapol_msg1_hex)
                 msg2 = bytes.fromhex(eapol_msg2_hex)
 
-                rth1, rth_len1 = l2.ieee802_11.FrameParser.parser_radiotap_header(msg1)
-                mac_hdr1, mac_hdr_offset1 = l2.ieee802_11.FrameParser.parser_mac_header(msg1, rth_len1)
-                llc1, llc_offset1 = l2.ieee802_11.FrameParser.parser_llc(msg1, mac_hdr_offset1)
-                eapol1, _ = l2.ieee802_11.FrameParser.parser_eapol(msg1, llc_offset1)
+                rth1, rth_len1 = l2.ieee802_11.FramesParser.parser_radiotap_header(msg1)
+                mac_hdr1, mac_hdr_offset1 = l2.ieee802_11.FramesParser.parser_mac_header(msg1, rth_len1)
+                llc1, llc_offset1 = l2.ieee802_11.FramesParser.parser_llc(msg1, mac_hdr_offset1)
+                eapol1, _ = l2.ieee802_11.FramesParser.parser_eapol(msg1, llc_offset1)
 
-                rth2, rth_len2 = l2.ieee802_11.FrameParser.parser_radiotap_header(msg2)
-                mac_hdr2, mac_hdr_offset2 = l2.ieee802_11.FrameParser.parser_mac_header(msg2, rth_len2)
-                llc2, llc_offset2 = l2.ieee802_11.FrameParser.parser_llc(msg2, mac_hdr_offset2)
-                eapol2, _ = l2.ieee802_11.FrameParser.parser_eapol(msg2, llc_offset2)
+                rth2, rth_len2 = l2.ieee802_11.FramesParser.parser_radiotap_header(msg2)
+                mac_hdr2, mac_hdr_offset2 = l2.ieee802_11.FramesParser.parser_mac_header(msg2, rth_len2)
+                llc2, llc_offset2 = l2.ieee802_11.FramesParser.parser_llc(msg2, mac_hdr_offset2)
+                eapol2, _ = l2.ieee802_11.FramesParser.parser_eapol(msg2, llc_offset2)
 
                 ap_mac = mac_hdr1.get("BSSID", "").replace(":", "")
                 sta_mac = mac_hdr1.get("MACSource", "").replace(":", "")
@@ -632,19 +563,19 @@ ff17d404500929a37d848e7f3a001630
 0fac028000
 ''')
 
-   #eapol_rth_hdr, rth_hdr_offset = l2.ieee802_11.FrameParser.parser_radiotap_header(eapol_msg2)
-   #eapol_mac_hdr, mac_hdr_offset = l2.ieee802_11.FrameParser.parser_mac_header(eapol_msg2, rth_hdr_offset)
+   #eapol_rth_hdr, rth_hdr_offset = l2.ieee802_11.FramesParser.parser_radiotap_header(eapol_msg2)
+   #eapol_mac_hdr, mac_hdr_offset = l2.ieee802_11.FramesParser.parser_mac_header(eapol_msg2, rth_hdr_offset)
    #print(eapol_rth_hdr)
    #print(eapol_mac_hdr)
    #if eapol_mac_hdr.get("FrameControl") == "0x188":
-   #   eapol_info, eapol_info_offset = l2.ieee802_11.FrameParser.parser_eapol(eapol_msg2, mac_hdr_offset)
+   #   eapol_info, eapol_info_offset = l2.ieee802_11.FramesParser.parser_eapol(eapol_msg2, mac_hdr_offset)
    #   print(eapol_info)
 
-   parsed_frame = l2.ieee802_11.FrameParser.frames_parser(eapol_msg2)
+   parsed_frame = l2.ieee802_11.FramesParser.frames_parser(eapol_msg2)
    print(parsed_frame)
-   #store_filter_result, display_filter_result = l2.ieee802_11.FrameParser.frames_filter("MacHeader.BSSID == '5C:62:8B:80:83:8A'", "MacHeader.BSSID, MacHeader.MACSource", parsed_frame)
-   store_filter_result, display_filter_result = l2.ieee802_11.FrameParser.frames_filter("MacHeader.BSSID == '5c:62:8b:80:83:8a'", "", parsed_frame)
-   #store_filter_result, display_filter_result = l2.ieee802_11.FrameParser.frames_filter("", "", parsed_frame)
+   #store_filter_result, display_filter_result = l2.ieee802_11.FramesParser.frames_filter("MacHeader.BSSID == '5C:62:8B:80:83:8A'", "MacHeader.BSSID, MacHeader.MACSource", parsed_frame)
+   store_filter_result, display_filter_result = l2.ieee802_11.FramesParser.frames_filter("MacHeader.BSSID == '5c:62:8b:80:83:8a'", "", parsed_frame)
+   #store_filter_result, display_filter_result = l2.ieee802_11.FramesParser.frames_filter("", "", parsed_frame)
    if store_filter_result:
       print(parsed_frame, display_filter_result)
 

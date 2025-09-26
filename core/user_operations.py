@@ -74,4 +74,5 @@ class Operations:
       def channel_hopping(self, wiphy_index):
           print(" In development, see https://github.com/gusprojects008/wnlpy")
 
-      def sniff(store_filter = None, display_filter = None, output_path = None):
+      def sniff(store_filter: str = "", display_filter: str = "", output_path: str = None):
+          ieee80211.sniff(store_filter, display_filter, output_path)
