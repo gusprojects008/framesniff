@@ -15,15 +15,6 @@ def _get_nested(path: str, dct: dict):
             return None
     return current
 
-def _multi_get(paths: str, dct: dict):
-    if not paths:
-        return None
-    paths = [path.strip() for path in paths.split(",")]
-    result = {}
-    for path in paths:
-        result[path] = _get_nested(path, dct)
-    return result
-
 def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
     ops = {
         "==": operator.eq,
@@ -55,9 +46,29 @@ def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
             return op_func(left_val, right_val)
     return False
 
-def parse_filter_expr(filter_expr: str, parsed_frame: dict) -> bool:
-    if " and " in filter_expr:
-        return all(parse_filter_expr(f, parsed_frame) for f in filter_expr.split(" and "))
-    if " or " in filter_expr:
-        return any(parse_filter_expr(f, parsed_frame) for f in filter_expr.split(" or "))
-    return _evaluate_condition(filter_expr, parsed_frame)
+def _multi_get(paths: str, dct: dict):
+    if not paths:
+        return None
+    paths = [path.strip() for path in paths.split(",")]
+    result = {}
+    for path in paths:
+        result[path] = _get_nested(path, dct)
+    return result
+
+def _parse_filter_expression(filter_expression: str, parsed_frame: dict) -> bool:
+    if " and " in filter_expression:
+        return all(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" and "))
+    if " or " in filter_expression:
+        return any(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" or "))
+    return _evaluate_condition(filter_expression, parsed_frame)
+
+def apply_filters(store_filter: str = "", display_filter: str = "", parsed_frame: dict = None):
+    if parsed_frame is None:
+        parsed_frame = {}
+    if store_filter == "":
+        store_filter_result = True
+    else:
+        store_filter_result = _parse_filter_expression(store_filter, parsed_frame)
+    if display_filter:
+        display_filter_result = _multi_get(display_filter, parsed_frame)
+    return store_filter_result, display_filter_result

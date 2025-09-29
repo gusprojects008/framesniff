@@ -1,4 +1,5 @@
 import subprocess
+import re
 from wifi import l2
 ieee80211 = l2()
 
@@ -62,6 +63,7 @@ class Operations:
               elif "Management frame protection: capable" in block:
                   caps.append("PMF capable")
               vendor_match = re.search(r"Manufacturer: (.+)", block)
+              print(blocks)
 
       def set_frequency(self, wiphy_name: str, frequency_mhz: str):
           print(" In development, see https://github.com/gusprojects008/wnlpy")
@@ -74,5 +76,8 @@ class Operations:
       def channel_hopping(self, wiphy_index):
           print(" In development, see https://github.com/gusprojects008/wnlpy")
 
-      def sniff(store_filter: str = "", display_filter: str = "", output_path: str = None):
-          ieee80211.sniff(store_filter, display_filter, output_path)
+        def sniff(layer: str = "", standard: str = "", ifname: str = None, store_filter: str = "", display_filter: str = "", output_file: str = None):
+            if layer == "L2":
+                L2obj = L2()
+                if standard == "802.11":
+                   L2obj.IEEE802_11.sniff(ifname, store_filter, display_filter, output_file)
