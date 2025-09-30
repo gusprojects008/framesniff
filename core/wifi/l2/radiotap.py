@@ -1,3 +1,5 @@
+import struct
+
 class Radiotap:
     @staticmethod
     def boolean_fields_to_hex(bitmap_fields):
@@ -30,13 +32,13 @@ class Radiotap:
             "Channel": config["channel"],
             "AntennaSignal": config["antenna_signal"],
         }
-        rth_btm_present_int = struct.pack("<I", L2.Radiotap.boolean_fields_to_hex(rth_btm_present))
+        rth_btm_present_int = struct.pack("<I", Radiotap.boolean_fields_to_hex(rth_btm_present))
         rth_mac_timestamp = struct.pack("<Q", config["mac_timestamp"])
         rth_btm_flags = {k: False for k in ["CFP", "Preamble", "WEP", "Fragmentation", "FCS", "DataPad", "BadFCS", "ShortGI"]}
-        rth_btm_flags_int = struct.pack("<B", L2.Radiotap.boolean_fields_to_hex(rth_btm_flags))
+        rth_btm_flags_int = struct.pack("<B", Radiotap.boolean_fields_to_hex(rth_btm_flags))
         rth_data_rate = struct.pack("<B", config["data_rate"])
         rth_btm_channels = {"2GHZ": True, "5GHZ": True}
-        rth_btm_channels_int = struct.pack("<H", L2.Radiotap.boolean_fields_to_hex(rth_btm_channels))
+        rth_btm_channels_int = struct.pack("<H", Radiotap.boolean_fields_to_hex(rth_btm_channels))
         rth_antenna_signal = struct.pack("<b", config["antenna_signal_dbm"])
 
         radiotap_data = rth_mac_timestamp + rth_btm_flags_int + rth_data_rate + rth_btm_channels_int + rth_antenna_signal

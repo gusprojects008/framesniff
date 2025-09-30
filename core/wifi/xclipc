@@ -1,7 +1,5 @@
 import socket
 import struct
-import time
-import json
 from ....common.useful_functions import *
 from ....common.filter_engine import apply_filters
 from ..radiotap import Radiotap
@@ -158,7 +156,7 @@ class IEEE802_11:
                 offset += data_len
                 
             return {
-                "AuthenticationVersion": auth_ver, "Type": eapol_type, "HeaderLength": length,
+                "AuthenticationVersion": auth_ver, "EAPOLType": eapol_type, "HeaderLength": length,
                 "KeyDescriptorType": desc_type, "KeyInformation": key_info, "KeyLength": key_len,
                 "ReplayCounter": replay, "KeyNonce": nonce.hex(), "KeyIV": iv.hex(),
                 "KeyRSC": rsc.hex(), "KeyID": key_id.hex(), "KeyMIC": mic.hex(),
@@ -284,11 +282,10 @@ class IEEE802_11:
                 
                 frame_bytes = radiotap + mac_header + frame_body + tagged_params
                 return frame_bytes.hex()
-
-        @staticmethod
-        def parser(frame, offset):
-            tagged_parameters, tagged_parameters_offset = IEEE802_11.Parsers.tagged_parameters(frame, offset)
-            return tagged_parameters
+                @staticmethod
+                def parser(frame, offset):
+                    tagged_parameters, tagged_parameters_offset = IEEE802_11.Parsers.tagged_parameters(frame, offset)
+                    return tagged_parameters
 
     class Control:
         class build:
@@ -319,26 +316,31 @@ class IEEE802_11:
     @staticmethod
     def frames_parser(raw_frame: bytes) -> dict:
         parsed_frame = {}
+
         rth, rth_len = Radiotap.parser(raw_frame)
         mac_hdr, mac_hdr_offset = IEEE802_11.Parsers.mac_header(raw_frame, rth_len)
+
         if not mac_hdr:
             return parsed_frame
+
         parsed_frame = {'RadiotapHeader': rth, 'MACHeader': mac_hdr}
+
         try:
             frame_type = mac_hdr.get("Type")
             subtype = mac_hdr.get("Subtype")
             if frame_type == 0:
-                body = IEEE802_11.Management.parser(raw_frame, mac_hdr_offset)
-                parsed_frame["Body"] = body or {}
+                 body = IEEE802_11.Management.parser(raw_frame, mac_hdr_offset, parsed_frame)
+                 parsed_frame["Body"] = body
             elif frame_type == 1:
-                parsed_frame["Body"] = {"Error": "Control frame parser not implemented"}
+                parsed_frame["Body"] = {"Unsupported parser!"}
             elif frame_type == 2:
                 body = IEEE802_11.Data.parser(raw_frame, mac_hdr_offset)
-                parsed_frame["Body"] = body or {}
+                parsed_frame["Body"] = body
             else:
-                parsed_frame["Body"] = {"Error": f"Unknown frame type {frame_type}"}
+                parsed_frame["Body"] = {"Unsupported parser!"}
         except Exception as error:
-            parsed_frame["Body"] = {"ParserError": str(error)}
+            parsed_frame["ParserError"] = str(error)
+
         return parsed_frame
         
     @staticmethod
@@ -365,13 +367,14 @@ class IEEE802_11:
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = IEEE802_11.frames_parser(frame)
-                    parsed_frame["Raw"] = frame.hex()
-                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+                    store_result, display_result = IEEE802_11.frames_filter(store_filter, display_filter, parsed_frame)
                     
                     if store_result:
-                        print(f"[{frame_count}] {display_result}")
                         captured_frames.append(parsed_frame)
                         frame_count += 1
+                        
+                    if display_result:
+                        print(f"[{frame_count}] {display_result}")
                     
                     if count > 0 and frame_count >= count:
                         break
@@ -428,12 +431,12 @@ class IEEE802_11:
         def eapol_capture(ifname: str = None, bssid: str = None, mac: str = None,
                           output_file: str = None, count: int = None, timeout: int = None):
             filters = ["MACHeader.Type == 2"]
-            display_fields = ["Raw", "MACHeader", "Body.EAPOL"]
+            display_fields = ["RadiotapHeader", "MACHeader", "Body.LLC.Type", "Body.EAPOL"]
 
             if bssid:
                 filters.append(f"MACHeader.BSSID == '{bssid}'")
             if mac:
-                filters.append(f"MACHeader.MACSource == '{mac}' or MACHeader.MACDestination == '{mac}'")
+                filters.append(f"(MACHeader.MACSource == '{mac}' or MACHeader.MACDestination == '{mac}')")
 
             store_filter = " and ".join(filters)
             display_filter = ", ".join(display_fields)
@@ -445,57 +448,30 @@ class IEEE802_11:
             IEEE802_11.sniff(ifname=ifname, store_filter=store_filter, display_filter=display_filter,
                              output_file=output_file_path, count=count, timeout=timeout)
 
-
         @staticmethod
         def generate_22000(eapol_msg1_hex, eapol_msg2_hex, output_file="hashcat.22000"):
-            import re
-        
-            def clean_hex(s):
-                return "".join(re.findall(r"[0-9a-fA-F]", s)).lower()
-        
-            msg1 = bytes.fromhex(clean_hex(eapol_msg1_hex))
-            msg2 = bytes.fromhex(clean_hex(eapol_msg2_hex))
-        
-            _, rth_len1 = Radiotap.parser(msg1)
-            mac_hdr1, mac_offset1 = IEEE802_11.Parsers.mac_header(msg1, rth_len1)
-            body1 = IEEE802_11.Data.parser(msg1, mac_offset1)
-        
-            _, rth_len2 = Radiotap.parser(msg2)
-            mac_hdr2, mac_offset2 = IEEE802_11.Parsers.mac_header(msg2, rth_len2)
-            body2 = IEEE802_11.Data.parser(msg2, mac_offset2)
-        
-            ap_mac = clean_hex(mac_hdr1.get("BSSID", mac_hdr1.get("MACTransmitter", "")))
-            sta_mac = clean_hex(mac_hdr1.get("MACReceiver", ""))
-        
-            eapol_data1 = body1.get("EAPOL", {})
-            anonce = eapol_data1.get("KeyNonce", "") 
-        
-            eapol_data2 = body2.get("EAPOL", {})
-            mic = eapol_data2.get("KeyMIC", "")
-        
-            if not all([ap_mac, sta_mac, anonce, mic]):
-                raise ValueError("Dados essenciais (MACs, ANonce, MIC) não encontrados.")
-        
-            eapol_frame = msg2[mac_offset2:]
-            mic_bytes = bytes.fromhex(mic)
-            zero_mic = b"\x00" * len(mic_bytes)
-            
-            mic_pos = eapol_frame.find(mic_bytes)
-            if mic_pos != -1:
-                eapol_zeromic = eapol_frame[:mic_pos] + zero_mic + eapol_frame[mic_pos + len(mic_bytes):]
-            else:
-                eapol_zeromic = eapol_frame
-            
-            eapol_hex = eapol_zeromic.hex()
-            
-            message_pair = "01"
-        
-            line = f"WPA*02*00*{mic}*{ap_mac}*{sta_mac}*{essid_hex}*{anonce}*{eapol_hex}*{message_pair}\n"
-            
-            with open(output_file, "w") as f:
-                f.write(line)
-                
-            print(f"[+] Arquivo Hashcat 22000 gerado: {output_file}")
-            print(f"    -> AP MAC: {ap_mac}")
-            print(f"    -> STA MAC: {sta_mac}")
+            msg1 = bytes.fromhex(eapol_msg1_hex)
+            msg2 = bytes.fromhex(eapol_msg2_hex)
+
+            rth1, rth_len1 = Radiotap.parser(msg1)
+            mac_hdr1, mac_hdr_offset1 = IEEE802_11.Parsers.mac_header(msg1, rth_len1)
+            body1 = IEEE802_11.Data.parser(msg1, mac_hdr_offset1)
+
+            rth2, rth_len2 = Radiotap.parser(msg2)
+            mac_hdr2, mac_hdr_offset2 = IEEE802_11.Parsers.mac_header(msg2, rth_len2)
+            body2 = IEEE802_11.Data.parser(msg2, mac_hdr_offset2)
+
+            ap_mac = mac_hdr1.get("BSSID", "").replace(":", "")
+            sta_mac = mac_hdr1.get("MACSource", "").replace(":", "")
+
+            nonce = body2["EAPOL"].get("KeyNonce", "")
+            mic = body2.get("KeyMIC", "")
+            eapol2_len = len(msg2[mac_hdr_offset2:])
+
+            line = f"$WPAPSK${ap_mac}${sta_mac}${nonce}${mic}${eapol2_len}:{msg2[mac_hdr_offset2:].hex()}\n"
+
+            with open(output_file, "w") as file:
+                file.write(line)
+
+            print(f"[+] 22000 file generated: {output_file}")
             return output_file

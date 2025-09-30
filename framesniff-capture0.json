@@ -1,0 +1,246 @@
+[
+  {
+    "RadiotapHeader": {
+      "Version": 0,
+      "Pad": 0,
+      "Length": 56,
+      "Present": "0x820a0000820a040402f",
+      "TSFT": 4930720431,
+      "Flags": 16,
+      "Rate": 1.0,
+      "Channel": 160,
+      "2GHZ": true,
+      "5GHZ": false,
+      "dBmAntSignal": 0,
+      "RXFlags": 0,
+      "FrameTimestamp": 635801811,
+      "ExtPresent": 51445782
+    },
+    "MACHeader": {
+      "FrameControl": "0x288",
+      "ProtocolVersion": 0,
+      "Type": 2,
+      "TypeName": "Data",
+      "Subtype": 8,
+      "SubtypeName": "QoS Data",
+      "ToDS": 0,
+      "FromDS": 1,
+      "MACReceiver": "06:ab:f1:d6:31:16",
+      "MACTransmitter": "5c:62:8b:80:83:8a",
+      "MACSource": "5c:62:8b:80:83:8a",
+      "MACDestination": "06:ab:f1:d6:31:16",
+      "BSSID": "5c:62:8b:80:83:8a",
+      "SequenceNumber": 0,
+      "QOSControl": 0
+    },
+    "Body": {
+      "LLC": {
+        "DSAP": "0xaa",
+        "SSAP": "0xaa",
+        "ControlField": 3,
+        "OrganizationCode": "00:00:00",
+        "Type": "0x888e"
+      },
+      "EAPOL": {
+        "AuthenticationVersion": 1,
+        "EAPOLType": 3,
+        "HeaderLength": 117,
+        "KeyDescriptorType": 2,
+        "KeyInformation": 138,
+        "KeyLength": 16,
+        "ReplayCounter": 1,
+        "KeyNonce": "9bd0853bf55ffcb8e8076244346f1c8fe20ed50076c6900067934c044893dab4",
+        "KeyIV": "00000000000000000000000000000000",
+        "KeyRSC": "0000000000000000",
+        "KeyID": "0000000000000000",
+        "KeyMIC": "00000000000000000000000000000000",
+        "KeyDataLength": 22,
+        "KeyData": "dd14000fac0413db5dd8d7b4af25317703399b3e3016"
+      }
+    },
+    "Raw": "000038002f4040a0200800a020080000afd2e4250100000010028509a000ce000000000000000000d390e5250000000016001103cc00ce018802ca0006abf1d631165c628b80838a5c628b80838a00000000aaaa03000000888e0103007502008a001000000000000000019bd0853bf55ffcb8e8076244346f1c8fe20ed50076c6900067934c044893dab40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000016dd14000fac0413db5dd8d7b4af25317703399b3e3016de8b52c0"
+  },
+  {
+    "RadiotapHeader": {
+      "Version": 0,
+      "Pad": 0,
+      "Length": 56,
+      "Present": "0x820a0000820a040402f",
+      "TSFT": 4930725263,
+      "Flags": 16,
+      "Rate": 1.0,
+      "Channel": 160,
+      "2GHZ": true,
+      "5GHZ": false,
+      "dBmAntSignal": 0,
+      "RXFlags": 0,
+      "FrameTimestamp": 635806645,
+      "ExtPresent": 51445782
+    },
+    "MACHeader": {
+      "FrameControl": "0x188",
+      "ProtocolVersion": 0,
+      "Type": 2,
+      "TypeName": "Data",
+      "Subtype": 8,
+      "SubtypeName": "QoS Data",
+      "ToDS": 1,
+      "FromDS": 0,
+      "MACReceiver": "5c:62:8b:80:83:8a",
+      "MACTransmitter": "06:ab:f1:d6:31:16",
+      "MACSource": "06:ab:f1:d6:31:16",
+      "MACDestination": "5c:62:8b:80:83:8a",
+      "BSSID": "5c:62:8b:80:83:8a",
+      "SequenceNumber": 0,
+      "QOSControl": 6
+    },
+    "Body": {
+      "LLC": {
+        "DSAP": "0xaa",
+        "SSAP": "0xaa",
+        "ControlField": 3,
+        "OrganizationCode": "00:00:00",
+        "Type": "0x888e"
+      },
+      "EAPOL": {
+        "AuthenticationVersion": 1,
+        "EAPOLType": 3,
+        "HeaderLength": 117,
+        "KeyDescriptorType": 2,
+        "KeyInformation": 266,
+        "KeyLength": 0,
+        "ReplayCounter": 1,
+        "KeyNonce": "1f68e613597efcab78d1c87bb733301d4a5f36b543d6740449678d9df9204774",
+        "KeyIV": "00000000000000000000000000000000",
+        "KeyRSC": "0000000000000000",
+        "KeyID": "0000000000000000",
+        "KeyMIC": "05b5320f9e368ed7cf492b26a5006691",
+        "KeyDataLength": 22,
+        "KeyData": "30140100000fac040100000fac040100000fac028000"
+      }
+    },
+    "Raw": "000038002f4040a0200800a0200800008fe5e4250100000010028509a000df000000000000000000b5a3e5250000000016001103df00d10188013a015c628b80838a06abf1d631165c628b80838a00000600aaaa03000000888e0103007502010a000000000000000000011f68e613597efcab78d1c87bb733301d4a5f36b543d6740449678d9df9204774000000000000000000000000000000000000000000000000000000000000000005b5320f9e368ed7cf492b26a5006691001630140100000fac040100000fac040100000fac028000c47cbf4c"
+  },
+  {
+    "RadiotapHeader": {
+      "Version": 0,
+      "Pad": 0,
+      "Length": 56,
+      "Present": "0x820a0000820a040402f",
+      "TSFT": 4930728795,
+      "Flags": 16,
+      "Rate": 1.0,
+      "Channel": 160,
+      "2GHZ": true,
+      "5GHZ": false,
+      "dBmAntSignal": 0,
+      "RXFlags": 0,
+      "FrameTimestamp": 635810178,
+      "ExtPresent": 51445782
+    },
+    "MACHeader": {
+      "FrameControl": "0x288",
+      "ProtocolVersion": 0,
+      "Type": 2,
+      "TypeName": "Data",
+      "Subtype": 8,
+      "SubtypeName": "QoS Data",
+      "ToDS": 0,
+      "FromDS": 1,
+      "MACReceiver": "06:ab:f1:d6:31:16",
+      "MACTransmitter": "5c:62:8b:80:83:8a",
+      "MACSource": "5c:62:8b:80:83:8a",
+      "MACDestination": "06:ab:f1:d6:31:16",
+      "BSSID": "5c:62:8b:80:83:8a",
+      "SequenceNumber": 16,
+      "QOSControl": 0
+    },
+    "Body": {
+      "LLC": {
+        "DSAP": "0xaa",
+        "SSAP": "0xaa",
+        "ControlField": 3,
+        "OrganizationCode": "00:00:00",
+        "Type": "0x888e"
+      },
+      "EAPOL": {
+        "AuthenticationVersion": 1,
+        "EAPOLType": 3,
+        "HeaderLength": 151,
+        "KeyDescriptorType": 2,
+        "KeyInformation": 5066,
+        "KeyLength": 16,
+        "ReplayCounter": 2,
+        "KeyNonce": "9bd0853bf55ffcb8e8076244346f1c8fe20ed50076c6900067934c044893dab4",
+        "KeyIV": "00000000000000000000000000000000",
+        "KeyRSC": "87886f0000000000",
+        "KeyID": "0000000000000000",
+        "KeyMIC": "cfd37f6baee54c8a889b935acc924845",
+        "KeyDataLength": 56,
+        "KeyData": "27df10b4dd14d1617adda38048e620080aaa3d413e464261ce94b2f9529cca8c4326ee1c680671dfdd31803140e6bb7d88d38691d9a803df"
+      }
+    },
+    "Raw": "000038002f4040a0200800a0200800005bf3e4250100000010028509a000ce00000000000000000082b1e5250000000016001103cc00ce018802ca0006abf1d631165c628b80838a5c628b80838a10000000aaaa03000000888e010300970213ca001000000000000000029bd0853bf55ffcb8e8076244346f1c8fe20ed50076c6900067934c044893dab40000000000000000000000000000000087886f00000000000000000000000000cfd37f6baee54c8a889b935acc924845003827df10b4dd14d1617adda38048e620080aaa3d413e464261ce94b2f9529cca8c4326ee1c680671dfdd31803140e6bb7d88d38691d9a803df2e94e3f8"
+  },
+  {
+    "RadiotapHeader": {
+      "Version": 0,
+      "Pad": 0,
+      "Length": 56,
+      "Present": "0x820a0000820a040402f",
+      "TSFT": 4930732540,
+      "Flags": 16,
+      "Rate": 1.0,
+      "Channel": 160,
+      "2GHZ": true,
+      "5GHZ": false,
+      "dBmAntSignal": 0,
+      "RXFlags": 0,
+      "FrameTimestamp": 635813921,
+      "ExtPresent": 51445782
+    },
+    "MACHeader": {
+      "FrameControl": "0x188",
+      "ProtocolVersion": 0,
+      "Type": 2,
+      "TypeName": "Data",
+      "Subtype": 8,
+      "SubtypeName": "QoS Data",
+      "ToDS": 1,
+      "FromDS": 0,
+      "MACReceiver": "5c:62:8b:80:83:8a",
+      "MACTransmitter": "06:ab:f1:d6:31:16",
+      "MACSource": "06:ab:f1:d6:31:16",
+      "MACDestination": "5c:62:8b:80:83:8a",
+      "BSSID": "5c:62:8b:80:83:8a",
+      "SequenceNumber": 16,
+      "QOSControl": 6
+    },
+    "Body": {
+      "LLC": {
+        "DSAP": "0xaa",
+        "SSAP": "0xaa",
+        "ControlField": 3,
+        "OrganizationCode": "00:00:00",
+        "Type": "0x888e"
+      },
+      "EAPOL": {
+        "AuthenticationVersion": 1,
+        "EAPOLType": 3,
+        "HeaderLength": 95,
+        "KeyDescriptorType": 2,
+        "KeyInformation": 778,
+        "KeyLength": 0,
+        "ReplayCounter": 2,
+        "KeyNonce": "0000000000000000000000000000000000000000000000000000000000000000",
+        "KeyIV": "00000000000000000000000000000000",
+        "KeyRSC": "0000000000000000",
+        "KeyID": "0000000000000000",
+        "KeyMIC": "472a7b0e6388b85e0d96b56c2e74f1b6",
+        "KeyDataLength": 0,
+        "KeyData": ""
+      }
+    },
+    "Raw": "000038002f4040a0200800a020080000fc01e5250100000010028509a000de00000000000000000021c0e5250000000016001103de00d10188013a015c628b80838a06abf1d631165c628b80838a10000600aaaa03000000888e0103005f02030a0000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000472a7b0e6388b85e0d96b56c2e74f1b60000182692f0"
+  }
+]

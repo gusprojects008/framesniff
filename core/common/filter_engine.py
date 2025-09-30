@@ -15,14 +15,16 @@ def _get_nested(path: str, dct: dict):
             return None
     return current
 
+operators = ["==","!=",">","<",">=","<="]
+
 def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
     ops = {
-        "==": operator.eq,
-        "!=": operator.ne,
-        ">": operator.gt,
-        "<": operator.lt,
-        ">=": operator.ge,
-        "<=": operator.le
+        operators[0]: operator.eq,
+        operators[1]: operator.ne,
+        operators[2]: operator.gt,
+        operators[3]: operator.lt,
+        operators[4]: operator.ge,
+        operators[5]: operator.le
     }
     
     for op_str, op_func in ops.items():
@@ -31,7 +33,7 @@ def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
             left = left.strip()
             right = right.strip()
             left_val = _get_nested(left, parsed_frame)
-            if left_val is None:
+            if left_val is False:
                 return False
             try:
                 right_val = int(right)
@@ -48,6 +50,7 @@ def _evaluate_condition(condition: str, parsed_frame: dict) -> bool:
 
 def _multi_get(paths: str, dct: dict):
     if not paths:
+        #return False
         return None
     paths = [path.strip() for path in paths.split(",")]
     result = {}
@@ -60,9 +63,14 @@ def _parse_filter_expression(filter_expression: str, parsed_frame: dict) -> bool
         return all(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" and "))
     if " or " in filter_expression:
         return any(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" or "))
-    return _evaluate_condition(filter_expression, parsed_frame)
+    if any(op in filter_expression for op in operators):
+        return _evaluate_condition(filter_expression, parsed_frame)
+    value = _get_nested(filter_expression, parsed_frame)
+    return value is not None
 
 def apply_filters(store_filter: str = "", display_filter: str = "", parsed_frame: dict = None):
+    store_filter_result = False
+    display_filter_result = None
     if parsed_frame is None:
         parsed_frame = {}
     if store_filter == "":
