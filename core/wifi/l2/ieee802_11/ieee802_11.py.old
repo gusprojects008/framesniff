@@ -459,6 +459,7 @@ class IEEE802_11:
         @staticmethod
         def generate_22000(ssid: str = None, eapol_msg1: str = None, eapol_msg2: str = None,
                            output_file: str = "hashcat.22000", message_pair: int = 0):
+            import re
         
             if not all([ssid, eapol_msg1, eapol_msg2]):
                 raise ValueError("Essential data required! Need (ssid, eapol message 1, eapol message 2)")
@@ -496,16 +497,17 @@ class IEEE802_11:
         
             essid = ssid.encode("utf-8", errors="ignore").hex()
         
-
             llc, llc_offset = IEEE802_11.Parsers.llc(msg2, mac_offset2)
             eapol_frame, eapol_frame_offset = IEEE802_11.Parsers.eapol(msg2, llc_offset)
             eapol_frame = msg2[llc_offset:eapol_frame_offset]
-            
-            mic_offset = struct.calcsize("!BBHBHHQ32s16s8s8s")
-            mic_bytes = eapol_frame[mic_offset:mic_offset + struct.calcsize("16s")]
+            mic_bytes = bytes.fromhex(mic)
             zero_mic = b"\x00" * len(mic_bytes)
-            
-            eapol_zero_mic = (eapol_frame[:mic_offset] + zero_mic + eapol_frame[mic_offset + len(mic_bytes):]).hex()
+            pos = eapol_frame.find(mic_bytes)
+            if pos != -1:
+                eapol_zeromic = eapol_frame[:pos] + zero_mic + eapol_frame[pos + len(mic_bytes):]
+            else:
+                eapol_zeromic = eapol_frame
+            eapol_hex = eapol_zeromic.hex()
         
             try:
                 message_pair_int = int(message_pair)
@@ -515,12 +517,12 @@ class IEEE802_11:
                 raise ValueError("message_pair out of range")
         
             message_pair_hex = f"{message_pair_int:02x}"
-            line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair_hex}\n"
+            type_field = "00"
+            line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_hex}*{message_pair_hex}\n"
         
-            with open(output_file, "w", newline="\n") as f:
-                f.write(line)
+            #with open(output_file, "w", newline="\n") as f:
+             #   f.write(line)
         
             print()
             print(line)
-
             return output_file

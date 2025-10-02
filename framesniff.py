@@ -38,8 +38,8 @@ def main():
 
     sniff_parser = subparsers.add_parser("sniff", help="Sniff Wi-Fi or Bluetooth frames")
     sniff_parser.add_argument("--link-type", choices=["wifi", "bluetooth"], default="wifi", help="Link type to sniff")
-    sniff_parser.add_argument("--layer", choices=["L2", "L3"], default="L2", help="Layer to capture")
-    sniff_parser.add_argument("--standard", default="802.11", help="Standard to use (e.g., 802.11, BLE)")
+    sniff_parser.add_argument("--layer", type=int, choices=[2, 3], default = 2, help="Layer to capture")
+    sniff_parser.add_argument("--standard", type=float, default = 802.11, help="Standard to use (e.g., 802.11, BLE)")
     sniff_parser.add_argument("--ifname", "-i", help="Interface name")
     sniff_parser.add_argument("--store-filter", default="", help="Filter to store frames")
     sniff_parser.add_argument("--display-filter", default="", help="Filter to display frames")
@@ -56,31 +56,15 @@ def main():
     eapol_parser.add_argument("--timeout", type=int, default=None, help="Timeout in seconds")
 
     generate_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from two EAPOL messages")
-    generate_parser.add_argument("msg1", help="EAPOL message 1 in hex")
-    generate_parser.add_argument("msg2", help="EAPOL message 2 in hex")
+    generate_parser.add_argument("--ssid", required=True, help="SSID of the target network! Make sure the SSID is correct; we don't distinguish between lower and upper case!!!.")
+    generate_parser.add_argument("--msg1", required=True, help="EAPOL message 1 in hex")
+    generate_parser.add_argument("--msg2", required=True, help="EAPOL message 2 in hex")
     generate_parser.add_argument("--output", default="hashcat.22000", help="Output file name")
 
-    hextopcap_parser = subparsers.add_parser(
-        "hextopcap",
-        help="Receives a .txt file with raw packet(s) in hexadecimal (one per line or separated by ---) and writes them to a pcap file."
-    )
-    
-    hextopcap_parser.add_argument(
-        "--dlt",
-        required=True,
-        help="Data Link Type for pcap file (e.g. DLT_IEEE802_11_RADIO)."
-    )
-    
-    hextopcap_parser.add_argument(
-        "--input", "-i",
-        required=True,
-        help="Path to .txt file containing raw hexadecimal packets."
-    )
-    
-    hextopcap_parser.add_argument(
-        "--output", "-o",
-        help="Output path to pcap file (default: auto-generated in ./packets)."
-    )
+    hextopcap_parser = subparsers.add_parser("hextopcap", help="Receives a .txt file with raw packet(s) in hexadecimal (one per line or separated by ---) and writes them to a pcap file.")
+    hextopcap_parser.add_argument("--dlt", required=True, help="Data Link Type for pcap file (e.g. DLT_IEEE802_11_RADIO).")
+    hextopcap_parser.add_argument("--input", "-i", required=True, help="Path to .txt file containing raw hexadecimal packets.")
+    hextopcap_parser.add_argument("--output", "-o", help="Output path to pcap file (default: auto-generated in ./packets).")
 
     args = parser.parse_args()
 
@@ -121,9 +105,10 @@ def main():
         )
     elif args.command == "generate-22000":
         operations.generate_22000(
+            ssid=args.ssid,
             eapol_msg1_hex=args.msg1,
             eapol_msg2_hex=args.msg2,
-            output=args.output
+            output_file=args.output
         )
     elif args.command == "hextopcap":
          operations.hex_to_pcap(args.dlt, args.input, args.output)

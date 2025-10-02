@@ -1,6 +1,6 @@
 import struct
 
-class Radiotap:
+class RadiotapHeader:
     @staticmethod
     def boolean_fields_to_hex(bitmap_fields):
         result = 0

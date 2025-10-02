@@ -95,9 +95,10 @@ class Operations:
         print(" In development, see https://github.com/gusprojects008/wnlpy")
 
     @staticmethod
-    def sniff(link_type: Optional[str] = None,
-              layer: str = "L2",
-              standard: str = "",
+    def sniff(
+              link_type: str = "wifi",
+              layer: int = 2,
+              standard: float = 802.11,
               ifname: Optional[str] = None,
               store_filter: str = "",
               display_filter: str = "",
@@ -105,7 +106,7 @@ class Operations:
               count: Optional[int] = None,
               timeout: Optional[int] = None
         ):
-        if link_type == "wifi" and layer == "L2" and standard == "802.11":
+        if link_type == "wifi" and layer == 2 and standard == 802.11:
             return IEEE802_11.sniff(
                 ifname=ifname,
                 store_filter=store_filter,
@@ -139,8 +140,8 @@ class Operations:
         )
 
     @staticmethod
-    def generate_22000(eapol_msg1_hex: str, eapol_msg2_hex: str, output_file: str = "hashcat.22000") -> str:
-        return IEEE802_11.WPA2Personal.generate_22000(eapol_msg1_hex, eapol_msg2_hex, output_file)
+    def generate_22000(ssid: str = None, eapol_msg1_hex: str = None, eapol_msg2_hex: str = None, output_file: str = "hashcat.22000") -> str:
+        return IEEE802_11.WPA2Personal.generate_22000(ssid, eapol_msg1_hex, eapol_msg2_hex, output_file)
 
     # write frame or packet in pcap file
     @staticmethod
