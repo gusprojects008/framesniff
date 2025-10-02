@@ -1,8 +1,10 @@
 import subprocess
 import re
 from typing import Optional, Tuple, List
-
+import sys
+import time
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
+from core.common.useful_functions import (import_dpkt, new_file_path)
 
 class Operations:
     @staticmethod
@@ -101,7 +103,8 @@ class Operations:
               display_filter: str = "",
               output_file: Optional[str] = None,
               count: Optional[int] = None,
-              timeout: Optional[int] = None):
+              timeout: Optional[int] = None
+        ):
         if link_type == "wifi" and layer == "L2" and standard == "802.11":
             return IEEE802_11.sniff(
                 ifname=ifname,
@@ -138,3 +141,79 @@ class Operations:
     @staticmethod
     def generate_22000(eapol_msg1_hex: str, eapol_msg2_hex: str, output_file: str = "hashcat.22000") -> str:
         return IEEE802_11.WPA2Personal.generate_22000(eapol_msg1_hex, eapol_msg2_hex, output_file)
+
+    # write frame or packet in pcap file
+    @staticmethod
+    def hex_to_pcap(dlt: str, input_file: str = None, output_path: str = None):
+        if not import_dpkt():
+            sys.exit(1)
+    
+        import dpkt
+    
+        output_path = new_file_path("packets", ".pcap", output_path)
+    
+        linktypes = {
+            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
+        }
+    
+        if dlt not in linktypes:
+            raise ValueError(f"Unsupported DLT: {dlt}\nSupported DLTs:\n{', '.join(linktypes.keys())}")
+    
+        def clean_hex_string(hex_str: str) -> str:
+            return re.sub(r'[^0-9a-fA-F]', '', hex_str)
+    
+        packet_count = 0
+        with open(input_file, "r") as infile, open(output_path, "wb") as outfile:
+            writer = dpkt.pcap.Writer(outfile, linktype=linktypes[dlt])
+            
+            current_packet_hex = []
+            
+            for line_num, line in enumerate(infile, 1):
+                line = line.strip()
+                
+                if line == "---":
+                    if current_packet_hex:
+                        full_hex = "".join(current_packet_hex)
+                        clean_hex = clean_hex_string(full_hex)
+                        
+                        if clean_hex:
+                            if len(clean_hex) % 2 != 0:
+                                print(f"[-] Warning: Odd-length hex string for packet {packet_count + 1}, trimming last character")
+                                clean_hex = clean_hex[:-1]
+                                
+                            try:
+                                pkt_bytes = bytes.fromhex(clean_hex)
+                                writer.writepkt(pkt_bytes, ts=time.time())
+                                packet_count += 1
+                                print(f"[+] Packet {packet_count}: {len(pkt_bytes)} bytes")
+                            except ValueError as error:
+                                print(f"[-] Error processing packet {packet_count + 1} at line {line_num}: {error}")
+                                print(f"[-] Problematic hex (first 100 chars): {clean_hex[:100]}...")
+                                print(f"[-] Full hex length: {len(clean_hex)}")
+                                raise
+                        
+                        current_packet_hex = []
+                else:
+                    current_packet_hex.append(line)
+            
+            if current_packet_hex:
+                full_hex = "".join(current_packet_hex)
+                clean_hex = clean_hex_string(full_hex)
+                
+                if clean_hex:
+                    if len(clean_hex) % 2 != 0:
+                        print(f"[-] Warning: Odd-length hex string for final packet, trimming last character")
+                        clean_hex = clean_hex[:-1]
+                        
+                    try:
+                        pkt_bytes = bytes.fromhex(clean_hex)
+                        writer.writepkt(pkt_bytes, ts=time.time())
+                        packet_count += 1
+                        print(f"[+] Packet {packet_count}: {len(pkt_bytes)} bytes")
+                    except ValueError as error:
+                        print(f"[-] Error processing final packet: {error}")
+                        print(f"[-] Problematic hex (first 100 chars): {clean_hex[:100]}...")
+                        raise
+    
+        print(f"[+] Successfully created PCAP with {packet_count} packets: {output_path}")
+        return output_path

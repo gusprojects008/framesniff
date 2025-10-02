@@ -2,6 +2,7 @@ import socket
 import struct
 import time
 import json
+import re
 from ....common.useful_functions import *
 from ....common.filter_engine import apply_filters
 from ..radiotap import Radiotap
@@ -287,8 +288,10 @@ class IEEE802_11:
 
         @staticmethod
         def parser(frame, offset):
+            body = {}
             tagged_parameters, tagged_parameters_offset = IEEE802_11.Parsers.tagged_parameters(frame, offset)
-            return tagged_parameters
+            body["TaggedParameters"] = tagged_parameters
+            return body
 
     class Control:
         class build:
@@ -342,52 +345,59 @@ class IEEE802_11:
         return parsed_frame
         
     @staticmethod
-    def sniff(ifname: str = None, store_filter: str = "", display_filter: str = "", 
-              output_file: str = None, count: int = None, timeout: int = None):
+    def sniff(ifname: str = None, store_filter: str = "", display_filter: str = "",
+              output_file: str = None, count: int = None, timeout: int = None, display_interval: float = 1.0):
         if not ifname:
             raise ValueError("Interface name is required")
-            
+    
         sock = create_raw_socket(ifname)
         base = "framesniff-capture"
-        ext = ".json" 
+        ext = ".json"
         output_file_path = new_file_path(base, ext, output_file)
         captured_frames = []
         frame_count = 0
-        
+        last_display_time = 0.0
+    
         try:
             if timeout:
                 sock.settimeout(timeout)
-                
+    
             print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
             start_time = time.time()
-            
+    
             while True:
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = IEEE802_11.frames_parser(frame)
                     parsed_frame["Raw"] = frame.hex()
+    
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
-                    
+    
                     if store_result:
-                        print(f"[{frame_count}] {display_result}")
                         captured_frames.append(parsed_frame)
                         frame_count += 1
-                    
-                    if count > 0 and frame_count >= count:
+    
+                    if store_result and display_result:
+                       try:
+                           print(f"[{frame_count}] {json.dumps(display_result, ensure_ascii=False)}")
+                       except Exception:
+                           print(f"[{frame_count}] {display_result}")
+    
+                    if count is not None and count > 0 and frame_count >= count:
                         break
-                        
+    
                 except socket.timeout:
                     print("Capture timeout reached")
                     break
                 except KeyboardInterrupt:
                     print("\nCapture interrupted by user")
                     break
-                except Exception as e:
-                    print(f"Error receiving frame: {e}")
+                except Exception as error:
+                    print(f"Error receiving frame: {error}")
                     continue
         finally:
             sock.close()
-            capture_duration = time.time() - start_time
+            capture_duration = start_time - time.time()
             if captured_frames:
                 with open(output_file_path, "w") as file:
                     json.dump(captured_frames, file, indent=2)
@@ -445,11 +455,8 @@ class IEEE802_11:
             IEEE802_11.sniff(ifname=ifname, store_filter=store_filter, display_filter=display_filter,
                              output_file=output_file_path, count=count, timeout=timeout)
 
-
         @staticmethod
         def generate_22000(eapol_msg1_hex, eapol_msg2_hex, output_file="hashcat.22000"):
-            import re
-        
             def clean_hex(s):
                 return "".join(re.findall(r"[0-9a-fA-F]", s)).lower()
         

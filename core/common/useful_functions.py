@@ -1,6 +1,7 @@
 import struct
 import random
 import socket
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -53,7 +54,7 @@ def new_file_path(base: str, ext: str, output_file: Optional[str] = None) -> Pat
     base = Path(base)
     i = 0
     if output_file:
-        candidate_path = Path(f"{i}-{output_file}")
+        candidate_path = Path(f"{output_file}")
     else:
         candidate_path = Path(f"{base}{i}{ext}")
 
@@ -65,3 +66,18 @@ def new_file_path(base: str, ext: str, output_file: Optional[str] = None) -> Pat
             candidate_path = Path(f"{base}{i}{ext}")
 
     return candidate_path
+
+def import_dpkt():
+    try:
+        import dpkt
+        return True
+    except Exception as error:
+        print(f'''
+    {error}
+    Error when trying to import dpkt, run the following commands:\n
+    python -m venv venv
+    source venv/bin/activate
+    pip install dpkt
+    python {' '.join(sys.argv)}
+''')
+        return False

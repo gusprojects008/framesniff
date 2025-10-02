@@ -37,15 +37,11 @@ ff17d404500929a37d848e7f3a001630
 
     parsed_frame = IEEE802_11.frames_parser(eapol_msg2)
     store_filter_result, frame_filter_result = apply_filters("Body.EAPOL", "Body.LLC.Type, MACHeader.BSSID", parsed_frame) 
+    print(parsed_frame)
     if store_filter_result:
         print(parsed_frame, frame_filter_result)
 
     #L2.IEEE802_11.sniff("L2", "IEEE802.11", sock, "wlan1")
-
-    #from scapy.all import *
-    #packet = Radiotap(eapol_msg2)
-    #wrpcap("eapol_test.pcap", [packet])
-    #print("Arquivo pcap criado: eapol_test.pcap")
 
 if __name__ == "__main__":
    main()
