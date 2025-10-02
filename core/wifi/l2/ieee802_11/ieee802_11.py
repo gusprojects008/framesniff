@@ -66,32 +66,33 @@ class IEEE802_11:
 
                 offset += size
                 mac_data = {
-                    "FrameControl": hex(frame_control),
-                    "ProtocolVersion": protocol_version,
-                    "Type": frame_type,
-                    "TypeName": frame_type_name,
-                    "Subtype": frame_subtype,
-                    "SubtypeName": frame_subtype_name,
-                    "ToDS": to_ds,
-                    "FromDS": from_ds,
-                    "MACReceiver": mac_receiver,
-                    "MACTransmitter": mac_transmitter,
+                    "fc": {
+                        "protocol_version": protocol_version,
+                        "type": frame_type,
+                        "type_name": frame_type_name,
+                        "subtype": frame_subtype,
+                        "subtype_name": frame_subtype_name,
+                        "tods": to_ds,
+                        "fromdS": from_ds,
+                    },
+                    "mac_receiver": mac_receiver,
+                    "mac_transmitter": mac_transmitter,
                 }
 
                 if frame_type == 0 or frame_type == 2:
                     mac_data.update({
-                        "MACSource": mac_source,
-                        "MACDestination": mac_destination,
-                        "BSSID": bssid,
-                        "SequenceNumber": sequence_number
+                        "mac_src": mac_source,
+                        "mac_dst": mac_destination,
+                        "bssid": bssid,
+                        "sequence_number": sequence_number
                     })
                     if frame_type == 2 and frame_subtype >= 8 and offset + 2 <= len(frame):
-                        mac_data["QOSControl"] = struct.unpack_from("<H", frame, offset)[0]
+                        mac_data["qos_control"] = struct.unpack_from("<H", frame, offset)[0]
                         offset += 2
 
                 return mac_data, offset
             except Exception as error:
-                print(f"mac_header Error: {error}")
+                print(f"mac_hdr Error: {error}")
                 return None, None
 
         @staticmethod
@@ -100,14 +101,14 @@ class IEEE802_11:
                 return None
             timestamp, beacon_interval, capabilities_information = struct.unpack_from("<QHH", frame, offset)
             offset += struct.calcsize("<QHH")
-            tagged_parameters = {'Timestamp': timestamp, 'BeaconInterval': beacon_interval, 'SSID': None, 'SupportedRates': []}
+            tagged_parameters = {'timestamp': timestamp, 'beacon_interval': beacon_interval, 'ssid': None, 'supported_rates': []}
             if len(frame) < offset + 2:
                 return tagged_parameters
             ssid_tag_number, ssid_length = struct.unpack_from("<BB", frame, offset)
             offset += 2
             if ssid_tag_number == 0 and offset + ssid_length <= len(frame):
                 ssid = struct.unpack_from(f"{ssid_length}s", frame, offset)[0]
-                tagged_parameters["SSID"] = ssid.decode(errors='ignore')
+                tagged_parameters["ssid"] = ssid.decode(errors='ignore')
                 offset += ssid_length
             if len(frame) < offset + 2:
                 return tagged_parameters
@@ -115,7 +116,7 @@ class IEEE802_11:
             offset += 2
             if supported_rates_tag_number == 1 and offset + supported_rates_length <= len(frame):
                 supported_rates = struct.unpack_from(f"<{supported_rates_length}B", frame, offset)
-                tagged_parameters["SupportedRates"] = [rate // 2 for rate in supported_rates]
+                tagged_parameters["supported_rates"] = [rate // 2 for rate in supported_rates]
                 offset += supported_rates_length
             return tagged_parameters, offset
     
@@ -129,8 +130,8 @@ class IEEE802_11:
             offset += size
             
             return {
-                "DSAP": hex(dsap), "SSAP": hex(ssap), "ControlField": control,
-                "OrganizationCode": bytes_for_mac(org_code), "Type": hex(llc_type)
+                "dsap": hex(dsap), "ssap": hex(ssap), "control_field": control,
+                "organization_code": bytes_for_mac(org_code), "type": hex(llc_type)
             }, offset
     
         @staticmethod
@@ -159,11 +160,11 @@ class IEEE802_11:
                 offset += data_len
                 
             return {
-                "AuthenticationVersion": auth_ver, "Type": eapol_type, "HeaderLength": length,
-                "KeyDescriptorType": desc_type, "KeyInformation": key_info, "KeyLength": key_len,
-                "ReplayCounter": replay, "KeyNonce": nonce.hex(), "KeyIV": iv.hex(),
-                "KeyRSC": rsc.hex(), "KeyID": key_id.hex(), "KeyMIC": mic.hex(),
-                "KeyDataLength": data_len, "KeyData": key_data.hex()
+                "authentication_version": auth_ver, "type": eapol_type, "header_length": length,
+                "key_descriptor_type": desc_type, "key_information": key_info, "key_length": key_len,
+                "replay_counter": replay, "key_nonce": nonce.hex(), "key_iv": iv.hex(),
+                "key_rsc": rsc.hex(), "key_id": key_id.hex(), "key_mic": mic.hex(),
+                "key_data_length": data_len, "key_data": key_data.hex()
             }, offset
 
     class Management:
@@ -186,27 +187,22 @@ class IEEE802_11:
                 
                 tagged_data = b""
                 
-                # SSID Parameter Set (Element ID 0)
                 if ssid is not None:
                     ie_ssid = ssid.encode("utf-8")
                     tagged_data += struct.pack("<BB", 0, len(ie_ssid)) + ie_ssid
                 
-                # Supported Rates (Element ID 1)
                 if rates:
                     ie_rates = b"".join(struct.pack("<B", rate // 500) for rate in calc_rates(rates))
                     tagged_data += struct.pack("<BB", 1, len(ie_rates)) + ie_rates
                 
-                # DS Parameter Set (Element ID 3) - Channel
                 if 'channel' in kwargs:
                     channel = kwargs['channel']
                     tagged_data += struct.pack("<BB", 3, 1) + struct.pack("<B", channel)
                 
-                # Traffic Indication Map (Element ID 5)
                 if 'tim' in kwargs:
                     tim_data = kwargs['tim']
                     tagged_data += struct.pack("<BB", 5, len(tim_data)) + tim_data
                 
-                # Extended Supported Rates (Element ID 50)
                 if 'extended_rates' in kwargs:
                     ext_rates = kwargs['extended_rates']
                     ie_ext_rates = b"".join(struct.pack("<B", rate // 500) for rate in calc_rates(ext_rates))
@@ -216,7 +212,7 @@ class IEEE802_11:
     
             @staticmethod
             def deauthentication(dst_mac, src_mac, bssid=None, reason_code=0x0007, **kwargs):
-                radiotap = RadiotapHeader.header(**kwargs)
+                radiotap = RadiotapHeader.build(**kwargs)
                 frame_control = struct.pack("<H", 0x00C0)  # Management + Deauthentication
                 mac_header = IEEE802_11.Management.build.mac_header(
                     frame_control, dst_mac, src_mac, bssid)
@@ -226,7 +222,7 @@ class IEEE802_11:
             
             @staticmethod
             def probe_request(src_mac, dst_mac="ff:ff:ff:ff:ff:ff", ssid="", rates=None, **kwargs):
-                radiotap = RadiotapHeader.header(**kwargs)
+                radiotap = RadiotapHeader.build(**kwargs)
                 frame_control = struct.pack("<H", 0x0040)  # Management + Probe Request
                 mac_header = IEEE802_11.Management.build.mac_header(
                     frame_control, dst_mac, src_mac, dst_mac)  # BSSID = destino para probe requests
@@ -238,7 +234,7 @@ class IEEE802_11:
             @staticmethod
             def beacon(src_mac, dst_mac="ff:ff:ff:ff:ff:ff", ssid="", beacon_interval=100, 
                       rates=None, channel=None, capabilities=0x0431, **kwargs):
-                radiotap = RadiotapHeader.header(**kwargs)
+                radiotap = RadiotapHeader.build(**kwargs)
                 frame_control = struct.pack("<H", 0x0080)  # Management + Beacon
                 mac_header = IEEE802_11.Management.build.mac_header(
                     frame_control, dst_mac, src_mac, src_mac)  # BSSID = MAC do AP
@@ -259,7 +255,7 @@ class IEEE802_11:
             @staticmethod
             def authentication(dst_mac, src_mac, bssid=None, auth_algorithm=0x0000, 
                               auth_seq=0x0001, status_code=0x0000, **kwargs):
-                radiotap = RadiotapHeader.header(**kwargs)
+                radiotap = RadiotapHeader.build(**kwargs)
                 frame_control = struct.pack("<H", 0x00B0)  # Management + Authentication
                 mac_header = IEEE802_11.Management.build.mac_header(
                     frame_control, dst_mac, src_mac, bssid)
@@ -270,7 +266,7 @@ class IEEE802_11:
     
             @staticmethod
             def association_request(dst_mac, src_mac, ssid, rates=None, capabilities=0x0431, **kwargs):
-                radiotap = RadiotapHeader.header(**kwargs)
+                radiotap = RadiotapHeader.build(**kwargs)
                 frame_control = struct.pack("<H", 0x0000)  # Management + Association Request
                 mac_header = IEEE802_11.Management.build.mac_header(
                     frame_control, dst_mac, src_mac, dst_mac)
@@ -290,7 +286,7 @@ class IEEE802_11:
         def parser(frame, offset):
             body = {}
             tagged_parameters, tagged_parameters_offset = IEEE802_11.Parsers.tagged_parameters(frame, offset)
-            body["TaggedParameters"] = tagged_parameters
+            body["tagged_parameters"] = tagged_parameters
             return body
 
     class Control:
@@ -313,35 +309,35 @@ class IEEE802_11:
         def parser(frame, offset):
             body = {}
             llc, llc_offset = IEEE802_11.Parsers.llc(frame, offset)
-            body["LLC"] = llc
-            if llc.get("Type", "") == "0x888e":
+            body["llc"] = llc
+            if llc.get("type", "") == "0x888e":
                 eapol, eapol_offset = IEEE802_11.Parsers.eapol(frame, llc_offset)
-                body["EAPOL"] = eapol
+                body["eapol"] = eapol
             return body
 
     @staticmethod
     def frames_parser(raw_frame: bytes) -> dict:
         parsed_frame = {}
-        rth, rth_len = RadiotapHeader.parser(raw_frame)
+        rth, rth_len = RadiotapHeader.parse(raw_frame)
         mac_hdr, mac_hdr_offset = IEEE802_11.Parsers.mac_header(raw_frame, rth_len)
         if not mac_hdr:
             return parsed_frame
-        parsed_frame = {'RadiotapHeader': rth, 'MACHeader': mac_hdr}
+        parsed_frame = {'rt_hdr': rth, 'mac_hdr': mac_hdr}
         try:
-            frame_type = mac_hdr.get("Type")
-            subtype = mac_hdr.get("Subtype")
+            frame_type = mac_hdr.get("fc").get("type")
+            subtype = mac_hdr.get("fc").get("subtype")
             if frame_type == 0:
                 body = IEEE802_11.Management.parser(raw_frame, mac_hdr_offset)
-                parsed_frame["Body"] = body or {}
+                parsed_frame["body"] = body or {}
             elif frame_type == 1:
-                parsed_frame["Body"] = {"Error": "Control frame parser not implemented"}
+                parsed_frame["body"] = {"error": "Control frame parser not implemented"}
             elif frame_type == 2:
                 body = IEEE802_11.Data.parser(raw_frame, mac_hdr_offset)
-                parsed_frame["Body"] = body or {}
+                parsed_frame["body"] = body or {}
             else:
-                parsed_frame["Body"] = {"Error": f"Unknown frame type {frame_type}"}
+                parsed_frame["body"] = {"error": f"Unknown frame type {frame_type}"}
         except Exception as error:
-            parsed_frame["Body"] = {"ParserError": str(error)}
+            parsed_frame["body"] = {"parser_error": str(error)}
         return parsed_frame
         
     @staticmethod
@@ -369,7 +365,7 @@ class IEEE802_11:
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = IEEE802_11.frames_parser(frame)
-                    parsed_frame["Raw"] = frame.hex()
+                    parsed_frame["raw"] = frame.hex()
     
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
     
@@ -407,44 +403,17 @@ class IEEE802_11:
             else:
                 print("\nNo frames captured")
 
-    @staticmethod
-    def send_frame(ifname: str, raw_hex_frame: str = None, count: int = 1, interval: int = 1, timeout: int = None):
-        sock = create_raw_socket(ifname)
-
-        if raw_hex_frame is None:
-            raise ValueError("The frame must be in hexadecimal!")
-        
-        raw_frame = bytes.fromhex(raw_hex_frame.replace(":", "").replace(" ", ""))
-        
-        if timeout is not None:
-            sock.settimeout(timeout)
-        
-        for i in range(count):
-            try:
-                bytes_sent = sock.send(raw_frame)
-                print(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
-                
-                if i < count - 1:
-                    time.sleep(interval)
-                    
-            except socket.error as error:
-                print(f"Failed to send frame: {error}")
-                break
-            except Exception as error:
-                print(f"Unexpected error: {error}")
-                break
-
     class WPA2Personal:
         @staticmethod
         def eapol_capture(ifname: str = None, bssid: str = None, mac: str = None,
                           output_file: str = None, count: int = None, timeout: int = None):
-            filters = ["MACHeader.Type == 2"]
-            display_fields = ["Raw", "MACHeader", "Body.EAPOL"]
+            filters = ["mac_hdr.fc.type == 2"]
+            display_fields = ["raw", "mac_hdr", "body.eapol"]
 
             if bssid:
-                filters.append(f"MACHeader.BSSID == '{bssid}'")
+                filters.append(f"mac_hdr.bssid == '{bssid}'")
             if mac:
-                filters.append(f"MACHeader.MACSource == '{mac}' or MACHeader.MACDestination == '{mac}'")
+                filters.append(f"mac_hdr.mac_src == '{mac}' or mac_hdr.mac_dst == '{mac}'")
 
             store_filter = " and ".join(filters)
             display_filter = ", ".join(display_fields)
@@ -471,22 +440,22 @@ class IEEE802_11:
             msg1 = bytes.fromhex(clean_hex(eapol_msg1))
             msg2 = bytes.fromhex(clean_hex(eapol_msg2))
         
-            _, rth_len1 = RadiotapHeader.parser(msg1)
+            _, rth_len1 = RadiotapHeader.parse(msg1)
             mac_hdr1, mac_offset1 = IEEE802_11.Parsers.mac_header(msg1, rth_len1)
             body1 = IEEE802_11.Data.parser(msg1, mac_offset1)
         
-            _, rth_len2 = RadiotapHeader.parser(msg2)
+            _, rth_len2 = RadiotapHeader.parse(msg2)
             mac_hdr2, mac_offset2 = IEEE802_11.Parsers.mac_header(msg2, rth_len2)
             body2 = IEEE802_11.Data.parser(msg2, mac_offset2)
         
-            mac_ap = clean_hex(mac_hdr2.get("BSSID", "") or mac_hdr2.get("MACDestination", ""))
-            mac_client = clean_hex(mac_hdr2.get("MACSource", "") or mac_hdr2.get("MACTransmitter", ""))
+            mac_ap = clean_hex(mac_hdr2.get("bssid", "") or mac_hdr2.get("mac_dst", ""))
+            mac_client = clean_hex(mac_hdr2.get("mac_src", "") or mac_hdr2.get("mac_transmitter", ""))
         
-            eapol_data1 = body1.get("EAPOL", {})
-            eapol_data2 = body2.get("EAPOL", {})
+            eapol_data1 = body1.get("eapol", {})
+            eapol_data2 = body2.get("eapol", {})
         
-            anonce = eapol_data1.get("KeyNonce", "")
-            mic = eapol_data2.get("KeyMIC", "")
+            anonce = eapol_data1.get("key_nonce", "")
+            mic = eapol_data2.get("key_mic", "")
             if not all([mac_ap, mac_client, anonce, mic]):
                 raise ValueError("Missing essential EAPOL data")
             if len(mic) != 32:
@@ -496,7 +465,6 @@ class IEEE802_11:
         
             essid = ssid.encode("utf-8", errors="ignore").hex()
         
-
             llc, llc_offset = IEEE802_11.Parsers.llc(msg2, mac_offset2)
             eapol_frame, eapol_frame_offset = IEEE802_11.Parsers.eapol(msg2, llc_offset)
             eapol_frame = msg2[llc_offset:eapol_frame_offset]

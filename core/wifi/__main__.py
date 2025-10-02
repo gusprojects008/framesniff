@@ -36,12 +36,10 @@ ff17d404500929a37d848e7f3a001630
 ''' )
 
     parsed_frame = IEEE802_11.frames_parser(eapol_msg2)
-    store_filter_result, frame_filter_result = apply_filters("Body.EAPOL", "Body.LLC.Type, MACHeader.BSSID", parsed_frame) 
+    store_filter_result, frame_filter_result = apply_filters("body.eapol", "rt_hdr, body.llc, mac_hdr.bssid", parsed_frame) 
     print(parsed_frame)
     if store_filter_result:
         print(parsed_frame, frame_filter_result)
 
-    #L2.IEEE802_11.sniff("L2", "IEEE802.11", sock, "wlan1")
-
 if __name__ == "__main__":
-   main()
+    main()

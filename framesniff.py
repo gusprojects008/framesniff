@@ -2,10 +2,10 @@ import sys
 import pathlib
 import argparse
 
-modules_path = pathlib.Path(__file__).parent / "core"
-sys.path.append(str(modules_path))
+#modules_path = pathlib.Path(__file__).parent / "core"
+#sys.path.append(str(modules_path))
 
-from user_operations import Operations
+from core.user_operations import Operations
 
 operations = Operations()
 
@@ -66,6 +66,10 @@ def main():
     hextopcap_parser.add_argument("--input", "-i", required=True, help="Path to .txt file containing raw hexadecimal packets.")
     hextopcap_parser.add_argument("--output", "-o", help="Output path to pcap file (default: auto-generated in ./packets).")
 
+    send_raw_parser = subparsers.add_parser("send-raw", help="Sends a raw frame/packet in hexadecimal format from an interface.")
+    send_raw_parser.add_argument("--ifname", required=True, help="Network interface name.")
+    send_raw_parser.add_argument("--raw", required=True, help="Raw frame or packet.")
+
     args = parser.parse_args()
 
     if args.command == "list-interfaces":
@@ -112,6 +116,8 @@ def main():
         )
     elif args.command == "hextopcap":
          operations.hex_to_pcap(args.dlt, args.input, args.output)
+    elif args.command == "send-raw":
+         return operations.send_raw(args.ifname, args.raw)
 
 if __name__ == "__main__":
     main()

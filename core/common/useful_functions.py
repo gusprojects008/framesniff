@@ -81,3 +81,11 @@ def import_dpkt():
     python {' '.join(sys.argv)}
 ''')
         return False
+
+# returns the hexadecimal contents of a dictionary of a bitmap.
+def boolean_fields_to_hex(bitmap_fields: dict):
+    result = 0
+    for i, (field, active) in enumerate(bitmap_fields.items()):
+        if active:
+            result |= (1 << i)
+    return result
