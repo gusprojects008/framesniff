@@ -2,6 +2,9 @@ import struct
 import random
 import socket
 import sys
+import re
+import json
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -89,3 +92,55 @@ def boolean_fields_to_hex(bitmap_fields: dict):
         if active:
             result |= (1 << i)
     return result
+
+def clean_hex_string(s: str) -> str:
+    s = s.strip().strip("'").strip('"')
+    if len(s) % 2 != 0:
+        s = s[:-1]
+    return re.sub(r'[^0-9a-fA-F]', '', s)
+
+def iter_packets_from_json(path: str):
+    try:
+        with open(path, "r") as file:
+            content = file.read()
+    except Exception as error:
+        raise RuntimeError(f"Could not open file {path}: {error}")
+    key = "raw"
+    try:
+        data = json.loads(content)
+
+        if isinstance(data, list):
+            for obj in data:
+                if not isinstance(obj, dict):
+                    continue
+                raw = obj.get(key)
+                if isinstance(raw, str):
+                    cleaned = clean_hex_string(raw)
+                    if cleaned:
+                        yield (cleaned, bytes.fromhex(cleaned))
+                elif isinstance(raw, list):
+                    for entry in raw:
+                        if not isinstance(entry, str):
+                            continue
+                        cleaned = clean_hex_string(entry)
+                        if cleaned:
+                            yield (cleaned, bytes.fromhex(cleaned))
+        elif isinstance(data, dict):
+            value = data.get(key)
+            if isinstance(value, str):
+                cleaned = clean_hex_string(value)
+                if cleaned:
+                    yield (cleaned, bytes.fromhex(cleaned))
+            elif isinstance(value, list):
+                for entry in value:
+                    if not isinstance(entry, str):
+                        continue
+                    cleaned = clean_hex_string(entry)
+                    if cleaned:
+                        yield (cleaned, bytes.fromhex(cleaned))
+
+        else:
+            raise ValueError("JSON file must contain a dict or list of dicts")
+
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Error trying to load json file: {error}")

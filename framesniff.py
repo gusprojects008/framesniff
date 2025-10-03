@@ -61,14 +61,17 @@ def main():
     generate_parser.add_argument("--msg2", required=True, help="EAPOL message 2 in hex")
     generate_parser.add_argument("--output", default="hashcat.22000", help="Output file name")
 
-    hextopcap_parser = subparsers.add_parser("hextopcap", help="Receives a .txt file with raw packet(s) in hexadecimal (one per line or separated by ---) and writes them to a pcap file.")
+    hextopcap_parser = subparsers.add_parser("hextopcap", help="Receives a json file with raw packet(s) in hexadecimal and writes them to a pcap file.")
     hextopcap_parser.add_argument("--dlt", required=True, help="Data Link Type for pcap file (e.g. DLT_IEEE802_11_RADIO).")
     hextopcap_parser.add_argument("--input", "-i", required=True, help="Path to .txt file containing raw hexadecimal packets.")
     hextopcap_parser.add_argument("--output", "-o", help="Output path to pcap file (default: auto-generated in ./packets).")
 
     send_raw_parser = subparsers.add_parser("send-raw", help="Sends a raw frame/packet in hexadecimal format from an interface.")
     send_raw_parser.add_argument("--ifname", required=True, help="Network interface name.")
-    send_raw_parser.add_argument("--raw", required=True, help="Raw frame or packet.")
+    send_raw_parser.add_argument("--input", "-i", required=True, help="Json file with hexadecimal raw packets: ex: {'raw': ['01234abcdef', '01234abcdef']}.")
+    send_raw_parser.add_argument("--count", type=int, default=1, help="Number of frames to send (default: 1).")
+    send_raw_parser.add_argument("--interval", type=float, default=1.0, help="Interval between sends in seconds (default: 1.0).")
+    send_raw_parser.add_argument("--timeout", type=int, default=None, help="Socket timeout in seconds (optional).")
 
     args = parser.parse_args()
 
@@ -115,9 +118,9 @@ def main():
             output_file=args.output
         )
     elif args.command == "hextopcap":
-         operations.hex_to_pcap(args.dlt, args.input, args.output)
+         operations.write_pcap_from_json(args.dlt, args.input, args.output)
     elif args.command == "send-raw":
-         return operations.send_raw(args.ifname, args.raw)
+         return operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
 
 if __name__ == "__main__":
     main()

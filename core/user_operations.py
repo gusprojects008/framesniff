@@ -3,8 +3,9 @@ import re
 from typing import Optional, Tuple, List
 import sys
 import time
+import json
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
-from core.common.useful_functions import (import_dpkt, new_file_path)
+from core.common.useful_functions import (import_dpkt, new_file_path, iter_packets_from_json)
 from core.common.sockets import create_raw_socket
 
 class Operations:
@@ -144,134 +145,54 @@ class Operations:
     def generate_22000(ssid: str = None, eapol_msg1_hex: str = None, eapol_msg2_hex: str = None, output_file: str = "hashcat.22000") -> str:
         return IEEE802_11.WPA2Personal.generate_22000(ssid, eapol_msg1_hex, eapol_msg2_hex, output_file)
 
-    # write frame or packet in pcap file
     @staticmethod
-    def hex_to_pcap(dlt: str, input_file: str = None, output_path: str = None):
+    def write_pcap_from_json(dlt: str, input_file: str, output_path: str):
         if not import_dpkt():
             sys.exit(1)
-
         import dpkt
 
-        output_path = new_file_path("packets", ".pcap", output_path)
+        output_path = new_file_path("packets", ".pcap", output_path)        
 
         linktypes = {
             "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
+            "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
+            "DLT_IEEE802_11": dpkt.pcap.DLT_IEEE802_11,
         }
-
         if dlt not in linktypes:
-            raise ValueError(f"Unsupported DLT: {dlt}\nSupported DLTs:\n{', '.join(linktypes.keys())}")
-
-        def clean_hex_string(hex_str: str) -> str:
-            return re.sub(r'[^0-9a-fA-F]', '', hex_str)
-
-        packet_count = 0
-
-        with open(input_file, "r") as infile, open(output_path, "wb") as outfile:
-            writer = dpkt.pcap.Writer(outfile, linktype=linktypes[dlt])
-
-            if input_file.endswith(".json"):
-                try:
-                    data = json.load(infile)
-                except json.JSONDecodeError as e:
-                    raise ValueError(f"Invalid JSON input file: {e}")
-
-                if not isinstance(data, list):
-                    raise ValueError("JSON must contain a list of packet objects")
-
-                for idx, obj in enumerate(data, 1):
-                    if "raw" not in obj:
-                        print(f"[-] Skipping object {idx}, no 'raw' field")
-                        continue
-
-                    clean_hex = clean_hex_string(obj["raw"])
-                    if not clean_hex:
-                        continue
-
-                    if len(clean_hex) % 2 != 0:
-                        print(f"[-] Warning: Odd-length hex string in JSON object {idx}, trimming last character")
-                        clean_hex = clean_hex[:-1]
-
-                    try:
-                        pkt_bytes = bytes.fromhex(clean_hex)
-                        writer.writepkt(pkt_bytes, ts=time.time())
-                        packet_count += 1
-                        print(f"[+] Packet {packet_count}: {len(pkt_bytes)} bytes (from JSON)")
-                    except ValueError as error:
-                        print(f"[-] Error processing JSON object {idx}: {error}")
-                        raise
-
-            else:
-                current_packet_hex = []
-                for line_num, line in enumerate(infile, 1):
-                    line = line.strip()
-
-                    if line == "---":
-                        if current_packet_hex:
-                            full_hex = "".join(current_packet_hex)
-                            clean_hex = clean_hex_string(full_hex)
-
-                            if clean_hex:
-                                if len(clean_hex) % 2 != 0:
-                                    print(f"[-] Warning: Odd-length hex string for packet {packet_count + 1}, trimming last character")
-                                    clean_hex = clean_hex[:-1]
-
-                                try:
-                                    pkt_bytes = bytes.fromhex(clean_hex)
-                                    writer.writepkt(pkt_bytes, ts=time.time())
-                                    packet_count += 1
-                                    print(f"[+] Packet {packet_count}: {len(pkt_bytes)} bytes (from TXT)")
-                                except ValueError as error:
-                                    print(f"[-] Error processing packet {packet_count + 1} at line {line_num}: {error}")
-                                    raise
-
-                            current_packet_hex = []
-                    else:
-                        current_packet_hex.append(line)
-
-                if current_packet_hex:
-                    full_hex = "".join(current_packet_hex)
-                    clean_hex = clean_hex_string(full_hex)
-
-                    if clean_hex:
-                        if len(clean_hex) % 2 != 0:
-                            print(f"[-] Warning: Odd-length hex string for final packet, trimming last character")
-                            clean_hex = clean_hex[:-1]
-
-                        try:
-                            pkt_bytes = bytes.fromhex(clean_hex)
-                            writer.writepkt(pkt_bytes, ts=time.time())
-                            packet_count += 1
-                            print(f"[+] Packet {packet_count}: {len(pkt_bytes)} bytes (from TXT)")
-                        except ValueError as error:
-                            print(f"[-] Error processing final packet: {error}")
-                            raise
-
+            raise ValueError(f"Unsupported DLT: {dlt}\n{''.join(linktypes.keys())}")
+        with open(output_path, "wb") as out:
+            writer = dpkt.pcap.Writer(out, linktype=linktypes[dlt])
+            count = 0
+            for hexstr, b in iter_packets_from_json(input_file):
+                writer.writepkt(b, ts=time.time())
+                count += 1
+                print(f"{count} packet writed: {b[:50]}...")
             writer.close()
-            print(f"[+] Finished: {packet_count} packets written to {output_path}")
+            print(f"Output file: {output_path}")
 
     @staticmethod
-    def send_raw(ifname: str, raw_hex_frame: str = None, count: int = 1, interval: int = 1, timeout: int = None):
+    def send_raw(ifname: str, input_file: str, count: int = 1, interval: float = 1.0, timeout: float = None):
         sock = create_raw_socket(ifname)
     
-        if raw_hex_frame is None:
-            raise ValueError("The frame must be in hexadecimal!")
-        
-        raw_frame = bytes.fromhex(raw_hex_frame.replace(":", "").replace(" ", ""))
-        
         if timeout is not None:
             sock.settimeout(timeout)
-        
-        for i in range(count):
-            try:
-                bytes_sent = sock.send(raw_frame)
-                print(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
-                
-                if i < count - 1:
-                    time.sleep(interval)
-                    
-            except socket.error as error:
-                print(f"Failed to send frame: {error}")
-                break
-            except Exception as error:
-                print(f"Unexpected error: {error}")
-                break
+    
+        try:
+            for cleaned, raw_bytes in iter_packets_from_json(input_file):
+                for i in range(count):
+                    try:
+                        bytes_sent = sock.send(raw_bytes)
+                        print(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
+    
+                        if i < count - 1:
+                            time.sleep(interval)
+    
+                    except socket.error as error:
+                        print(f"Failed to send frame: {error}")
+                        break
+                    except Exception as error:
+                        print(f"Unexpected error: {error}")
+                        break
+    
+        finally:
+            sock.close()
