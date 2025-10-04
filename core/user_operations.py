@@ -97,52 +97,125 @@ class Operations:
         print(" In development, see https://github.com/gusprojects008/wnlpy")
 
     @staticmethod
-    def sniff(
-              link_type: str = "wifi",
-              layer: int = 2,
-              standard: float = 802.11,
-              ifname: Optional[str] = None,
-              store_filter: str = "",
-              display_filter: str = "",
-              output_file: Optional[str] = None,
-              count: Optional[int] = None,
-              timeout: Optional[int] = None
-        ):
-        if link_type == "wifi" and layer == 2 and standard == 802.11:
-            return IEEE802_11.sniff(
-                ifname=ifname,
-                store_filter=store_filter,
-                display_filter=display_filter,
-                output_file=output_file,
-                count=count,
-                timeout=timeout
-            )
-        raise ValueError("Unsupported sniff parameters")
+    def sniff(link_type: str = "wifi", layer: int = 2, standard: float = 802.11, ifname: str = None, store_filter: str = "", display_filter: str = "", output_file: str = None, count: int = None, timeout: float = None, display_interval: float = 1.0):
+    
+        parser = None
+    
+        if link_type == "wifi" and layer == 2 and standard == "802.11":
+            parser = IEEE802_11.frames_parser
+    
+        if parser is None:
+            raise ValueError("Unsupported sniff parameters")
+    
+        sock = create_raw_socket(ifname)
+        base = "framesniff-capture"
+        ext = ".json"
+        output_file_path = new_file_path(base, ext, output_file)
+        captured_frames = []
+        frame_counter = 0
+        last_display_time = 0.0
+    
+        try:
+            if timeout:
+                sock.settimeout(timeout)
+    
+            print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
+            start_time = time.time()
+    
+            while True:
+                try:
+                    frame, _ = sock.recvfrom(65535)
+                    parsed_frame = parser(frame)
+                    if parsed_frame is None:
+                        continue
+    
+                    parsed_frame["counter"] = frame_counter
+                    parsed_frame["raw"] = frame.hex()
+    
+                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+    
+                    if store_result:
+                        captured_frames.append(store_result)
+    
+                    current_time = time.time()
+                    if display_result and current_time - last_display_time >= display_interval:
+                        try:
+                            print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
+                        except Exception:
+                            print(f"[{frame_counter}] {display_result}")
+                        last_display_time = current_time
+    
+                    frame_counter += 1
+    
+                    if count is not None and frame_counter >= count:
+                        break
+    
+                except socket.timeout:
+                    print("Capture timeout reached")
+                    break
+                except KeyboardInterrupt:
+                    print("\nCapture interrupted by user")
+                    break
+                except Exception as error:
+                    print(f"Error receiving frame: {error}")
+                    continue
+        finally:
+            sock.close()
+            capture_duration = time.time() - start_time
+            if captured_frames:
+                with open(output_file_path, "w") as file:
+                    json.dump(captured_frames, file, indent=2)
+                print(f"\nCaptured {len(captured_frames)} frames in {capture_duration:.2f}s")
+                print(f"Saved to: {output_file_path}")
+            else:
+                print("\nNo frames captured")
 
     @staticmethod
-    def eapol_capture(ifname: str = None,
+    def eapol_capture(
+            ifname: str = None,
             bssid: Optional[str] = None,
             mac: Optional[str] = None,
-            output_file: Optional[str] = None,
             count: Optional[int] = None,
             timeout: Optional[int] = None,
-            store_filter: str = "",
-            display_filter: str = "") -> tuple:
+            output_file: Optional[str] = None,
+        )
         if not ifname:
             raise ValueError("Interface name is required")
-        return IEEE802_11.WPA2Personal.eapol_capture(
-            ifname=ifname,
-            bssid=bssid,
-            mac=mac,
-            output_file=output_file,
-            count=count,
-            timeout=timeout,
-            store_filter=store_filter,
-            display_filter=display_filter
-        )
+        filters = ["mac_hdr.fc.type == 2"]
+        display_fields = ["raw", "mac_hdr", "body.eapol"]
+
+        if bssid:
+            filters.append(f"mac_hdr.bssid == '{bssid}'")
+        if mac:
+            filters.append(f"mac_hdr.mac_src == '{mac}' or mac_hdr.mac_dst == '{mac}'")
+
+        store_filter = " and ".join(filters)
+        display_filter = ", ".join(display_fields)
+
+        base = "framesniff-eapol-capture"
+        ext = ".json" 
+        output_file_path = new_file_path(base, ext, output_file)    
+
+        Operations.sniff(linktype="wifi", layer=2, standard=802.11, ifname=ifname, store_filter=store_filter, display_filter=display_filter, count=count, timeout=timeout, output_file=output_file_path)
 
     @staticmethod
-    def generate_22000(ssid: str = None, eapol_msg1_hex: str = None, eapol_msg2_hex: str = None, output_file: str = "hashcat.22000") -> str:
+    def generate_22000(ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
+        if not input_file:
+            raise ValueError("Input file must be a json file with hexadecimal raw frames.")
+        eapol_msg1_hex = None
+        eapol_msg2_hex = None
+        seen = 0
+        for hexstr, _ in iter_packets_from_json(input_file):
+            if seen == 0:
+                eapol_msg1_hex = hexstr
+            elif seen == 1:
+                eapol_msg2_hex = hexstr
+                break
+            seen += 1
+        if eapol_msg1_hex is None:
+            raise ValueError("No frames found in input file")
+        if eapol_msg2_hex is None:
+            raise ValueError("Only one frame found in input file; need two EAPOL frames")
         return IEEE802_11.WPA2Personal.generate_22000(ssid, eapol_msg1_hex, eapol_msg2_hex, output_file)
 
     @staticmethod
@@ -156,7 +229,7 @@ class Operations:
         linktypes = {
             "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
             "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
-            "DLT_IEEE802_11": dpkt.pcap.DLT_IEEE802_11,
+            "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
         }
         if dlt not in linktypes:
             raise ValueError(f"Unsupported DLT: {dlt}\n{''.join(linktypes.keys())}")

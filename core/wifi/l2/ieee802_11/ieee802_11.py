@@ -7,93 +7,10 @@ from ....common.useful_functions import *
 from ....common.filter_engine import apply_filters
 from ..radiotap_header import RadiotapHeader
 from ....common.sockets import create_raw_socket
+from ....user_operations import sniff
 
 class IEEE802_11:
     class Parsers:
-        @staticmethod
-        def _get_frame_type_subtype_name(frame_type, subtype):
-            type_names = {0: "Management", 1: "Control", 2: "Data"}
-            subtype_names = {
-                0: {0: "Association Request", 1: "Association Response", 2: "Reassociation Request", 
-                    3: "Reassociation Response", 4: "Probe Request", 5: "Probe Response", 6: "Timing Advertisement", 
-                    8: "Beacon", 9: "ATIM", 10: "Disassociation", 11: "Authentication", 12: "Deauthentication", 
-                    13: "Action", 14: "Action No Ack"},
-                1: {8: "Block Ack Request", 9: "Block Ack", 10: "PS-Poll", 11: "RTS", 12: "CTS", 
-                    13: "ACK", 14: "CF-End", 15: "CF-End+CF-Ack"},
-                2: {i: name for i, name in enumerate([
-                    "Data", "Data+CF-Ack", "Data+CF-Poll", "Data+CF-Ack+CF-Poll", "Null", 
-                    "CF-Ack", "CF-Poll", "CF-Ack+CF-Poll", "QoS Data", "QoS Data+CF-Ack", 
-                    "QoS Data+CF-Poll", "QoS Data+CF-Ack+CF-Poll", "QoS Null", "Reserved", 
-                    "QoS CF-Poll", "QoS CF-Ack+CF-Poll"])}
-            }
-            type_name = type_names.get(frame_type, f"Unknown ({frame_type})")
-            subtype_name = subtype_names.get(frame_type, {}).get(subtype, f"Unknown {type_name} ({subtype})")
-            return type_name, subtype_name
-
-        @staticmethod
-        def mac_header(frame, offset):
-            try:
-                size = struct.calcsize("<HH6s6s6sH")
-                if len(frame) < offset + size:
-                    return None, None
-
-                frame_control, duration_id, addr1, addr2, addr3, sequence_number = struct.unpack_from("<HH6s6s6sH", frame, offset)
-                protocol_version = frame_control & 0b11
-                frame_type = (frame_control >> 2) & 0b11
-                frame_subtype = (frame_control >> 4) & 0b1111
-                frame_type_name, frame_subtype_name = IEEE802_11.Parsers._get_frame_type_subtype_name(frame_type, frame_subtype)
-
-                to_ds = (frame_control >> 8) & 1
-                from_ds = (frame_control >> 9) & 1
-                addr4 = frame[offset + size: offset + size + 6] if to_ds and from_ds and len(frame) >= offset + size + 6 else None
-
-                mac_receiver = bytes_for_mac(addr1)
-                mac_transmitter = bytes_for_mac(addr2)
-                bssid = bytes_for_mac(addr3)
-                mac_source, mac_destination = None, None
-
-                if to_ds == 0 and from_ds == 0:
-                    mac_source, mac_destination = mac_transmitter, mac_receiver
-                elif to_ds == 0 and from_ds == 1:
-                    mac_source, mac_destination = bytes_for_mac(addr3), mac_receiver
-                    bssid = mac_transmitter
-                elif to_ds == 1 and from_ds == 0:
-                    mac_source, mac_destination = mac_transmitter, bytes_for_mac(addr3)
-                    bssid = mac_receiver
-                elif to_ds == 1 and from_ds == 1:
-                    mac_source, mac_destination = bytes_for_mac(addr4) if addr4 else mac_transmitter, bytes_for_mac(addr3)
-                    bssid = None
-
-                offset += size
-                mac_data = {
-                    "fc": {
-                        "protocol_version": protocol_version,
-                        "type": frame_type,
-                        "type_name": frame_type_name,
-                        "subtype": frame_subtype,
-                        "subtype_name": frame_subtype_name,
-                        "tods": to_ds,
-                        "fromdS": from_ds,
-                    },
-                    "mac_receiver": mac_receiver,
-                    "mac_transmitter": mac_transmitter,
-                }
-
-                if frame_type == 0 or frame_type == 2:
-                    mac_data.update({
-                        "mac_src": mac_source,
-                        "mac_dst": mac_destination,
-                        "bssid": bssid,
-                        "sequence_number": sequence_number
-                    })
-                    if frame_type == 2 and frame_subtype >= 8 and offset + 2 <= len(frame):
-                        mac_data["qos_control"] = struct.unpack_from("<H", frame, offset)[0]
-                        offset += 2
-
-                return mac_data, offset
-            except Exception as error:
-                print(f"mac_hdr Error: {error}")
-                return None, None
 
         @staticmethod
         def tagged_parameters(frame, offset):
@@ -167,118 +84,193 @@ class IEEE802_11:
                 "key_data_length": data_len, "key_data": key_data.hex()
             }, offset
 
+    class MacHeader:
+        @staticmethod
+        def parse(frame, offset):
+            def _get_frame_type_subtype_name(frame_type, subtype):
+                type_names = {0: "Management", 1: "Control", 2: "Data"}
+                subtype_names = {
+                    0: {0: "Association Request", 1: "Association Response", 2: "Reassociation Request", 
+                        3: "Reassociation Response", 4: "Probe Request", 5: "Probe Response", 6: "Timing Advertisement", 
+                        8: "Beacon", 9: "ATIM", 10: "Disassociation", 11: "Authentication", 12: "Deauthentication", 
+                        13: "Action", 14: "Action No Ack"},
+                    1: {8: "Block Ack Request", 9: "Block Ack", 10: "PS-Poll", 11: "RTS", 12: "CTS", 
+                        13: "ACK", 14: "CF-End", 15: "CF-End+CF-Ack"},
+                    2: {i: name for i, name in enumerate([
+                        "Data", "Data+CF-Ack", "Data+CF-Poll", "Data+CF-Ack+CF-Poll", "Null", 
+                        "CF-Ack", "CF-Poll", "CF-Ack+CF-Poll", "QoS Data", "QoS Data+CF-Ack", 
+                        "QoS Data+CF-Poll", "QoS Data+CF-Ack+CF-Poll", "QoS Null", "Reserved", 
+                        "QoS CF-Poll", "QoS CF-Ack+CF-Poll"])}
+                }
+                type_name = type_names.get(frame_type, f"Unknown ({frame_type})")
+                subtype_name = subtype_names.get(frame_type, {}).get(subtype, f"Unknown {type_name} ({subtype})")
+                return type_name, subtype_name
+
+            try:
+                size = struct.calcsize("<HH6s6s6sH")
+                if len(frame) < offset + size:
+                    return None, None
+
+                frame_control, duration_id, addr1, addr2, addr3, sequence_number = struct.unpack_from("<HH6s6s6sH", frame, offset)
+                protocol_version = frame_control & 0b11
+                frame_type = (frame_control >> 2) & 0b11
+                frame_subtype = (frame_control >> 4) & 0b1111
+                frame_type_name, frame_subtype_name = IEEE802_11._get_frame_type_subtype_name(frame_type, frame_subtype)
+
+                to_ds = (frame_control >> 8) & 1
+                from_ds = (frame_control >> 9) & 1
+                addr4 = frame[offset + size: offset + size + 6] if to_ds and from_ds and len(frame) >= offset + size + 6 else None
+
+                mac_receiver = bytes_for_mac(addr1)
+                mac_transmitter = bytes_for_mac(addr2)
+                bssid = bytes_for_mac(addr3)
+                mac_source, mac_destination = None, None
+
+                if to_ds == 0 and from_ds == 0:
+                    mac_source, mac_destination = mac_transmitter, mac_receiver
+                elif to_ds == 0 and from_ds == 1:
+                    mac_source, mac_destination = bytes_for_mac(addr3), mac_receiver
+                    bssid = mac_transmitter
+                elif to_ds == 1 and from_ds == 0:
+                    mac_source, mac_destination = mac_transmitter, bytes_for_mac(addr3)
+                    bssid = mac_receiver
+                elif to_ds == 1 and from_ds == 1:
+                    mac_source, mac_destination = bytes_for_mac(addr4) if addr4 else mac_transmitter, bytes_for_mac(addr3)
+                    bssid = None
+
+                offset += size
+                mac_data = {
+                    "fc": {
+                        "protocol_version": protocol_version,
+                        "type": frame_type,
+                        "type_name": frame_type_name,
+                        "subtype": frame_subtype,
+                        "subtype_name": frame_subtype_name,
+                        "tods": to_ds,
+                        "fromdS": from_ds,
+                    },
+                    "mac_receiver": mac_receiver,
+                    "mac_transmitter": mac_transmitter,
+                }
+
+                if frame_type == 0 or frame_type == 2:
+                    mac_data.update({
+                        "mac_src": mac_source,
+                        "mac_dst": mac_destination,
+                        "bssid": bssid,
+                        "sequence_number": sequence_number
+                    })
+                    if frame_type == 2 and frame_subtype >= 8 and offset + 2 <= len(frame):
+                        mac_data["qos_control"] = struct.unpack_from("<H", frame, offset)[0]
+                        offset += 2
+
+                return mac_data, offset
+            except Exception as error:
+                print(f"mac_hdr Error: {error}")
+                return None, None
+
+        @staticmethod
+        def build(frame_control: int = 0x0000, receiver_address: str = "ff:ff:ff:ff:ff:ff",
+                  transmitter_address: str = "ff:ff:ff:ff:ff:ff", bssid: str = None,
+                  duration: int = 0, sequence: int = 0):
+            frame_control_bytes = struct.pack("<H", frame_control)
+            duration_bytes = struct.pack("<H", duration)
+            receiver_bytes = mac_for_bytes(receiver_address)
+            transmitter_bytes = mac_for_bytes(transmitter_address)
+            bssid_bytes = mac_for_bytes(bssid or transmitter_address)
+            sequence_bytes = struct.pack("<H", sequence & 0xFFF)
+            return frame_control_bytes + duration_bytes + receiver_bytes + transmitter_bytes + bssid_bytes + sequence_bytes
+    
     class Management:
         class build:
             @staticmethod
-            def mac_header(frame_control, receiver_address, transmitter_address, bssid=None, duration=0, sequence=0):
-                duration_id = struct.pack("<H", duration)
-                receiver_addr = mac_for_bytes(receiver_address)
-                transmitter_addr = mac_for_bytes(transmitter_address)
-                bssid_addr = mac_for_bytes(bssid or transmitter_address)
-                sequence_control = struct.pack("<H", sequence & 0xFFF)
-                
-                return (frame_control + duration_id + receiver_addr + 
-                       transmitter_addr + bssid_addr + sequence_control)
-    
-            @staticmethod
-            def tagged_parameters(ssid="", rates: list = None, **kwargs):
+            def tagged_parameters(ssid: str = "TestSSID", rates: list = None, **kwargs):
                 if rates is None:
                     rates = [0x82, 0x84, 0x8b, 0x96, 0x12, 0x24, 0x48, 0x6c]
-                
                 tagged_data = b""
-                
-                if ssid is not None:
-                    ie_ssid = ssid.encode("utf-8")
-                    tagged_data += struct.pack("<BB", 0, len(ie_ssid)) + ie_ssid
-                
-                if rates:
-                    ie_rates = b"".join(struct.pack("<B", rate // 500) for rate in calc_rates(rates))
-                    tagged_data += struct.pack("<BB", 1, len(ie_rates)) + ie_rates
-                
+                ie_ssid = ssid.encode("utf-8")
+                tagged_data += struct.pack("<BB", 0, len(ie_ssid)) + ie_ssid
+                ie_rates = b"".join(struct.pack("<B", rate // 500) for rate in calc_rates(rates))
+                tagged_data += struct.pack("<BB", 1, len(ie_rates)) + ie_rates
                 if 'channel' in kwargs:
                     channel = kwargs['channel']
                     tagged_data += struct.pack("<BB", 3, 1) + struct.pack("<B", channel)
-                
                 if 'tim' in kwargs:
                     tim_data = kwargs['tim']
                     tagged_data += struct.pack("<BB", 5, len(tim_data)) + tim_data
-                
                 if 'extended_rates' in kwargs:
                     ext_rates = kwargs['extended_rates']
                     ie_ext_rates = b"".join(struct.pack("<B", rate // 500) for rate in calc_rates(ext_rates))
                     tagged_data += struct.pack("<BB", 50, len(ie_ext_rates)) + ie_ext_rates
-                
                 return tagged_data
     
             @staticmethod
-            def deauthentication(dst_mac, src_mac, bssid=None, reason_code=0x0007, **kwargs):
-                radiotap = RadiotapHeader.build(**kwargs)
-                frame_control = struct.pack("<H", 0x00C0)  # Management + Deauthentication
-                mac_header = IEEE802_11.Management.build.mac_header(
-                    frame_control, dst_mac, src_mac, bssid)
+            def deauthentication():
+                dst_mac = "ff:ff:ff:ff:ff:ff"
+                src_mac = "00:11:22:33:44:55"
+                bssid = src_mac
+                reason_code = 0x0007
+                radiotap = RadiotapHeader.build()
+                frame_control = 0x00C0
+                mac_header = MacHeader.build(frame_control, dst_mac, src_mac, bssid)
                 reason = struct.pack("<H", reason_code)
                 frame_bytes = radiotap + mac_header + reason
                 return frame_bytes.hex()
-            
+    
             @staticmethod
-            def probe_request(src_mac, dst_mac="ff:ff:ff:ff:ff:ff", ssid="", rates=None, **kwargs):
-                radiotap = RadiotapHeader.build(**kwargs)
-                frame_control = struct.pack("<H", 0x0040)  # Management + Probe Request
-                mac_header = IEEE802_11.Management.build.mac_header(
-                    frame_control, dst_mac, src_mac, dst_mac)  # BSSID = destino para probe requests
-                tagged_params = IEEE802_11.Management.build.tagged_parameters(
-                    ssid=ssid, rates=rates)
+            def probe_request():
+                dst_mac = "ff:ff:ff:ff:ff:ff"
+                src_mac = "00:11:22:33:44:55"
+                bssid = dst_mac
+                radiotap = RadiotapHeader.build()
+                frame_control = 0x0040
+                mac_header = MacHeader.build(frame_control, dst_mac, src_mac, bssid)
+                tagged_params = Management.build.tagged_parameters()
                 frame_bytes = radiotap + mac_header + tagged_params
                 return frame_bytes.hex()
-            
+    
             @staticmethod
-            def beacon(src_mac, dst_mac="ff:ff:ff:ff:ff:ff", ssid="", beacon_interval=100, 
-                      rates=None, channel=None, capabilities=0x0431, **kwargs):
-                radiotap = RadiotapHeader.build(**kwargs)
-                frame_control = struct.pack("<H", 0x0080)  # Management + Beacon
-                mac_header = IEEE802_11.Management.build.mac_header(
-                    frame_control, dst_mac, src_mac, src_mac)  # BSSID = MAC do AP
-                
-                # Beacon frame body
+            def beacon():
+                dst_mac = "ff:ff:ff:ff:ff:ff"
+                src_mac = "00:11:22:33:44:55"
+                bssid = src_mac
+                radiotap = RadiotapHeader.build()
+                frame_control = 0x0080
+                mac_header = MacHeader.build(frame_control, dst_mac, src_mac, bssid)
                 timestamp = struct.pack("<Q", int(time.time() * 1_000_000))
-                beacon_interval_packed = struct.pack("<H", beacon_interval)
-                capabilities_packed = struct.pack("<H", capabilities)
-                frame_body = timestamp + beacon_interval_packed + capabilities_packed
-                
-                # Tagged parameters
-                tagged_params = IEEE802_11.Management.build.tagged_parameters(
-                    ssid=ssid, rates=rates, channel=channel)
-                
+                beacon_interval = struct.pack("<H", 100)
+                capabilities = struct.pack("<H", 0x0431)
+                frame_body = timestamp + beacon_interval + capabilities
+                tagged_params = Management.build.tagged_parameters()
                 frame_bytes = radiotap + mac_header + frame_body + tagged_params
                 return frame_bytes.hex()
     
             @staticmethod
-            def authentication(dst_mac, src_mac, bssid=None, auth_algorithm=0x0000, 
-                              auth_seq=0x0001, status_code=0x0000, **kwargs):
-                radiotap = RadiotapHeader.build(**kwargs)
-                frame_control = struct.pack("<H", 0x00B0)  # Management + Authentication
-                mac_header = IEEE802_11.Management.build.mac_header(
-                    frame_control, dst_mac, src_mac, bssid)
-                
-                auth_body = struct.pack("<HHH", auth_algorithm, auth_seq, status_code)
-                frame_bytes = radiotap + mac_header + auth_body
+            def authentication():
+                dst_mac = "ff:ff:ff:ff:ff:ff"
+                src_mac = "00:11:22:33:44:55"
+                bssid = src_mac
+                radiotap = RadiotapHeader.build()
+                frame_control = 0x00B0
+                mac_header = MacHeader.build(frame_control, dst_mac, src_mac, bssid)
+                auth_algorithm = struct.pack("<H", 0x0000)
+                auth_seq = struct.pack("<H", 0x0001)
+                status_code = struct.pack("<H", 0x0000)
+                frame_bytes = radiotap + mac_header + auth_algorithm + auth_seq + status_code
                 return frame_bytes.hex()
     
             @staticmethod
-            def association_request(dst_mac, src_mac, ssid, rates=None, capabilities=0x0431, **kwargs):
-                radiotap = RadiotapHeader.build(**kwargs)
-                frame_control = struct.pack("<H", 0x0000)  # Management + Association Request
-                mac_header = IEEE802_11.Management.build.mac_header(
-                    frame_control, dst_mac, src_mac, dst_mac)
-                
-                # Association request body
-                capabilities_packed = struct.pack("<H", capabilities)
-                listen_interval = struct.pack("<H", 0x0001)  # Listen interval padrão
-                
-                frame_body = capabilities_packed + listen_interval
-                tagged_params = IEEE802_11.Management.build.tagged_parameters(
-                    ssid=ssid, rates=rates)
-                
+            def association_request():
+                dst_mac = "ff:ff:ff:ff:ff:ff"
+                src_mac = "00:11:22:33:44:55"
+                bssid = dst_mac
+                radiotap = RadiotapHeader.build()
+                frame_control = 0x0000
+                mac_header = MacHeader.build(frame_control, dst_mac, src_mac, bssid)
+                capabilities = struct.pack("<H", 0x0431)
+                listen_interval = struct.pack("<H", 0x0001)
+                frame_body = capabilities + listen_interval
+                tagged_params = Management.build.tagged_parameters()
                 frame_bytes = radiotap + mac_header + frame_body + tagged_params
                 return frame_bytes.hex()
 
@@ -339,95 +331,10 @@ class IEEE802_11:
         except Exception as error:
             parsed_frame["body"] = {"parser_error": str(error)}
         return parsed_frame
-        
-    @staticmethod
-    def sniff(ifname: str = None, store_filter: str = "", display_filter: str = "",
-              output_file: str = None, count: int = None, timeout: int = None, display_interval: float = 1.0):
-        if not ifname:
-            raise ValueError("Interface name is required")
-    
-        sock = create_raw_socket(ifname)
-        base = "framesniff-capture"
-        ext = ".json"
-        output_file_path = new_file_path(base, ext, output_file)
-        captured_frames = []
-        frame_count = 0
-        last_display_time = 0.0
-    
-        try:
-            if timeout:
-                sock.settimeout(timeout)
-    
-            print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
-            start_time = time.time()
-    
-            while True:
-                try:
-                    frame, _ = sock.recvfrom(65535)
-                    parsed_frame = IEEE802_11.frames_parser(frame)
-                    parsed_frame["raw"] = frame.hex()
-    
-                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
-    
-                    if store_result:
-                        captured_frames.append(parsed_frame)
-                        frame_count += 1
-    
-                    if store_result and display_result:
-                       try:
-                           print(f"[{frame_count}] {json.dumps(display_result, ensure_ascii=False)}")
-                       except Exception:
-                           print(f"[{frame_count}] {display_result}")
-    
-                    if count is not None and count > 0 and frame_count >= count:
-                        break
-
-                    
-                except socket.timeout:
-                    print("Capture timeout reached")
-                    break
-                except KeyboardInterrupt:
-                    print("\nCapture interrupted by user")
-                    break
-                except Exception as error:
-                    print(f"Error receiving frame: {error}")
-                    continue
-        finally:
-            sock.close()
-            capture_duration = start_time - time.time()
-            if captured_frames:
-                with open(output_file_path, "w") as file:
-                    json.dump(captured_frames, file, indent=2)
-                print(f"\nCaptured {len(captured_frames)} frames in {capture_duration:.2f}s")
-                print(f"Saved to: {output_file_path}")
-            else:
-                print("\nNo frames captured")
-
-    class WPA2Personal:
-        @staticmethod
-        def eapol_capture(ifname: str = None, bssid: str = None, mac: str = None,
-                          output_file: str = None, count: int = None, timeout: int = None):
-            filters = ["mac_hdr.fc.type == 2"]
-            display_fields = ["raw", "mac_hdr", "body.eapol"]
-
-            if bssid:
-                filters.append(f"mac_hdr.bssid == '{bssid}'")
-            if mac:
-                filters.append(f"mac_hdr.mac_src == '{mac}' or mac_hdr.mac_dst == '{mac}'")
-
-            store_filter = " and ".join(filters)
-            display_filter = ", ".join(display_fields)
-
-            base = "framesniff-eapol-capture"
-            ext = ".json" 
-            output_file_path = new_file_path(base, ext, output_file)    
-
-            IEEE802_11.sniff(ifname=ifname, store_filter=store_filter, display_filter=display_filter,
-                             output_file=output_file_path, count=count, timeout=timeout)
 
         @staticmethod
         def generate_22000(ssid: str = None, eapol_msg1: str = None, eapol_msg2: str = None,
-                           output_file: str = "hashcat.22000", message_pair: int = 0):
+                output_file: str = "hashcat.22000", message_pair: int = 0):
         
             if not all([ssid, eapol_msg1, eapol_msg2]):
                 raise ValueError("Essential data required! Need (ssid, eapol message 1, eapol message 2)")
