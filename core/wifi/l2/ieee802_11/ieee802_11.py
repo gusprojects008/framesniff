@@ -7,11 +7,9 @@ from ....common.useful_functions import *
 from ....common.filter_engine import apply_filters
 from ..radiotap_header import RadiotapHeader
 from ....common.sockets import create_raw_socket
-from ....user_operations import sniff
 
 class IEEE802_11:
     class Parsers:
-
         @staticmethod
         def tagged_parameters(frame, offset):
             if len(frame) < offset + 8:
@@ -115,7 +113,7 @@ class IEEE802_11:
                 protocol_version = frame_control & 0b11
                 frame_type = (frame_control >> 2) & 0b11
                 frame_subtype = (frame_control >> 4) & 0b1111
-                frame_type_name, frame_subtype_name = IEEE802_11._get_frame_type_subtype_name(frame_type, frame_subtype)
+                frame_type_name, frame_subtype_name = _get_frame_type_subtype_name(frame_type, frame_subtype)
 
                 to_ds = (frame_control >> 8) & 1
                 from_ds = (frame_control >> 9) & 1
@@ -275,7 +273,7 @@ class IEEE802_11:
                 return frame_bytes.hex()
 
         @staticmethod
-        def parser(frame, offset):
+        def parse(frame, offset):
             body = {}
             tagged_parameters, tagged_parameters_offset = IEEE802_11.Parsers.tagged_parameters(frame, offset)
             body["tagged_parameters"] = tagged_parameters
@@ -288,7 +286,7 @@ class IEEE802_11:
                 pass
 
         @staticmethod
-        def parser(frame, offset):
+        def parse(frame, offset):
             pass
     
     class Data:
@@ -298,7 +296,7 @@ class IEEE802_11:
                 pass
 
         @staticmethod
-        def parser(frame, offset):
+        def parse(frame, offset):
             body = {}
             llc, llc_offset = IEEE802_11.Parsers.llc(frame, offset)
             body["llc"] = llc
@@ -311,7 +309,7 @@ class IEEE802_11:
     def frames_parser(raw_frame: bytes) -> dict:
         parsed_frame = {}
         rth, rth_len = RadiotapHeader.parse(raw_frame)
-        mac_hdr, mac_hdr_offset = IEEE802_11.Parsers.mac_header(raw_frame, rth_len)
+        mac_hdr, mac_hdr_offset = IEEE802_11.MacHeader.parse(raw_frame, rth_len)
         if not mac_hdr:
             return parsed_frame
         parsed_frame = {'rt_hdr': rth, 'mac_hdr': mac_hdr}
@@ -319,12 +317,12 @@ class IEEE802_11:
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
             if frame_type == 0:
-                body = IEEE802_11.Management.parser(raw_frame, mac_hdr_offset)
+                body = IEEE802_11.Management.parse(raw_frame, mac_hdr_offset)
                 parsed_frame["body"] = body or {}
             elif frame_type == 1:
                 parsed_frame["body"] = {"error": "Control frame parser not implemented"}
             elif frame_type == 2:
-                body = IEEE802_11.Data.parser(raw_frame, mac_hdr_offset)
+                body = IEEE802_11.Data.parse(raw_frame, mac_hdr_offset)
                 parsed_frame["body"] = body or {}
             else:
                 parsed_frame["body"] = {"error": f"Unknown frame type {frame_type}"}
@@ -332,35 +330,61 @@ class IEEE802_11:
             parsed_frame["body"] = {"parser_error": str(error)}
         return parsed_frame
 
-        @staticmethod
-        def generate_22000(ssid: str = None, eapol_msg1: str = None, eapol_msg2: str = None,
-                output_file: str = "hashcat.22000", message_pair: int = 0):
-        
-            if not all([ssid, eapol_msg1, eapol_msg2]):
-                raise ValueError("Essential data required! Need (ssid, eapol message 1, eapol message 2)")
-        
-            def clean_hex(s):
-                return "".join(re.findall(r"[0-9a-fA-F]", s)).lower()
-        
-            output_file = new_file_path("hashcat", ".22000", output_file)
-        
-            msg1 = bytes.fromhex(clean_hex(eapol_msg1))
-            msg2 = bytes.fromhex(clean_hex(eapol_msg2))
-        
+    @staticmethod
+    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000", message_pair: int = 0):
+        if not input_file:
+            raise ValueError("Input file must be provided.")
+    
+        output_file = new_file_path("hashcat", ".22000", output_file)
+        ssid_hex = ssid.encode("utf-8", errors="ignore").hex()
+    
+        with open(input_file, "r") as f:
+            data = json.load(f)
+
+        if bitmask_message_pair == 1:
+            pmkid = clean_hex_string(data.get("pmkid", ""))
+            mac_ap = clean_hex_string(data.get("mac_ap", ""))
+            mac_client = clean_hex_string(data.get("mac_client", ""))
+            if not all([ssid, pmkid, mac_ap, mac_client]):
+                raise ValueError("Missing one or more required keys: pmkid, mac_ap, mac_client")
+            line = f"WPA*01*{pmkid}*{mac_ap}*{mac_client}*{ssid_hex}***{message_pair:02x}"
+            print(line)
+    
+        elif bitmask_message_pair == 2:
+            eapol_msg1_hex = None
+            eapol_msg2_hex = None
+            seen = 0
+    
+            for hexstr, _ in iter_packets_from_json(input_file):
+                if seen == 0:
+                    eapol_msg1_hex = hexstr
+                elif seen == 1:
+                    eapol_msg2_hex = hexstr
+                    break
+                seen += 1
+    
+            if eapol_msg1_hex is None:
+                raise ValueError("No frames found in input file")
+            if eapol_msg2_hex is None:
+                raise ValueError("Only one frame found in input file; need two EAPOL frames")
+
+            msg1 = bytes.fromhex(eapol_msg1_hex)
+            msg2 = bytes.fromhex(eapol_msg2_hex)
+    
             _, rth_len1 = RadiotapHeader.parse(msg1)
-            mac_hdr1, mac_offset1 = IEEE802_11.Parsers.mac_header(msg1, rth_len1)
-            body1 = IEEE802_11.Data.parser(msg1, mac_offset1)
-        
+            mac_hdr1, mac_offset1 = IEEE802_11.MacHeader.parse(msg1, rth_len1)
+            body1 = IEEE802_11.Data.parse(msg1, mac_offset1)
+    
             _, rth_len2 = RadiotapHeader.parse(msg2)
-            mac_hdr2, mac_offset2 = IEEE802_11.Parsers.mac_header(msg2, rth_len2)
-            body2 = IEEE802_11.Data.parser(msg2, mac_offset2)
-        
-            mac_ap = clean_hex(mac_hdr2.get("bssid", "") or mac_hdr2.get("mac_dst", ""))
-            mac_client = clean_hex(mac_hdr2.get("mac_src", "") or mac_hdr2.get("mac_transmitter", ""))
-        
+            mac_hdr2, mac_offset2 = IEEE802_11.MacHeader.parse(msg2, rth_len2)
+            body2 = IEEE802_11.Data.parse(msg2, mac_offset2)
+    
+            mac_ap = clean_hex_string(mac_hdr2.get("bssid", "") or mac_hdr2.get("mac_dst", ""))
+            mac_client = clean_hex_string(mac_hdr2.get("mac_src", "") or mac_hdr2.get("mac_transmitter", ""))
+    
             eapol_data1 = body1.get("eapol", {})
             eapol_data2 = body2.get("eapol", {})
-        
+    
             anonce = eapol_data1.get("key_nonce", "")
             mic = eapol_data2.get("key_mic", "")
             if not all([mac_ap, mac_client, anonce, mic]):
@@ -369,33 +393,25 @@ class IEEE802_11:
                 raise ValueError(f"Invalid MIC length: {len(mic)}")
             if len(anonce) != 64:
                 raise ValueError(f"Invalid ANonce length: {len(anonce)}")
-        
+    
             essid = ssid.encode("utf-8", errors="ignore").hex()
-        
+    
             llc, llc_offset = IEEE802_11.Parsers.llc(msg2, mac_offset2)
             eapol_frame, eapol_frame_offset = IEEE802_11.Parsers.eapol(msg2, llc_offset)
             eapol_frame = msg2[llc_offset:eapol_frame_offset]
-            
+    
             mic_offset = struct.calcsize("!BBHBHHQ32s16s8s8s")
             mic_bytes = eapol_frame[mic_offset:mic_offset + struct.calcsize("16s")]
             zero_mic = b"\x00" * len(mic_bytes)
-            
+    
             eapol_zero_mic = (eapol_frame[:mic_offset] + zero_mic + eapol_frame[mic_offset + len(mic_bytes):]).hex()
-        
-            try:
-                message_pair_int = int(message_pair)
-            except:
-                raise ValueError("message_pair must be an integer")
-            if not (0 <= message_pair_int <= 255):
-                raise ValueError("message_pair out of range")
-        
-            message_pair_hex = f"{message_pair_int:02x}"
-            line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair_hex}\n"
-        
+            message_pair_hex = f"{message_pair:02x}"
+    
+            line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair_hex}"
+    
             with open(output_file, "w", newline="\n") as f:
                 f.write(line)
-        
-            print()
-            print(line)
 
-            return output_file
+            print(line)
+        else:
+            raise ValueError("Unsupported bitmask_message_pair. Must be 1 or 2.")

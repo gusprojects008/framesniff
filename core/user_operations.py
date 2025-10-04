@@ -1,11 +1,13 @@
 import subprocess
 import re
-from typing import Optional, Tuple, List
 import sys
 import time
 import json
+import socket
+from typing import Optional, Tuple, List
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
 from core.common.useful_functions import (import_dpkt, new_file_path, iter_packets_from_json)
+from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
 class Operations:
@@ -56,35 +58,121 @@ class Operations:
             print(f"error configure {ifname} to station mode: {error}")
 
     @staticmethod
-    def scan_station_mode(ifname: str):
-        print(" In development, see https://github.com/gusprojects008/wnlpy")
-        result = subprocess.run(
-            ["sudo", "iw", "dev", ifname, "scan"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            check=True
-        )
-        blocks = result.stdout.strip().split("\nBSS ")
-        for block in blocks[1:]:
-            bssid_match = re.search(r"^([0-9a-f:]{17})", block)
-            ssid_match = re.search(r"SSID: (.+)", block)
-            signal_match = re.search(r"signal: ([-\d.]+)", block)
-            caps = []
+    def scan_station_mode(ifname: str = None, output_path: str = None):
+        print(" In development, see https://github.com/gusprojects008/wnlpy\n")
+    
+        if not ifname:
+            raise ValueError("Interface name is needed!")
+    
+        print(f" Scanning WiFi networks on {ifname}...\n")
+        
+        try:
+            result = subprocess.run(
+                ["sudo", "iw", "dev", ifname, "scan"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Error during scan: {e}")
+            return
+        except FileNotFoundError:
+            print("Error: 'iw' command not found. Please install wireless tools.")
+            return
+    
+        def _extract_value(block: str, pattern: str) -> str:
+            match = re.search(pattern, block)
+            return match.group(1) if match else "N/A"
+    
+        def _get_security_type(block: str) -> str:
             if "WPA3" in block or "SAE" in block:
-                caps.append("WPA3")
-            if "WPA2" in block or "RSN:" in block:
-                caps.append("WPA2")
-            if "WPA:" in block:
-                caps.append("WPA")
-            if "privacy" in block and not caps:
-                caps.append("WEP/OPEN")
-            if "Management frame protection: required" in block:
-                caps.append("PMF required")
-            elif "Management frame protection: capable" in block:
-                caps.append("PMF capable")
-            vendor_match = re.search(r"Manufacturer: (.+)", block)
-            print(block)
+                return "WPA3"
+            elif "WPA2" in block or "RSN:" in block:
+                return "WPA2"
+            elif "WPA:" in block:
+                return "WPA"
+            elif "privacy" in block:
+                return "WEP"
+            else:
+                return "OPEN"
+    
+        def _get_wps_status(block: str) -> str:
+            if "WPS:" not in block:
+                return "Disabled"
+            
+            status = "Enabled"
+    
+            state_match = re.search(r"Wi-Fi Protected Setup State:\s*(\d+)\s*\((\w+)\)", block)
+            if state_match:
+                status += f" ({state_match.group(2)})"
+            
+            methods_match = re.search(r"Config methods:\s*(.+)", block)
+            if methods_match:
+                status += f" - {methods_match.group(1)}"
+            
+            if "AP setup locked: 0x01" in block:
+                status += " [LOCKED]"
+            
+            return status
+    
+        def _print_network_summary(block: str, num: int):
+            bssid = _extract_value(block, r"^([0-9a-f:]{17})")
+            ssid = _extract_value(block, r"SSID:\s*(.+)") or "Hidden"
+            signal = _extract_value(block, r"signal:\s*([-\d.]+)\s*dBm")
+            channel = _extract_value(block, r"DS Parameter set:\s*channel\s*(\d+)")
+            frequency = _extract_value(block, r"freq:\s*([\d.]+)")
+            
+            security = _get_security_type(block)
+            wps_info = _get_wps_status(block)
+            vendor = _extract_value(block, r"Manufacturer:\s*(.+)")
+            
+            encryption = []
+            if "CCMP" in block: encryption.append("AES")
+            if "TKIP" in block: encryption.append("TKIP")
+            
+            print(f"┌─── NETWORK #{num} {'─' * 50}")
+            print(f"│ SSID: {ssid}")
+            print(f"│ BSSID: {bssid}")
+            print(f"│ Signal: {signal} dBm | Channel: {channel} | Freq: {frequency} MHz")
+            print(f"│ Security: {security}")
+            
+            if encryption:
+                print(f"│ Encryption: {', '.join(encryption)}")
+            
+            if vendor and vendor != "Unknown":
+                print(f"│ Vendor: {vendor}")
+            
+            print(f"│ WPS: {wps_info}")
+            
+            flags = []
+            if "WPA3" in block or "SAE" in block: flags.append("WPA3")
+            if "Management frame protection: required" in block: flags.append("PMF-Required")
+            elif "Management frame protection: capable" in block: flags.append("PMF-Capable")
+            
+            if flags:
+                print(f"│ Security Flags: {', '.join(flags)}")
+            
+            print(f"└{'─' * 60}")
+    
+        output_path = str(new_file_path("scan-station-result", ".txt", output_path))
+    
+        if result.stdout:
+            with open(output_path, "w") as file:
+                file.write(result.stdout)
+        
+            blocks = result.stdout.strip().split("\nBSS ")
+            network_count = 0
+            
+            for block in blocks[1:]:
+                network_count += 1
+                _print_network_summary(block, network_count)
+            
+            print(f"\nTotal networks found: {network_count}")
+   
+    @staticmethod
+    def scan_monitor_mode(channel_hopping_interval: float = 2.0):
+        pass
 
     @staticmethod
     def set_frequency(wiphy_name: str, frequency_mhz: str):
@@ -97,7 +185,7 @@ class Operations:
         print(" In development, see https://github.com/gusprojects008/wnlpy")
 
     @staticmethod
-    def sniff(link_type: str = "wifi", layer: int = 2, standard: float = 802.11, ifname: str = None, store_filter: str = "", display_filter: str = "", output_file: str = None, count: int = None, timeout: float = None, display_interval: float = 1.0):
+    def sniff(link_type: str = "wifi", layer: int = 2, standard: str = "802.11", ifname: str = None, store_filter: str = "", display_filter: str = "", count: int = None, timeout: float = None, display_interval: float = 1.0, output_file: str = None):
     
         parser = None
     
@@ -108,9 +196,7 @@ class Operations:
             raise ValueError("Unsupported sniff parameters")
     
         sock = create_raw_socket(ifname)
-        base = "framesniff-capture"
-        ext = ".json"
-        output_file_path = new_file_path(base, ext, output_file)
+        output_file_path = new_file_path("framesniff-capture", ".json", output_file)
         captured_frames = []
         frame_counter = 0
         last_display_time = 0.0
@@ -135,17 +221,17 @@ class Operations:
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
     
                     if store_result:
-                        captured_frames.append(store_result)
+                        captured_frames.append(parsed_frame)
     
                     current_time = time.time()
-                    if display_result and current_time - last_display_time >= display_interval:
+                    if display_result and store_result and current_time - last_display_time >= display_interval:
+                        frame_counter += 1
                         try:
                             print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
                         except Exception:
                             print(f"[{frame_counter}] {display_result}")
                         last_display_time = current_time
     
-                    frame_counter += 1
     
                     if count is not None and frame_counter >= count:
                         break
@@ -173,12 +259,12 @@ class Operations:
     @staticmethod
     def eapol_capture(
             ifname: str = None,
-            bssid: Optional[str] = None,
-            mac: Optional[str] = None,
-            count: Optional[int] = None,
-            timeout: Optional[int] = None,
-            output_file: Optional[str] = None,
-        )
+            bssid: str = None,
+            mac: str = None,
+            count: int = None,
+            timeout: int = None,
+            output_file: str = None,
+        ):
         if not ifname:
             raise ValueError("Interface name is required")
         filters = ["mac_hdr.fc.type == 2"]
@@ -196,27 +282,11 @@ class Operations:
         ext = ".json" 
         output_file_path = new_file_path(base, ext, output_file)    
 
-        Operations.sniff(linktype="wifi", layer=2, standard=802.11, ifname=ifname, store_filter=store_filter, display_filter=display_filter, count=count, timeout=timeout, output_file=output_file_path)
+        Operations.sniff(linktype="wifi", layer=2, standard="802.11", ifname=ifname, store_filter=store_filter, display_filter=display_filter, count=count, timeout=timeout, output_file=output_file_path)
 
     @staticmethod
-    def generate_22000(ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
-        if not input_file:
-            raise ValueError("Input file must be a json file with hexadecimal raw frames.")
-        eapol_msg1_hex = None
-        eapol_msg2_hex = None
-        seen = 0
-        for hexstr, _ in iter_packets_from_json(input_file):
-            if seen == 0:
-                eapol_msg1_hex = hexstr
-            elif seen == 1:
-                eapol_msg2_hex = hexstr
-                break
-            seen += 1
-        if eapol_msg1_hex is None:
-            raise ValueError("No frames found in input file")
-        if eapol_msg2_hex is None:
-            raise ValueError("Only one frame found in input file; need two EAPOL frames")
-        return IEEE802_11.WPA2Personal.generate_22000(ssid, eapol_msg1_hex, eapol_msg2_hex, output_file)
+    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
+        IEEE802_11.generate_22000(bitmask_message_pair, ssid, input_file, output_file)
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_file: str, output_path: str):
@@ -224,13 +294,14 @@ class Operations:
             sys.exit(1)
         import dpkt
 
-        output_path = new_file_path("packets", ".pcap", output_path)        
+        output_path = new_file_path("packets", ".pcap", output_path)
 
         linktypes = {
             "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
             "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
             "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
         }
+
         if dlt not in linktypes:
             raise ValueError(f"Unsupported DLT: {dlt}\n{''.join(linktypes.keys())}")
         with open(output_path, "wb") as out:

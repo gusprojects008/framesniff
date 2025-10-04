@@ -95,9 +95,9 @@ def boolean_fields_to_hex(bitmap_fields: dict):
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
-    if len(s) % 2 != 0:
-        s = s[:-1]
-    return re.sub(r'[^0-9a-fA-F]', '', s)
+    #if len(s) % 2 != 0:
+     #   s = s[:-1]
+    return re.sub(r'[^0-9a-fA-F]', '', s).lower()
 
 def iter_packets_from_json(path: str):
     try:
