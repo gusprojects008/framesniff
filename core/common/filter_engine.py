@@ -1,4 +1,5 @@
 import operator
+import re
 
 def _get_nested(path: str, dct: dict):
     keys = path.split(".")
@@ -59,13 +60,27 @@ def _multi_get(paths: str, dct: dict):
     return result
 
 def _parse_filter_expression(filter_expression: str, parsed_frame: dict) -> bool:
+    filter_expression = filter_expression.strip()
+
+    while "(" in filter_expression:
+        inner = re.search(r'\(([^()]+)\)', filter_expression)
+        if not inner:
+            break
+        inner_expr = inner.group(1)
+        inner_result = _parse_filter_expression(inner_expr, parsed_frame)
+        filter_expression = filter_expression[:inner.start()] + str(inner_result) + filter_expression[inner.end():]
+
     if " and " in filter_expression:
         return all(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" and "))
     if " or " in filter_expression:
         return any(_parse_filter_expression(f, parsed_frame) for f in filter_expression.split(" or "))
+
     if any(op in filter_expression for op in operators):
         return _evaluate_condition(filter_expression, parsed_frame)
+
     value = _get_nested(filter_expression, parsed_frame)
+    if isinstance(value, bool):
+        return value
     return value is not None
 
 def apply_filters(store_filter: str = "", display_filter: str = "", parsed_frame: dict = None):

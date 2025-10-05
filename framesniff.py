@@ -18,16 +18,16 @@ def main():
     subparsers.add_parser("list-interfaces", help="List all network interfaces")
 
     list_interface_parser = subparsers.add_parser("list-interface", help="Show info about a specific interface")
-    list_interface_parser.add_argument("ifname", help="Interface name")
+    list_interface_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
 
     set_monitor_parser = subparsers.add_parser("set-monitor", help="Set interface to monitor mode")
-    set_monitor_parser.add_argument("ifname", help="Interface name")
+    set_monitor_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
 
     set_station_parser = subparsers.add_parser("set-station", help="Set interface to station/management/managed mode")
-    set_station_parser.add_argument("ifname", help="Interface name")
+    set_station_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
 
     scan_parser = subparsers.add_parser("station-scan", help="Scan networks in station mode")
-    scan_parser.add_argument("ifname", default=None, help="Interface name")
+    scan_parser.add_argument("--ifname", "-i", required=True, help="Network Interface Name")
     scan_parser.add_argument("--output", "-o", default=None, help="Output file path")
 
     set_frequency_parser = subparsers.add_parser("set-frequency", help="Set frequency on a given phy")
@@ -50,11 +50,11 @@ def main():
     sniff_parser.add_argument("--output", "-o", default=None, help="Output JSON file")
 
     eapol_parser = subparsers.add_parser("eapol-capture", help="Capture WPA2 EAPOL frames")
-    eapol_parser.add_argument("ifname", help="Interface name")
+    eapol_parser.add_argument("--ifname", "-i", required=True, help="Network Interface Name")
     eapol_parser.add_argument("--bssid", default=None, help="Target BSSID")
     eapol_parser.add_argument("--mac", default=None, help="Target client MAC")
     eapol_parser.add_argument("--count", type=int, default=None, help="Number of frames to capture")
-    eapol_parser.add_argument("--timeout", type=int, default=None, help="Timeout in seconds")
+    eapol_parser.add_argument("--timeout", type=float, default=None, help="Timeout in seconds")
     eapol_parser.add_argument("--output", default=None, help="Output JSON file")
 
     generate_22000_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from json file")
@@ -63,12 +63,16 @@ def main():
     generate_22000_parser.add_argument("--input", "-i", required=True, help="JSON file path")
     generate_22000_parser.add_argument("--output", "-o", default="hashcat.22000", help="Output file name")
 
+    hextopcap_parser = subparsers.add_parser("hextopcap", help="Generates a pcap file from a json file with the raw contents of the packet.")
+    hextopcap_parser.add_argument("--input", "-i", required=True, help="Json file with raw hexadecimal packets.")
+    hextopcap_parser.add_argument("--output", "-o", default=None, help="Output pcap file path.")
+
     send_raw_parser = subparsers.add_parser("send-raw", help="Sends a raw frame/packet in hexadecimal format from an interface.")
     send_raw_parser.add_argument("--ifname", required=True, help="Network interface name.")
     send_raw_parser.add_argument("--input", "-i", required=True, help="Json file with hexadecimal raw packets: ex: {'raw': ['01234abcdef', '01234abcdef']}.")
     send_raw_parser.add_argument("--count", type=int, default=1, help="Number of frames to send (default: 1).")
     send_raw_parser.add_argument("--interval", type=float, default=1.0, help="Interval between sends in seconds (default: 1.0).")
-    send_raw_parser.add_argument("--timeout", type=int, default=None, help="Socket timeout in seconds (optional).")
+    send_raw_parser.add_argument("--timeout", type=float, default=None, help="Socket timeout in seconds (optional).")
 
     args = parser.parse_args()
 

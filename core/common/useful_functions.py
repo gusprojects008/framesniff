@@ -8,27 +8,11 @@ import time
 from pathlib import Path
 from typing import Optional
 
-bytes_for_mac = lambda mac : ":".join(format(byte, "02x") for byte in mac)
-
-mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
-
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
 index_pack = lambda index : struct.pack("<I", index)
 
 ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
-
-def RandomMac():
-    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
-    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
-
-def calc_rates(rates):
-    list_rates_transmition = []
-    for rate in rates:   
-        value_rate = (rate & 0x7f) * 500
-        list_rates_transmition.append(value_rate)
-    return list_rates_transmition
-
 
 def freq_converter(freq_unit: tuple, to_unit: str):
     freq, unit = freq_tuple
@@ -86,17 +70,44 @@ def import_dpkt():
         return False
 
 # returns the hexadecimal contents of a dictionary of a bitmap.
-def boolean_fields_to_hex(bitmap_fields: dict):
+def bitmap_dict_to_hex(bitmap_dict: dict):
     result = 0
-    for i, (field, active) in enumerate(bitmap_fields.items()):
+    for i, (field, active) in enumerate(bitmap_dict.items()):
         if active:
             result |= (1 << i)
     return result
 
+def RandomMac():
+    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
+    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
+
+def calc_rates(rates):
+    list_rates_transmition = []
+    for rate in rates:   
+        value_rate = (rate & 0x7f) * 500
+        list_rates_transmition.append(value_rate)
+    return list_rates_transmition
+
+bytes_for_mac = lambda mac : ":".join(format(byte, "02x") for byte in mac)
+
+mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
+
+def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
+    result = {}
+    for i, name in enumerate(field_names):
+        result[name] = bool(bitmap_value & (1 << i))
+    return result
+
+def safe_unpack(fmt: str, frame: bytes, offset: int):
+    size = struct.calcsize(fmt)
+    if offset + size > len(frame):
+        return None, offset
+    return struct.unpack_from(fmt, frame, offset), offset + size
+
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
-    #if len(s) % 2 != 0:
-     #   s = s[:-1]
+    #if len(s) % 2 != 0: May malform the package!!
+     #s = s[:-1]
     return re.sub(r'[^0-9a-fA-F]', '', s).lower()
 
 def iter_packets_from_json(path: str):

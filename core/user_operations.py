@@ -185,7 +185,7 @@ class Operations:
         print(" In development, see https://github.com/gusprojects008/wnlpy")
 
     @staticmethod
-    def sniff(link_type: str = "wifi", layer: int = 2, standard: str = "802.11", ifname: str = None, store_filter: str = "", display_filter: str = "", count: int = None, timeout: float = None, display_interval: float = 1.0, output_file: str = None):
+    def sniff(link_type: str = "wifi", layer: int = 2, standard: str = "802.11", ifname: str = None, store_filter: str = "", display_filter: str = "", count: int = None, timeout: float = None, display_interval: float = 0.0, output_file: str = None):
     
         parser = None
     
@@ -221,17 +221,16 @@ class Operations:
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
     
                     if store_result:
+                        frame_counter += 1
                         captured_frames.append(parsed_frame)
     
                     current_time = time.time()
                     if display_result and store_result and current_time - last_display_time >= display_interval:
-                        frame_counter += 1
                         try:
                             print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
                         except Exception:
                             print(f"[{frame_counter}] {display_result}")
                         last_display_time = current_time
-    
     
                     if count is not None and frame_counter >= count:
                         break
@@ -292,6 +291,7 @@ class Operations:
     def write_pcap_from_json(dlt: str, input_file: str, output_path: str):
         if not import_dpkt():
             sys.exit(1)
+
         import dpkt
 
         output_path = new_file_path("packets", ".pcap", output_path)
