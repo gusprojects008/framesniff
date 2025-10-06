@@ -6,209 +6,258 @@ from core.common.useful_functions import (safe_unpack, bytes_for_mac)
 
 def vendor_specific_ie(data: bytes):
     def _wps_vendor_ie(vendor_data: bytes):
-        ATTR_MAP = {
-            0x104A: "Version",
-            0x1012: "Device Name", 
-            0x1011: "Device Password ID",
-            0x1008: "Config Methods",
-            0x1021: "Manufacturer",
-            0x1023: "Model Name",
-            0x1024: "Model Number",
-            0x1044: "WPS State",
-            0x1047: "UUID-E",
-            0x103C: "RF Bands",
-            0x1049: "Vendor Extension",
-            0x1054: "Primary Device Type",
-            0x1057: "Selected Registrar",
-            0x1053: "Selected Registrar Config Methods",
-            0x100D: "Public Key",
-            0x1042: "Network Key",
-            0x1041: "Network Key Index",
-            0x1001: "AP Setup Locked",
-            0x101A: "Message Type",
-            0x1020: "MAC Address",
-            0x1032: "Response Type",
-            0x103E: "Registrar Config Methods",
-            0x1010: "Version2",
-            0x1045: "SSID",
-            0x102D: "Serial Number",
-            0x103B: "OS Version",
-            0x1033: "Association State",
+        attr_map = {
+            "version": 0x104a,
+            "device_name": 0x1012,
+            "device_password_id": 0x1011,
+            "config_methods": 0x1008,
+            "manufacturer": 0x1021,
+            "model_name": 0x1023,
+            "model_number": 0x1024,
+            "wps_state": 0x1044,
+            "uuid_e": 0x1047,
+            "rf_bands": 0x103c,
+            "vendor_extension": 0x1049,
+            "primary_device_type": 0x1054,
+            "selected_registrar": 0x1057,
+            "selected_registrar_config_methods": 0x1053,
+            "public_key": 0x100d,
+            "network_key": 0x1042,
+            "network_key_index": 0x1041,
+            "ap_setup_locked": 0x1057,
+            "message_type": 0x101a,
+            "mac_address": 0x1020,
+            "response_type": 0x1032,
+            "registrar_config_methods": 0x103e,
+            "version2": 0x1010,
+            "ssid": 0x1045,
+            "serial_number": 0x102d,
+            "os_version": 0x103b,
+            "association_state": 0x1033,
+        }
+        wps_states = {
+            "not_configured": 0x01,
+            "configured": 0x02,
+        }
+        message_types = {
+            "m4_message": 0x04,
+            "m5_message": 0x05,
+            "m6_message": 0x06,
+            "m7_message": 0x07,
+            "m8_message": 0x08,
+            "wsc_ack": 0x0b,
+            "wsc_nack": 0x0c,
+            "wsc_done": 0x0d,
+        }
+        response_types = {
+            "enrollee_info": 0x00,
+            "enrollee": 0x01,
+            "registrar": 0x02,
+            "ap": 0x03,
+        }
+        rf_bands = {
+            "2_4_ghz": 0x01,
+            "5_ghz": 0x02,
+            "2_4_and_5_ghz": 0x03,
+        }
+        config_methods = {
+            "usb": 0x0001,
+            "ethernet": 0x0002,
+            "label": 0x0004,
+            "display": 0x0008,
+            "external_nfc_token": 0x0010,
+            "integrated_nfc_token": 0x0020,
+            "nfc_interface": 0x0040,
+            "push_button": 0x0080,
+            "keypad": 0x0100,
+        }
+        device_password_ids = {
+            "default": 0x0000,
+            "user_specified": 0x0001,
+            "machine_specified": 0x0002,
+            "rekey": 0x0003,
+            "push_button": 0x0004,
+            "registrar_specified": 0x0005,
+        }
+        device_categories = {
+            "computer": 0x0001,
+            "input_device": 0x0002,
+            "print_scan_fax_copy": 0x0003,
+            "camera": 0x0004,
+            "storage": 0x0005,
+            "network_infrastructure": 0x0006,
+            "display": 0x0007,
+            "multimedia": 0x0008,
+            "gaming": 0x0009,
+            "telephone": 0x000a,
+            "audio": 0x000b,
+            "other": 0x000f,
         }
     
-        WPS_STATES = {0x01: "Not Configured", 0x02: "Configured"}
-
-        MESSAGE_TYPES = {
-            0x04: "M4 Message", 0x05: "M5 Message", 0x06: "M6 Message",
-            0x07: "M7 Message", 0x08: "M8 Message", 0x0B: "WSC_ACK",
-            0x0C: "WSC_NACK", 0x0D: "WSC_DONE"
-        }
-        RESPONSE_TYPES = {
-            0x00: "Enrollee Info", 0x01: "Enrollee", 0x02: "Registrar",
-            0x03: "AP"
-        }
-        RF_BANDS = {0x01: "2.4 GHz", 0x02: "5 GHz", 0x03: "2.4 & 5 GHz"}
-        CONFIG_METHODS = {
-            0x0001: "USB", 0x0002: "Ethernet", 0x0004: "Label",
-            0x0008: "Display", 0x0010: "External NFC Token",
-            0x0020: "Integrated NFC Token", 0x0040: "NFC Interface",
-            0x0080: "Push Button", 0x0100: "Keypad"
-        }
-        DEVICE_PASSWORD_IDS = {
-            0x0000: "Default", 0x0001: "User Specified", 0x0002: "Machine Specified",
-            0x0003: "Rekey", 0x0004: "Push Button", 0x0005: "Registrar Specified"
-        }
-        DEVICE_CATEGORIES = {
-            0x0001: "Computer", 0x0002: "Input Device", 0x0003: "Print/Scan/FAX/Copy",
-            0x0004: "Camera", 0x0005: "Storage", 0x0006: "Network Infrastructure",
-            0x0007: "Display", 0x0008: "Multimedia", 0x0009: "Gaming",
-            0x000A: "Telephone", 0x000B: "Audio", 0x000F: "Other"
-        }
-    
-        data_dict = {}
+        result = {}
         pos = 0
-        index = 0
-    
         while pos + 4 <= len(vendor_data):
-            attr_type, attr_len = struct.unpack(">HH", vendor_data[pos:pos+4])
+            (res, _offset) = safe_unpack(">HH", vendor_data, pos)
+            if res is None:
+                break
+            attr_type, attr_len = res
             pos += 4
+            if pos + attr_len > len(vendor_data):
+                break
             attr_data = vendor_data[pos:pos+attr_len]
             pos += attr_len
     
-            name = ATTR_MAP.get(attr_type, f"Unknown ({attr_type})")
-            value_hex = binascii.hexlify(attr_data).decode()
-    
-            parsed = {}
-            if attr_type == 0x104A:  # Version
-                version_major = attr_data[0] >> 4
-                version_minor = attr_data[0] & 0x0F
-                parsed = {"version": f"{version_major}.{version_minor}"}
-            elif attr_type == 0x1044:  # WPS State
-                state_hex = attr_data[0]
-                state_desc = WPS_STATES.get(state_hex, f"Unknown ({state_hex:#x})")
-                parsed = {"state": state_desc, "value": state_hex}
-            elif attr_type == 0x1047:  # UUID-E
-                uuid_str = str(UUID(hex=value_hex))
-                parsed = {"uuid": uuid_str}
-            elif attr_type == 0x103C:  # RF Bands
-                band_hex = attr_data[0]
-                band_desc = RF_BANDS.get(band_hex, f"Unknown ({band_hex:#x})")
-                parsed = {"bands": band_desc, "Hex": f"0x{band_hex:02x}"}
-            elif attr_type == 0x1008:  # Config Methods
-                config_mask = struct.unpack(">H", attr_data)[0]
-                methods = [name for bit, name in CONFIG_METHODS.items() if config_mask & bit]
-                parsed = {"methods": methods, "Mask": f"0x{config_mask:04x}"}
-            elif attr_type == 0x1011:  # Device Password ID
-                pid = struct.unpack(">H", attr_data)[0]
-                pid_desc = DEVICE_PASSWORD_IDS.get(pid, f"Unknown ({pid:#x})")
-                parsed = {"password_id": pid_desc, "Hex": f"0x{pid:04x}"}
-            elif attr_type == 0x1049:  # Vendor Extension
-                parsed = {"sublayers": {}}
-                pos_sub = 0
-                sub_index = 0
-                while pos_sub + 4 <= len(attr_data):
-                    sub_type, sub_len = struct.unpack(">HH", attr_data[pos_sub:pos_sub+4])
-                    pos_sub += 4
-                    sub_value = attr_data[pos_sub:pos_sub+sub_len]
-                    pos_sub += sub_len
-                    
-                    sub_parsed = None
-                    if sub_type == 0x1010:  # Version2
-                        version_major = sub_value[0] >> 4
-                        version_minor = sub_value[0] & 0x0F
-                        sub_parsed = f"{version_major}.{version_minor}"
-                    elif sub_type == 0x0000:  # Vendor ID
-                        sub_parsed = f"{int.from_bytes(sub_value, 'big')}"
-                    
-                    parsed["sublayers"][f"{sub_index:02d}. Type 0x{sub_type:04x}"] = {
-                        "value": sub_value.hex(),
-                        "parsed": sub_parsed
-                    }
-                    sub_index += 1
-            elif attr_type == 0x101A:  # Message Type
-                msg_type = attr_data[0]
-                msg_desc = MESSAGE_TYPES.get(msg_type, f"Unknown ({msg_type:#x})")
-                parsed = {"type": msg_desc, "hex": f"0x{msg_type:02x}"}
-            elif attr_type == 0x1020:  # MAC Address
-                mac_str = bytes_for_mac(attr_data)
-                parsed = {"mac": mac_str}
-            elif attr_type == 0x1032:  # Response Type
-                resp_type = attr_data[0]
-                resp_desc = RESPONSE_TYPES.get(resp_type, f"Unknown ({resp_type:#x})")
-                parsed = {"response_type": resp_desc}
-            elif attr_type == 0x1054:  # Primary Device Type
-                category = struct.unpack(">H", attr_data[:2])[0]
-                oui = bytes_for_mac(attr_data[2:6])
-                subtype = struct.unpack(">H", attr_data[6:8])[0]
-                category_desc = DEVICE_CATEGORIES.get(category, f"Unknown ({category})")
-                parsed = {
-                    "category": f"{category_desc} ({category})", 
-                    "oui": oui, 
-                    "subcategory": subtype,
-                    #"full": f"{category}-{oui.replace(':', '')}-{subtype}"
-                }
-            elif attr_type in [0x1012, 0x1021, 0x1023, 0x1024, 0x102D]:  # Text fields
-                try:
-                    text_value = attr_data.decode("utf-8").strip()
-                    parsed = {"string": text_value}
-                except UnicodeDecodeError:
-                    parsed = {"data": value_hex}
-            else:
-                try:
-                    parsed = {"string": attr_data.decode("utf-8").strip()}
-                except UnicodeDecodeError:
-                    parsed = {"data": value_hex}
-    
-            data_dict[f"{index:02d}. {name}"] = {
-                "type": f"0x{attr_type:04x}",
-                "data": parsed
-            }
-            index += 1
-        return data_dict
+            if attr_type == attr_map["version"]:
+                (ver_res, _) = safe_unpack("B", attr_data, 0)
+                if ver_res is not None:
+                    (version_byte,) = ver_res
+                    version_major = version_byte >> 4
+                    version_minor = version_byte & 0x0F
+                    result["version"] = f"{version_major}.{version_minor}"
+            elif attr_type == attr_map["wps_state"]:
+                (state_res, _) = safe_unpack("B", attr_data, 0)
+                if state_res is not None:
+                    (state_hex,) = state_res
+                    state_desc = next((k for k, v in wps_states.items() if v == state_hex), f"unknown_{state_hex:02x}")
+                    result["wps_state"] = state_desc
+                    result["wps_state_value"] = state_hex
+            elif attr_type == attr_map["ap_setup_locked"]:
+                (locked_res, _) = safe_unpack("B", attr_data, 0)
+                if locked_res is not None:
+                    (locked_byte,) = locked_res
+                    result["ap_setup_locked"] = locked_byte
+            elif attr_type == attr_map["response_type"]:
+                (resp_res, _) = safe_unpack("B", attr_data, 0)
+                if resp_res is not None:
+                    (resp_type,) = resp_res
+                    resp_desc = next((k for k, v in response_types.items() if v == resp_type), f"unknown_{resp_type:02x}")
+                    result["response_type"] = resp_desc
+                    result["response_type_value"] = resp_type
+            elif attr_type == attr_map["uuid_e"]:
+                if len(attr_data) == 16:
+                    result["uuid"] = str(UUID(bytes=attr_data))
+                else:
+                    result["uuid"] = attr_data.hex()
+            elif attr_type == attr_map["manufacturer"]:
+                result["manufacturer"] = attr_data.decode(errors="ignore").strip()
+            elif attr_type == attr_map["model_name"]:
+                result["model"] = attr_data.decode(errors="ignore").strip()
+            elif attr_type == attr_map["model_number"]:
+                result["model_number"] = attr_data.decode(errors="ignore").strip()
+            elif attr_type == attr_map["serial_number"]:
+                result["serial_number"] = attr_data.decode(errors="ignore").strip()
+            elif attr_type == attr_map["device_name"]:
+                result["device_name"] = attr_data.decode(errors="ignore").strip()
+            elif attr_type == attr_map["primary_device_type"]:
+                (cat_res, _) = safe_unpack(">H", attr_data, 0)
+                if cat_res is not None:
+                    (category,) = cat_res
+                    oui = attr_data[2:6].hex()
+                    (subtype_res, _) = safe_unpack(">H", attr_data, 6)
+                    subtype = subtype_res[0] if subtype_res else None
+                    result["primary_device_type"] = f"{category}-{oui}-{subtype}"
+                    category_desc = next((k for k, v in device_categories.items() if v == category), f"unknown_{category:04x}")
+                    result["primary_device_type_category"] = category_desc
+                    result["primary_device_type_subcategory"] = subtype
+            elif attr_type == attr_map["config_methods"]:
+                (cfg_res, _) = safe_unpack(">H", attr_data, 0)
+                if cfg_res is not None:
+                    (config_mask,) = cfg_res
+                    methods = [k.replace('_', ' ').title() for k, bit in config_methods.items() if config_mask & bit]
+                    result["config_methods"] = ", ".join(methods)
+                    result["config_methods_value"] = config_mask
+            elif attr_type == attr_map["rf_bands"]:
+                (band_res, _) = safe_unpack("B", attr_data, 0)
+                if band_res is not None:
+                    (band_hex,) = band_res
+                    band_desc = next((k for k, v in rf_bands.items() if v == band_hex), f"unknown_{band_hex:02x}")
+                    result["rf_bands"] = band_desc.replace('_', ' ').replace('ghz', 'GHz')
+                    result["rf_bands_value"] = band_hex
+            elif attr_type == attr_map["vendor_extension"]:
+                vendor_id = int.from_bytes(attr_data[:3], "big")
+                wfa_extension = attr_data[3:]
+                _pos = 0
+                while _pos + 2 <= len(wfa_extension):
+                    wfa_ext_subelement_id, wfa_ext_subelement_len = struct.unpack_from(">BB", wfa_extension, _pos)
+                    _pos += 2
+                    if _pos + wfa_ext_subelement_len > len(wfa_extension):
+                        break
+                    wfa_ext_subelement = wfa_extension[_pos:_pos + wfa_ext_subelement_len]
+                    _pos += wfa_ext_subelement_len
+                    if wfa_ext_subelement_id == 0:  # Version2
+                        version_major = wfa_ext_subelement[0] >> 4
+                        version_minor = wfa_ext_subelement[0] & 0x0F
+                        result["version2"] = f"{version_major}.{version_minor}"
+                        break
+        return result
 
     oui = bytes_for_mac(data[:3])
     vendor_type = data[3]
     vendor_data = data[4:]
     vendor_entry = {
-        #"oui": oui,
+        "oui": oui,
         "type": vendor_type,
     }
     if oui == "00:50:f2" and vendor_type == 0x04:
         vendor_entry["description"] = "Microsoft Corporation WPS"
         vendor_entry["data"] = _wps_vendor_ie(vendor_data)
+    elif oui == "00:0f:ac" and vendor_type == 4:
+        vendor_entry["description"] = "PMKID"
+        vendor_entry["data"] = vendor_data.hex()
     else:
         vendor_entry["description"] = "Generic Vendor Specific"
         vendor_entry["data"] = vendor_data.hex()
     return {oui: [vendor_entry]}
 
 def rsn_capabilities(data: bytes) -> dict:
-    rsn_info = {}
-    rsn_info['version'] = struct.unpack_from('<H', data)[0]
-    if tag_length >= 8:
-        rsn_info['group_cipher'] = {'oui': data[2:5].hex(':'), 'cipher_type': data[5]}
-    if tag_length >= 10:
-        pairwise_count = struct.unpack_from('<H', data, 6)[0]
-        rsn_info['pairwise_cipher_count'] = pairwise_count
+    result = {}
+    
+    if len(data) < 2:
+        return result
+    
+    result['version'] = struct.unpack_from('<H', data, 0)[0]
+    pos = 2
+    
+    if pos + 4 <= len(data):
+        result['group_cipher'] = {
+            'oui': data[pos:pos+3].hex(':'),
+            'cipher_type': data[pos+3]
+        }
+        pos += 4
+    
+    if pos + 2 <= len(data):
+        pairwise_count = struct.unpack_from('<H', data, pos)[0]
+        result['pairwise_cipher_count'] = pairwise_count
+        pos += 2
+        
         pairwise_list = []
-        pairwise_offset = 8
         for i in range(pairwise_count):
-            if pairwise_offset + 4 <= tag_length:
-                pairwise_list.append({'oui': data[pairwise_offset:pairwise_offset+3].hex(':'), 'cipher_type': data[pairwise_offset+3]})
-                pairwise_offset += 4
-        rsn_info['pairwise_cipher_list'] = pairwise_list
-    if pairwise_offset + 2 <= tag_length:
-        akm_count = struct.unpack_from('<H', data, pairwise_offset)[0]
-        rsn_info['akm_suite_count'] = akm_count
+            if pos + 4 <= len(data):
+                pairwise_list.append({
+                    'oui': data[pos:pos+3].hex(':'),
+                    'cipher_type': data[pos+3]
+                })
+                pos += 4
+        result['pairwise_cipher_list'] = pairwise_list
+    
+    if pos + 2 <= len(data):
+        akm_count = struct.unpack_from('<H', data, pos)[0]
+        result['akm_suite_count'] = akm_count
+        pos += 2
+        
         akm_list = []
-        akm_offset = pairwise_offset + 2
         for i in range(akm_count):
-            if akm_offset + 4 <= tag_length:
-                akm_list.append({'oui': data[akm_offset:akm_offset+3].hex(':'), 'akm_type': data[akm_offset+3]})
-                akm_offset += 4
-        rsn_info['akm_suite_list'] = akm_list
-    if akm_offset + 2 <= tag_length:
-        rsn_caps = struct.unpack_from('<H', data, akm_offset)[0]
-        rsn_info['capabilities'] = {
+            if pos + 4 <= len(data):
+                akm_list.append({
+                    'oui': data[pos:pos+3].hex(':'),
+                    'akm_type': data[pos+3]
+                })
+                pos += 4
+        result['akm_suite_list'] = akm_list
+    
+    if pos + 2 <= len(data):
+        rsn_caps = struct.unpack_from('<H', data, pos)[0]
+        result['capabilities'] = {
             'pre_auth': bool(rsn_caps & 0x0001),
             'no_pairwise': bool(rsn_caps & 0x0002),
             'ptksa_replay_counter': (rsn_caps >> 2) & 0x03,
@@ -218,6 +267,26 @@ def rsn_capabilities(data: bytes) -> dict:
             'joint_multi_band_rsna': bool(rsn_caps & 0x0100),
             'peerkey_enabled': bool(rsn_caps & 0x0200)
         }
+        pos += 2
+    
+    if pos + 2 <= len(data):
+        pmkid_count = struct.unpack_from('<H', data, pos)[0]
+        result['pmkid_count'] = pmkid_count
+        pos += 2
+        
+        pmkid_list = []
+        for i in range(pmkid_count):
+            if pos + 16 <= len(data):
+                pmkid = data[pos:pos+16].hex()
+                pmkid_list.append(pmkid)
+                pos += 16
+        if pmkid_list:
+            result['pmkids'] = pmkid_list
+    
+    result['bytes_processed'] = pos
+    result['total_length'] = len(data)
+    
+    return result
 
 def tim_info(data: bytes):
     if tag_length >= 3:

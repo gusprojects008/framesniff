@@ -101,6 +101,7 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
         result, offset = safe_unpack("<QHH", frame, offset)
         if result is None:
             return tagged_parameters, offset
+
         timestamp, beacon_interval, capabilities_information = result
         tagged_parameters['timestamp'] = timestamp
         tagged_parameters['beacon_interval'] = beacon_interval
@@ -167,7 +168,6 @@ def llc(frame, offset):
             return result, offset
         dsap, ssap, control, org_code, llc_type = unpacked
         offset = new_offset
-
         result.update({
             "dsap": hex(dsap),
             "ssap": hex(ssap),
@@ -176,14 +176,15 @@ def llc(frame, offset):
             "type": hex(llc_type)
         })
         return result, offset
-
     except struct.error as error:
         result['error'] = str(error)
         return result, offset
 
 def eapol(frame, offset):
-    result = {}
+    def _parse_key_data(key_data: bytes):
+        pass
     try:
+        result = {}
         unpacked, new_offset = safe_unpack("!BBH", frame, offset)
         if unpacked is None:
             return result, offset
@@ -194,7 +195,6 @@ def eapol(frame, offset):
             "type": eapol_type,
             "header_length": length
         })
-
         unpacked, new_offset = safe_unpack("!BHH", frame, offset)
         if unpacked is None:
             return result, offset
@@ -205,7 +205,6 @@ def eapol(frame, offset):
             "key_information": key_info,
             "key_length": key_len
         })
-
         unpacked, new_offset = safe_unpack("!Q32s16s8s8s16sH", frame, offset)
         if unpacked is None:
             return result, offset
@@ -223,7 +222,7 @@ def eapol(frame, offset):
 
         if data_len > 0 and offset + data_len <= len(frame):
             key_data = frame[offset:offset + data_len]
-            result["key_data"] = key_data.hex()
+            result["key_data"] = {key_data.hex(), _parse_key_data(key_data)}
             offset += data_len
 
         return result, offset
