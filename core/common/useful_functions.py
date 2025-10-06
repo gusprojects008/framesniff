@@ -77,7 +77,7 @@ def bitmap_dict_to_hex(bitmap_dict: dict):
             result |= (1 << i)
     return result
 
-def RandomMac():
+def random_mac():
     mac = [random.randint(0x00, 0xFF) for _ in range(6)]
     return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
 
