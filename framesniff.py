@@ -31,7 +31,7 @@ def main():
     scan_parser.add_argument("--output", "-o", default=None, help="Output file path")
 
     set_frequency_parser = subparsers.add_parser("set-frequency", help="Set frequency on a given phy")
-    set_frequency_parser.add_argument("wiphy_name", help="Wireless phy name (e.g. phy0)")
+    set_frequency_parser.add_argument("--wiphy", required=True, help="Wireless phy name (e.g. phy0)")
     set_frequency_parser.add_argument("frequency_mhz", help="Frequency in MHz")
 
     channel_hopping_parser = subparsers.add_parser("channel-hopping", help="Enable channel hopping")
@@ -87,7 +87,7 @@ def main():
     elif args.command == "station-scan":
         operations.scan_station_mode(args.ifname, args.output)
     elif args.command == "set-frequency":
-        operations.set_frequency(args.wiphy_name, args.frequency_mhz)
+        operations.set_frequency(args.wiphy, args.frequency_mhz)
     elif args.command == "channel-hopping":
         operations.channel_hopping(args.wiphy_name)
     elif args.command == "sniff":

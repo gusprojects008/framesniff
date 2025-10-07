@@ -114,11 +114,11 @@ class IEEE802_11:
             return body
 
     @staticmethod
-    def frames_parser(raw_frame: bytes) -> dict:
+    def frames_parser(raw_frame: bytes, mac_vendor_resolver) -> dict:
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(raw_frame)
         fcs_bytes, ieee80211_without_fcs = extract_fcs_from_frame(raw_frame, rt_hdr_len)
-        mac_hdr, mac_hdr_offset = parsers.mac_header(raw_frame, rt_hdr_len)
+        mac_hdr, mac_hdr_offset = parsers.mac_header(raw_frame, rt_hdr_len, mac_vendor_resolver)
         if not mac_hdr:
             return parsed_frame
         parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}

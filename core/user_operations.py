@@ -6,7 +6,7 @@ import json
 import socket
 from typing import Optional, Tuple, List
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
-from core.common.useful_functions import (import_dpkt, new_file_path, iter_packets_from_json)
+from core.common.useful_functions import (import_dpkt, new_file_path, iter_packets_from_json, MacVendorResolver)
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
@@ -188,9 +188,11 @@ class Operations:
 
     @staticmethod
     def sniff(link_type: str = "wifi", layer: int = 2, standard: str = "802.11", ifname: str = None, store_filter: str = "", display_filter: str = "", count: int = None, timeout: float = None, display_interval: float = 0.0, output_file: str = None):
-    
+
+        mac_vendor_resolver = MacVendorResolver("./core/common/mac-vendors-export.json")
+
         parser = None
-    
+
         if link_type == "wifi" and layer == 2 and standard == "802.11":
             parser = IEEE802_11.frames_parser
     
@@ -206,14 +208,14 @@ class Operations:
         try:
             if timeout:
                 sock.settimeout(timeout)
-    
+
             print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
             start_time = time.time()
     
             while True:
                 try:
                     frame, _ = sock.recvfrom(65535)
-                    parsed_frame = parser(frame)
+                    parsed_frame = parser(frame, mac_vendor_resolver)
                     if parsed_frame is None:
                         continue
     

@@ -171,3 +171,28 @@ def extract_fcs_from_frame(frame: bytes, radiotap_len: int) -> Tuple[Optional[by
         return candidate_fcs_bytes, data_for_crc
     else:
         return None, payload_11
+
+class MacVendorResolver:
+    _vendor_map = None
+    def __init__(self, filepath='~/Downloads/framesniff/core/common/mac-vendors-export.json'):
+        if MacVendorResolver._vendor_map is None:
+            print("INFO: Loading MAC vendors file for the first time...")
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    MacVendorResolver._vendor_map = {
+                        item['macPrefix']: item['vendorName'] for item in data
+                    }
+                print("INFO: MAC vendors loaded successfully.")
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                print(f"ERROR: Could not load or parse MAC vendors file: {e}")
+                MacVendorResolver._vendor_map = {}
+
+    def mac_resolver(self, mac_bytes: bytes):
+        if not mac_bytes:
+            return None
+        mac_address = bytes_for_mac(mac_bytes)
+        if not self._vendor_map or not mac_address:
+            return None
+        oui = mac_address.upper()[:8]
+        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "unknown")}

@@ -5,7 +5,7 @@ import re
 from core.common.useful_functions import (safe_unpack, bytes_for_mac)
 from core.wifi.l2.ieee802_11 import ies_parsers
 
-def mac_header(frame, offset):
+def mac_header(frame, offset, mac_vendor_resolver):
     def _get_frame_type_subtype_name(frame_type: int, subtype: int):
         type_names = {0: "Management", 1: "Control", 2: "Data"}
         subtype_names = {
@@ -26,6 +26,7 @@ def mac_header(frame, offset):
         return type_name, subtype_name
 
     mac_data = {}
+
     try:
         unpacked, new_offset = safe_unpack("<HH6s6s6sH", frame, offset)
         if unpacked is None:
@@ -44,21 +45,21 @@ def mac_header(frame, offset):
         if to_ds and from_ds and offset + 6 <= len(frame):
             addr4 = frame[offset:offset+6]
 
-        mac_receiver = bytes_for_mac(addr1)
-        mac_transmitter = bytes_for_mac(addr2)
-        bssid = bytes_for_mac(addr3)
+        mac_receiver = mac_vendor_resolver.mac_resolver(addr1)
+        mac_transmitter = mac_vendor_resolver.mac_resolver(addr2)
+        bssid = mac_vendor_resolver.mac_resolver(addr3)
         mac_source, mac_destination = None, None
 
         if to_ds == 0 and from_ds == 0:
             mac_source, mac_destination = mac_transmitter, mac_receiver
         elif to_ds == 0 and from_ds == 1:
-            mac_source, mac_destination = bytes_for_mac(addr3), mac_receiver
+            mac_source, mac_destination = mac_vendor_resolver.mac_resolver(addr3), mac_receiver
             bssid = mac_transmitter
         elif to_ds == 1 and from_ds == 0:
-            mac_source, mac_destination = mac_transmitter, bytes_for_mac(addr3)
+            mac_source, mac_destination = mac_transmitter, mac_vendor_resolver.mac_resolver(addr3)
             bssid = mac_receiver
         elif to_ds == 1 and from_ds == 1:
-            mac_source, mac_destination = bytes_for_mac(addr4) if addr4 else mac_transmitter, bytes_for_mac(addr3)
+            mac_source, mac_destination = mac_vendor_resolver.mac_resolver(addr4) if addr4 else mac_transmitter, mac_vendor_resolver.mac_resolver(addr3)
             bssid = None
 
         mac_data.update({
@@ -216,12 +217,34 @@ def eapol(frame, offset):
         if unpacked is None:
             return result, offset
         desc_type, key_info, key_len = unpacked
-        offset = new_offset
+        version_map = {
+            0: "Reserved (0)",
+            1: "HMAC-MD5 + ARC4 (WPA1)",
+            2: "HMAC-SHA1-128 + AES (WPA2/RSN)",
+            3: "AES-128-CMAC + AES-128-GCMP (WPA3)",
+            4: "Reserved (4)", 
+            5: "Reserved (5)",
+            6: "Reserved (6)",
+            7: "Reserved (7)"
+        }
         result.update({
             "key_descriptor_type": desc_type,
-            "key_information": key_info,
+            "key_information": {
+                "key_descriptor_version": version_map.get(key_info & 0x0007),
+                "key_type": "Group/SMK" if (key_info >> 3) & 0x01 else "Pairwise",
+                "key_index": (key_info >> 4) & 0x03,
+                "install": bool((key_info >> 6) & 0x01),
+                "key_ack": bool((key_info >> 7) & 0x01),
+                "key_mic": bool((key_info >> 8) & 0x01),
+                "secure": bool((key_info >> 9) & 0x01),
+                "error": bool((key_info >> 10) & 0x01),
+                "request": bool((key_info >> 11) & 0x01),
+                "encrypted_key_data": bool((key_info >> 12) & 0x01),
+                "smk_message": bool((key_info >> 13) & 0x01),
+        },
             "key_length": key_len
         })
+        offset = new_offset
         unpacked, new_offset = safe_unpack("!Q32s16s8s8s16sH", frame, offset)
         if unpacked is None:
             return result, offset
