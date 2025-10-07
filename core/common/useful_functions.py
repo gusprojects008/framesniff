@@ -5,8 +5,9 @@ import sys
 import re
 import json
 import time
+import binascii
+from typing import Tuple, Optional
 from pathlib import Path
-from typing import Optional
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
@@ -155,3 +156,18 @@ def iter_packets_from_json(path: str):
 
     except json.JSONDecodeError as error:
         raise ValueError(f"Error trying to load json file: {error}")
+
+def extract_fcs_from_frame(frame: bytes, radiotap_len: int) -> Tuple[Optional[bytes], bytes]:
+    if radiotap_len is None or radiotap_len < 0 or radiotap_len >= len(frame):
+        return None, frame[radiotap_len:]
+    payload_11 = frame[radiotap_len:]
+    if len(payload_11) < 4:
+        return None, payload_11
+    candidate_fcs_bytes = payload_11[-4:]
+    candidate_fcs = int.from_bytes(candidate_fcs_bytes, byteorder='little')
+    data_for_crc = payload_11[:-4]
+    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+    if calc_crc == candidate_fcs:
+        return candidate_fcs_bytes, data_for_crc
+    else:
+        return None, payload_11

@@ -131,11 +131,13 @@ class Operations:
             if "CCMP" in block: encryption.append("AES")
             if "TKIP" in block: encryption.append("TKIP")
             
-            print(f"┌─── NETWORK #{num} {'─' * 50}")
-            print(f"│ SSID: {ssid}")
-            print(f"│ BSSID: {bssid}")
-            print(f"│ Signal: {signal} dBm | Channel: {channel} | Freq: {frequency} MHz")
-            print(f"│ Security: {security}")
+            print(
+                f"┌─── NETWORK #{num} {'─' * 50}\n"
+                f"│ SSID: {ssid}\n"
+                f"│ BSSID: {bssid}\n"
+                f"│ Signal: {signal} dBm | Channel: {channel} | Freq: {frequency} MHz\n"
+                f"│ Security: {security}"
+            )
             
             if encryption:
                 print(f"│ Encryption: {', '.join(encryption)}")

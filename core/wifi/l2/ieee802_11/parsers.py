@@ -182,7 +182,24 @@ def llc(frame, offset):
 
 def eapol(frame, offset):
     def _parse_key_data(key_data: bytes):
-        pass
+        result = {}
+        pos = 0
+        while pos < len(key_data):
+            if pos + 2 > len(key_data):
+                break
+            elem_id = key_data[pos]
+            elem_len = key_data[pos + 1]
+            pos += 2
+            if pos + elem_len > len(key_data):
+                break
+            elem_data = key_data[pos:pos + elem_len]
+            if elem_id == 221:  # Vendor Specific IE
+                vendor_result = ies_parsers.vendor_specific_ie(elem_data)
+                result.update(vendor_result)
+            elif elem_id == 48:  # RSN IE
+                result["rsn_information"] = ies_parsers.rsn_capabilities(elem_data)
+            pos += elem_len
+        return result
     try:
         result = {}
         unpacked, new_offset = safe_unpack("!BBH", frame, offset)
@@ -222,7 +239,7 @@ def eapol(frame, offset):
 
         if data_len > 0 and offset + data_len <= len(frame):
             key_data = frame[offset:offset + data_len]
-            result["key_data"] = {key_data.hex(), _parse_key_data(key_data)}
+            result["key_data"] = [key_data.hex(), _parse_key_data(key_data)]
             offset += data_len
 
         return result, offset

@@ -198,20 +198,31 @@ def vendor_specific_ie(data: bytes):
         "oui": oui,
         "type": vendor_type,
     }
+    
     if oui == "00:50:f2" and vendor_type == 0x04:
         vendor_entry["description"] = "Microsoft Corporation WPS"
         vendor_entry["data"] = _wps_vendor_ie(vendor_data)
+    
+    elif oui == "00:0f:ac" and vendor_type in [1, 2]:
+        vendor_entry["description"] = "RSN Information"
+        vendor_entry["data"] = rsn_capabilities(vendor_data)
+    
     elif oui == "00:0f:ac" and vendor_type == 4:
         vendor_entry["description"] = "PMKID"
-        vendor_entry["data"] = vendor_data.hex()
+        if len(vendor_data) >= 16:
+            vendor_entry["pmkid"] = vendor_data[:16].hex()
+        else:
+            vendor_entry["data"] = vendor_data.hex()
+    
     else:
         vendor_entry["description"] = "Generic Vendor Specific"
         vendor_entry["data"] = vendor_data.hex()
+    
     return {oui: [vendor_entry]}
 
 def rsn_capabilities(data: bytes) -> dict:
     result = {}
-    
+   
     if len(data) < 2:
         return result
     
@@ -282,9 +293,6 @@ def rsn_capabilities(data: bytes) -> dict:
                 pos += 16
         if pmkid_list:
             result['pmkids'] = pmkid_list
-    
-    result['bytes_processed'] = pos
-    result['total_length'] = len(data)
     
     return result
 

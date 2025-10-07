@@ -1,7 +1,7 @@
 import struct
 import time
 import json
-from core.common.useful_functions import (random_mac, safe_unpack)
+from core.common.useful_functions import (random_mac, safe_unpack, extract_fcs_from_frame, new_file_path, clean_hex_string)
 from core.wifi.l2.radiotap_header import RadiotapHeader
 from core.wifi.l2.ieee802_11 import parsers
 from core.wifi.l2.ieee802_11 import ies_parsers
@@ -117,10 +117,11 @@ class IEEE802_11:
     def frames_parser(raw_frame: bytes) -> dict:
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(raw_frame)
+        fcs_bytes, ieee80211_without_fcs = extract_fcs_from_frame(raw_frame, rt_hdr_len)
         mac_hdr, mac_hdr_offset = parsers.mac_header(raw_frame, rt_hdr_len)
         if not mac_hdr:
             return parsed_frame
-        parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr}
+        parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
         try:
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
