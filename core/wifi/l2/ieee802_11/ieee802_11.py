@@ -81,12 +81,84 @@ class IEEE802_11:
                 return frame_bytes.hex()
 
         @staticmethod
-        def parse(frame, offset):
+        def parse(frame: bytes, offset: int, subtype: int, protected: bool):
             body = {}
-            tagged_parameters, tagged_parameters_offset = parsers.tagged_parameters(frame, offset)
-            body["tagged_parameters"] = tagged_parameters
+            flen = len(frame)
+        
+            if protected:
+                body["payload"] = frame[offset:flen].hex()
+                return body
+        
+            def unpack(fmt, off):
+                res, new_off = safe_unpack(fmt, frame, off)
+                if res is None:
+                    return None, off
+                if len(res) == 1:
+                    return res[0], new_off
+                return res, new_off
+        
+            if subtype == 0:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 1:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 2:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 3:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 4:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 5:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 8:
+                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                body["tagged_parameters"] = tagged_parameters
+            elif subtype == 9:
+                remaining = flen - offset
+                if remaining >= 2:
+                    aid_raw, offset = unpack("<H", offset)
+                    body["aid"] = aid_raw & 0x3FFF
+                else:
+                    body["aid"] = None
+            elif subtype == 10:
+                body["reason_code"], offset = unpack("<H", offset)
+            elif subtype == 11:
+                body["auth_algorithm"], offset = unpack("<H", offset)
+                body["auth_sequence"], offset = unpack("<H", offset)
+                body["status_code"], offset = unpack("<H", offset)
+                if offset < flen:
+                    try:
+                        tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                        body["tagged_parameters"] = tagged_parameters
+                    except Exception:
+                        body["extra"] = frame[offset:flen].hex()
+            elif subtype == 12:
+                body["reason_code"], offset = unpack("<H", offset)
+            elif subtype == 13:
+                if offset < flen:
+                    body["category"], offset = unpack("B", offset)
+                else:
+                    body["category"] = None
+                if offset < flen:
+                    body["action"], offset = unpack("B", offset)
+                else:
+                    body["action"] = None
+                if offset < flen:
+                    try:
+                        tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                        body["tagged_parameters"] = tagged_parameters
+                    except Exception:
+                        body["payload"] = frame[offset:flen].hex()
+            else:
+                body["payload"] = frame[offset:flen]
+        
             return body
-
+        
     class Control:
         class build:
             @staticmethod
@@ -94,7 +166,64 @@ class IEEE802_11:
                 pass
 
         @staticmethod
-        def parse(frame, offset):
+        def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
+            body = {}
+            flen = len(frame)
+
+            if protected:
+                body["payload"] = frame[offset:flen].hex()
+                return body
+
+            def unpack(fmt, off):
+                res, new_off = safe_unpack(fmt, frame, off)
+                if res is None:
+                    return None, off
+                if len(res) == 1:
+                    return res[0], new_off
+                return res, new_off
+
+            try:
+                if subtype == 8:  # Block Ack Request (BAR)
+                    block_ack_control, offset = unpack("<H", offset)
+                    block_ack_start_seq, offset = unpack("<H", offset)
+                    body.update({
+                        "block_ack_control": block_ack_control,
+                        "block_ack_start_seq": block_ack_start_seq
+                    })
+
+                elif subtype == 9:  # Block Ack (BA)
+                    block_ack_bitmap, offset = unpack("<Q", offset)
+                    body.update({"block_ack_bitmap": block_ack_bitmap})
+
+                elif subtype == 10:  # PS-Poll
+                    aid, offset = unpack("<H", offset)
+                    body["aid"] = aid & 0x3FFF
+
+                elif subtype == 11:  # RTS
+                    duration, offset = unpack("<H", offset)
+                    body["duration"] = duration
+
+                elif subtype == 12:  # CTS
+                    duration, offset = unpack("<H", offset)
+                    body["duration"] = duration
+
+                elif subtype == 13:  # ACK
+                    pass
+
+                elif subtype == 14:  # CF-End
+                    pass
+
+                elif subtype == 15:  # CF-End + CF-Ack
+                    pass
+
+                else:
+                    body["payload"] = frame[offset:flen].hex()
+
+            except Exception as e:
+                body["parser_error"] = str(e)
+                body["payload"] = frame[offset:flen].hex()
+
+            return body
             pass
     
     class Data:
@@ -103,35 +232,76 @@ class IEEE802_11:
             def basic(dst_mac: str = "ff:ff:ff:ff:ff:ff", src_mac: str = "ff:ff:ff:ff:ff:ff", payload = b""):
                 pass
 
-        @staticmethod
-        def parse(frame, offset):
+        def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
             body = {}
+            flen = len(frame)
+        
             llc, llc_offset = parsers.llc(frame, offset)
             body["llc"] = llc
-            if llc.get("type", "") == "0x888e":
-                eapol, eapol_offset = parsers.eapol(frame, llc_offset)
+        
+            if protected:
+                body["payload"] = frame[llc_offset:flen].hex()
+                return body
+        
+            llc_type = llc.get("type", "")
+        
+            def unpack_parser(parser_func, off):
+                try:
+                    res, new_off = parser_func(frame, off)
+                    return res, new_off
+                except Exception:
+                    return frame[off:flen].hex(), flen
+        
+            if llc_type == "0x888e":
+                eapol, eapol_offset = unpack_parser(parsers.eapol, llc_offset)
                 body["eapol"] = eapol
+            elif llc_type == "0x0800":
+                ip, ip_offset = unpack_parser(parsers.ip, llc_offset)
+                body["ip"] = ip
+            elif llc_type == "0x0806":
+                arp, arp_offset = unpack_parser(parsers.arp, llc_offset)
+                body["arp"] = arp
+            elif llc_type == "0x86dd":
+                ipv6, ipv6_offset = unpack_parser(parsers.ipv6, llc_offset)
+                body["ipv6"] = ipv6
+            elif llc_type in ["0x888f", "0x890d", "0x88b4", "0x88b5", "0x88b6", "0x8902", "0x88c0", "0x8903"]:
+                body_name = {
+                    "0x888f": "mesh_ctrl",
+                    "0x890d": "tdls",
+                    "0x88b4": "wapi",
+                    "0x88b5": "fast_bss_transition",
+                    "0x88b6": "dls",
+                    "0x8902": "robust_av_streaming",
+                    "0x88c0": "wmm",
+                    "0x8903": "qos_null"
+                }[llc_type]
+                body[body_name] = frame[llc_offset:flen].hex()
+            else:
+                body["payload"] = frame[llc_offset:flen].hex()
+        
             return body
 
     @staticmethod
-    def frames_parser(raw_frame: bytes, mac_vendor_resolver) -> dict:
+    def frames_parser(frame: bytes, mac_vendor_resolver) -> dict:
         parsed_frame = {}
-        rt_hdr, rt_hdr_len = RadiotapHeader.parse(raw_frame)
-        fcs_bytes, ieee80211_without_fcs = extract_fcs_from_frame(raw_frame, rt_hdr_len)
-        mac_hdr, mac_hdr_offset = parsers.mac_header(raw_frame, rt_hdr_len, mac_vendor_resolver)
+        rt_hdr, rt_hdr_len = RadiotapHeader.parse(frame)
+        fcs_bytes, frame_no_fcs = extract_fcs_from_frame(frame, rt_hdr_len)
+        #frame = frame_no_fcs
+        mac_hdr, mac_hdr_offset = parsers.mac_header(frame, rt_hdr_len, mac_vendor_resolver)
         if not mac_hdr:
             return parsed_frame
         parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
         try:
+            protected = mac_hdr.get("protected", False)
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
             if frame_type == 0:
-                body = IEEE802_11.Management.parse(raw_frame, mac_hdr_offset)
+                body = IEEE802_11.Management.parse(frame, mac_hdr_offset, subtype, protected)
                 parsed_frame["body"] = body
             elif frame_type == 1:
-                parsed_frame["body"] = {"error": "Control frame parser not implemented"}
+                parsed_frame["body"] = IEEE802_11.Control.parse(frame, mac_hdr_offset, subtype, protected)
             elif frame_type == 2:
-                body = IEEE802_11.Data.parse(raw_frame, mac_hdr_offset)
+                body = IEEE802_11.Data.parse(frame, mac_hdr_offset, subtype, protected)
                 parsed_frame["body"] = body
             else:
                 parsed_frame["body"] = {"error": f"Unknown frame type {frame_type}"}

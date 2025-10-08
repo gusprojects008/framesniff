@@ -2,6 +2,7 @@
 import struct
 import binascii
 import re
+import socket
 from core.common.useful_functions import (safe_unpack, bytes_for_mac)
 from core.wifi.l2.ieee802_11 import ies_parsers
 
@@ -34,6 +35,7 @@ def mac_header(frame, offset, mac_vendor_resolver):
         frame_control, duration_id, addr1, addr2, addr3, sequence_number = unpacked
         offset = new_offset
 
+        protected = bool(frame_control & 0x4000)
         protocol_version = frame_control & 0b11
         frame_type = (frame_control >> 2) & 0b11
         frame_subtype = (frame_control >> 4) & 0b1111
@@ -71,6 +73,7 @@ def mac_header(frame, offset, mac_vendor_resolver):
                 "subtype_name": frame_subtype_name,
                 "tods": to_ds,
                 "fromds": from_ds,
+                "protected": protected,
             },
             "mac_receiver": mac_receiver,
             "mac_transmitter": mac_transmitter
@@ -122,7 +125,7 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
             if tag_number == 0:
                 tagged_parameters['ssid'] = data.decode(errors='ignore')
             elif tag_number == 1:
-                tagged_parameters['supported_rates'] = [{'rate': r & 0x7F, 'basic': bool(r & 0x80)} for r in data]
+                tagged_parameters['supported_rates'] = ies_parsers.rates(data)
             elif tag_number == 3:
                 if tag_length >= 1:
                     tagged_parameters['current_channel'] = data[0]
@@ -138,10 +141,10 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
              #  tagged_parameters['erp_info'] = 
             #elif tag_number == 45 and tag_length >= 26:
              #    tagged_parameters['ht_capabilities'] = ht_caps
-            #elif tag_number == 48 and tag_length >= 2:
-             #    tagged_parameters['rsn_info'] = rsn_info
+            elif tag_number == 48 and tag_length >= 2:
+                 tagged_parameters['rsn_information'] = ies_parsers.rsn_information(data)
             elif tag_number == 50:
-                tagged_parameters['extended_supported_rates'] = [{'rate': r & 0x7F, 'basic': bool(r & 0x80)} for r in data]
+                tagged_parameters['extended_supported_rates'] = ies_parsers.rates(data)
             #elif tag_number == 61 and tag_length >= 22:
                 #tagged_parameters['ht_information'] = ht_info
             #elif tag_number == 70 and tag_length >= 5:
@@ -152,10 +155,19 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
                 if "vendor_specific" not in tagged_parameters:
                     tagged_parameters["vendor_specific"] = {}
                 vendor_ie = ies_parsers.vendor_specific_ie(data)
-                for oui, ie_list in vendor_ie.items():
+                for oui, vendor_entries in vendor_ie.items():
                     if oui not in tagged_parameters["vendor_specific"]:
-                        tagged_parameters["vendor_specific"][oui] = []
-                    tagged_parameters["vendor_specific"][oui].extend(ie_list)
+                        tagged_parameters["vendor_specific"][oui] = {}
+                    for vendor_entry in vendor_entries:
+                        vendor_type = vendor_entry["type"]
+                        if vendor_type in tagged_parameters["vendor_specific"][oui]:
+                            existing_entry = tagged_parameters["vendor_specific"][oui][vendor_type]
+                            if isinstance(existing_entry, list):
+                                existing_entry.append(vendor_entry)
+                            else:
+                                tagged_parameters["vendor_specific"][oui][vendor_type] = [existing_entry, vendor_entry]
+                        else:
+                            tagged_parameters["vendor_specific"][oui][vendor_type] = vendor_entry
         return tagged_parameters, offset
     except struct.error as error:
         tagged_parameters['error'] = str(error)
@@ -198,7 +210,7 @@ def eapol(frame, offset):
                 vendor_result = ies_parsers.vendor_specific_ie(elem_data)
                 result.update(vendor_result)
             elif elem_id == 48:  # RSN IE
-                result["rsn_information"] = ies_parsers.rsn_capabilities(elem_data)
+                result["rsn_information"] = ies_parsers.rsn_information(elem_data)
             pos += elem_len
         return result
     try:
@@ -262,11 +274,97 @@ def eapol(frame, offset):
 
         if data_len > 0 and offset + data_len <= len(frame):
             key_data = frame[offset:offset + data_len]
-            result["key_data"] = [key_data.hex(), _parse_key_data(key_data)]
+            result["key_data"] = {"value": key_data.hex(), "data": _parse_key_data(key_data)}
             offset += data_len
 
         return result, offset
 
     except struct.error as error:
         result['error'] = str(error)
+        return result, offset
+
+def ip(frame: bytes, offset: int):
+    result = {}
+    try:
+        unpacked, new_offset = safe_unpack("!BBHHHBBH4s4s", frame, offset)
+        if unpacked is None:
+            return result, offset
+        version_ihl, tos, total_length, identification, flags_frag, ttl, protocol, header_checksum, src, dst = unpacked
+        version = version_ihl >> 4
+        ihl = version_ihl & 0x0F
+        result.update({
+            "version": version,
+            "ihl": ihl,
+            "tos": tos,
+            "total_length": total_length,
+            "identification": identification,
+            "flags": (flags_frag >> 13) & 0x7,
+            "fragment_offset": flags_frag & 0x1FFF,
+            "ttl": ttl,
+            "protocol": protocol,
+            "header_checksum": header_checksum,
+            "src_ip": socket.inet_ntoa(src),
+            "dst_ip": socket.inet_ntoa(dst)
+        })
+        offset = new_offset
+        if total_length > ihl * 4:
+            payload_len = total_length - ihl * 4
+            result["payload"] = frame[offset:offset + payload_len].hex()
+            offset += payload_len
+        return result, offset
+    except struct.error as error:
+        result["error"] = str(error)
+        return result, offset
+
+def arp(frame: bytes, offset: int):
+    result = {}
+    try:
+        unpacked, new_offset = safe_unpack("!HHBBH6s4s6s4s", frame, offset)
+        if unpacked is None:
+            return result, offset
+        hw_type, proto_type, hw_size, proto_size, opcode, src_mac, src_ip, dst_mac, dst_ip = unpacked
+        result.update({
+            "hw_type": hw_type,
+            "protocol_type": proto_type,
+            "hw_size": hw_size,
+            "protocol_size": proto_size,
+            "opcode": opcode,
+            "src_mac": bytes_for_mac(src_mac),
+            "src_ip": socket.inet_ntoa(src_ip),
+            "dst_mac": bytes_for_mac(dst_mac),
+            "dst_ip": socket.inet_ntoa(dst_ip)
+        })
+        offset = new_offset
+        return result, offset
+    except struct.error as error:
+        result["error"] = str(error)
+        return result, offset
+
+def ipv6(frame: bytes, offset: int):
+    result = {}
+    try:
+        unpacked, new_offset = safe_unpack("!IHBB16s16s", frame, offset)
+        if unpacked is None:
+            return result, offset
+        ver_tc_fl, payload_len, next_header, hop_limit, src, dst = unpacked
+        version = (ver_tc_fl >> 28) & 0xF
+        traffic_class = (ver_tc_fl >> 20) & 0xFF
+        flow_label = ver_tc_fl & 0xFFFFF
+        result.update({
+            "version": version,
+            "traffic_class": traffic_class,
+            "flow_label": flow_label,
+            "payload_length": payload_len,
+            "next_header": next_header,
+            "hop_limit": hop_limit,
+            "src_ip": socket.inet_ntop(socket.AF_INET6, src),
+            "dst_ip": socket.inet_ntop(socket.AF_INET6, dst)
+        })
+        offset = new_offset
+        if payload_len > 0:
+            result["payload"] = frame[offset:offset + payload_len].hex()
+            offset += payload_len
+        return result, offset
+    except struct.error as error:
+        result["error"] = str(error)
         return result, offset

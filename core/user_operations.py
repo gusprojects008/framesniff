@@ -173,17 +173,13 @@ class Operations:
             print(f"\nTotal networks found: {network_count}")
    
     @staticmethod
-    def scan_monitor_mode(channel_hopping_interval: float = 2.0):
-        pass
-
-    @staticmethod
     def set_frequency(wiphy_name: str, frequency_mhz: str):
         print(" In development, see https://github.com/gusprojects008/wnlpy")
         subprocess.run(["sudo", "iw", wiphy_name, "set", "freq", str(frequency_mhz)], check=True)
         print(f"Frequency set to {frequency_mhz} MHz on {wiphy_name}")
 
     @staticmethod
-    def channel_hopping(wiphy_index: int):
+    def channel_hopping(wiphy_name: str, hopping_interval: float = 2.0):
         print(" In development, see https://github.com/gusprojects008/wnlpy")
 
     @staticmethod
@@ -260,34 +256,6 @@ class Operations:
                 print("\nNo frames captured")
 
     @staticmethod
-    def eapol_capture(
-            ifname: str = None,
-            bssid: str = None,
-            mac: str = None,
-            count: int = None,
-            timeout: int = None,
-            output_file: str = None,
-        ):
-        if not ifname:
-            raise ValueError("Interface name is required")
-        filters = ["mac_hdr.fc.type == 2"]
-        display_fields = ["raw", "mac_hdr", "body.eapol"]
-
-        if bssid:
-            filters.append(f"mac_hdr.bssid == '{bssid}'")
-        if mac:
-            filters.append(f"mac_hdr.mac_src == '{mac}' or mac_hdr.mac_dst == '{mac}'")
-
-        store_filter = " and ".join(filters)
-        display_filter = ", ".join(display_fields)
-
-        base = "framesniff-eapol-capture"
-        ext = ".json" 
-        output_file_path = new_file_path(base, ext, output_file)    
-
-        Operations.sniff(linktype="wifi", layer=2, standard="802.11", ifname=ifname, store_filter=store_filter, display_filter=display_filter, count=count, timeout=timeout, output_file=output_file_path)
-
-    @staticmethod
     def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
         IEEE802_11.generate_22000(bitmask_message_pair, ssid, input_file, output_file)
 
@@ -344,3 +312,6 @@ class Operations:
     
         finally:
             sock.close()
+
+if __name__ == "__main__":
+   Operations.monitor_scan("wifi", 2, "802.11", "wlan0")

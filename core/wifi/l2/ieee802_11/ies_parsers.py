@@ -190,7 +190,6 @@ def vendor_specific_ie(data: bytes):
                         result["version2"] = f"{version_major}.{version_minor}"
                         break
         return result
-
     oui = bytes_for_mac(data[:3])
     vendor_type = data[3]
     vendor_data = data[4:]
@@ -220,7 +219,8 @@ def vendor_specific_ie(data: bytes):
     
     return {oui: [vendor_entry]}
 
-def rsn_capabilities(data: bytes) -> dict:
+
+def rsn_information(data: bytes) -> dict:
     result = {}
    
     if len(data) < 2:
@@ -295,6 +295,14 @@ def rsn_capabilities(data: bytes) -> dict:
             result['pmkids'] = pmkid_list
     
     return result
+
+def rates(data: bytes) -> dict:
+    rates_info = {}
+    for i, r in enumerate(data):
+        rate_value = r & 0x7F
+        rates_info[f"rate_{i}_value"] = rate_value
+        rates_info[f"rate_{i}_basic"] = bool(r & 0x80)
+    return rates_info
 
 def tim_info(data: bytes):
     if tag_length >= 3:

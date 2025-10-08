@@ -67,15 +67,15 @@ class RadiotapHeader:
             }
         def _parse_rx_flags(name, value):
             FLAGS_FIELDS = [
-                'bad_plcp', 'short_gi', # 0, 1
-                None, # 2 (HT)
-                'greenfield', # 3 (HT)
-                'ht40', # 4 (HT)
-                None, None, # 5, 6 (HT)
-                'vht_ldpc_extra_symbol', # 7 (VHT)
-                'vht_stbc', # 8 (VHT)
-                'vht_txop_ps_not_allowed', # 9 (VHT)
-                'vht_sgi_nsym_da' # 10 (VHT)
+                'bad_plcp', 'short_gi',
+                None,
+                'greenfield',
+                'ht40',
+                None, None,
+                'vht_ldpc_extra_symbol',
+                'vht_stbc',
+                'vht_txop_ps_not_allowed',
+                'vht_sgi_nsym_da'
             ]
             return {'rx_flags': bitmap_value_for_dict(value[0], FLAGS_FIELDS)}
         def _parse_mcs(name, value):
@@ -164,7 +164,7 @@ class RadiotapHeader:
             if rth_length > len(frame):
                 return {"error": "Radiotap length exceeds frame size"}, rth_length
 
-            present_flags_all = []
+            present_flags_all = {}
             combined_present = 0
             i = 0
             while True:
@@ -173,14 +173,14 @@ class RadiotapHeader:
                     return {"error": "Frame truncated before presence bitmap"}, rth_length
                 
                 present = unpacked[0]
-                present_flags_all.append(present)
+                present_flags_all[i] = hex(present)
                 combined_present |= (present << (32 * i))
                 i += 1
                 
                 if not (present & (1 << 31)):
                     break
             
-            radiotap_info["present_bitmaps"] = [hex(p) for p in present_flags_all]
+            radiotap_info["present_bitmaps"] = present_flags_all
 
             for bit_index, name, fmt, alignment, parser_func in RADIOTAP_FIELDS:
                 if not (combined_present & (1 << bit_index)):
