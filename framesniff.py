@@ -42,8 +42,8 @@ def main():
     sniff_parser.add_argument("--layer", type=int, choices=[2, 3], default=2, help="Layer to capture")
     sniff_parser.add_argument("--standard", type=str, default="802.11", help="Standard to use (e.g., 802.11, BLE)")
     sniff_parser.add_argument("--ifname", "-i", required=True, help="Interface name")
-    sniff_parser.add_argument("--store-filter", default="", help="Filter to store frames")
-    sniff_parser.add_argument("--display-filter", default="", help="Filter to display frames")
+    sniff_parser.add_argument("--store-filter", default=None, help="Filter to store frames")
+    sniff_parser.add_argument("--display-filter", default=None, help="Filter to display frames")
     sniff_parser.add_argument("--count", type=int, default=None, help="Number of frames to capture")
     sniff_parser.add_argument("--timeout", type=float, default=None, help="Timeout in seconds")
     sniff_parser.add_argument("--display-interval", type=float, default=1.0, help="Interval for displaying frames")
@@ -64,6 +64,7 @@ def main():
     generate_22000_parser.add_argument("--output", "-o", default="hashcat.22000", help="Output file name")
 
     hextopcap_parser = subparsers.add_parser("hextopcap", help="Generates a pcap file from a json file with the raw contents of the packet.")
+    hextopcap_parser.add_argument("--dlt", required=True, choices=["DLT_IEEE802_11_RADIO", "DLT_EN10MB", "DLT_BLUETOOTH_HCI_H4"], help="Data Link Type (DLT)")
     hextopcap_parser.add_argument("--input", "-i", required=True, help="Json file with raw hexadecimal packets.")
     hextopcap_parser.add_argument("--output", "-o", default=None, help="Output pcap file path.")
 
@@ -73,6 +74,13 @@ def main():
     send_raw_parser.add_argument("--count", type=int, default=1, help="Number of frames to send (default: 1).")
     send_raw_parser.add_argument("--interval", type=float, default=1.0, help="Interval between sends in seconds (default: 1.0).")
     send_raw_parser.add_argument("--timeout", type=float, default=None, help="Socket timeout in seconds (optional).")
+
+    monitor_scan_parser = subparsers.add_parser("monitor-scan", help="scans nearby APs and devices DLT_IEEE802_11_RADIO only")
+    monitor_scan_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
+    monitor_scan_parser.add_argument("--channel-hopping", default=True, help="Channel hopping, default True.")
+    monitor_scan_parser.add_argument("--hopping-interval", default=None, help="Channel hopping interval, default 2.0 seconds.")
+    monitor_scan_parser.add_argument("--bands", default=None, help="Channel hopping bands, default 2.4.")
+    monitor_scan_parser.add_argument("--timeout", default=None, help="Scan timeout, default None.")
 
     args = parser.parse_args()
 
@@ -123,6 +131,8 @@ def main():
          operations.write_pcap_from_json(args.dlt, args.input, args.output)
     elif args.command == "send-raw":
          operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
+    elif args.command == "monitor-scan":
+         operations.monitor_scan(args.ifname, args.channel_hopping, args.hopping_interval, args.bands, args.timeout)
 
 if __name__ == "__main__":
     main()

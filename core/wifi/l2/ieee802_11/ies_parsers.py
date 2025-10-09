@@ -56,9 +56,9 @@ def vendor_specific_ie(data: bytes):
             "ap": 0x03,
         }
         rf_bands = {
-            "2_4_ghz": 0x01,
-            "5_ghz": 0x02,
-            "2_4_and_5_ghz": 0x03,
+            "2.4ghz": 0x01,
+            "5ghz": 0x02,
+            "2.4ghz_and_5ghz": 0x03,
         }
         config_methods = {
             "usb": 0x0001,
@@ -171,7 +171,7 @@ def vendor_specific_ie(data: bytes):
                 if band_res is not None:
                     (band_hex,) = band_res
                     band_desc = next((k for k, v in rf_bands.items() if v == band_hex), f"unknown_{band_hex:02x}")
-                    result["rf_bands"] = band_desc.replace('_', ' ').replace('ghz', 'GHz')
+                    result["rf_bands"] = band_desc
                     result["rf_bands_value"] = band_hex
             elif attr_type == attr_map["vendor_extension"]:
                 vendor_id = int.from_bytes(attr_data[:3], "big")
@@ -207,9 +207,9 @@ def vendor_specific_ie(data: bytes):
         vendor_entry["data"] = rsn_capabilities(vendor_data)
     
     elif oui == "00:0f:ac" and vendor_type == 4:
-        vendor_entry["description"] = "PMKID"
         if len(vendor_data) >= 16:
-            vendor_entry["pmkid"] = vendor_data[:16].hex()
+            vendor_entry["value"] = vendor_data[:16].hex()
+            vendor_entry["description"] = "PMKID"
         else:
             vendor_entry["data"] = vendor_data.hex()
     
@@ -219,54 +219,54 @@ def vendor_specific_ie(data: bytes):
     
     return {oui: [vendor_entry]}
 
-
-def rsn_information(data: bytes) -> dict:
+def rsn_information(data: bytes, tag_length: int) -> dict:
     result = {}
-   
-    if len(data) < 2:
+    if tag_length < 2:
         return result
-    
+
     result['version'] = struct.unpack_from('<H', data, 0)[0]
     pos = 2
-    
-    if pos + 4 <= len(data):
+
+    if pos + 4 <= tag_length:
         result['group_cipher'] = {
             'oui': data[pos:pos+3].hex(':'),
             'cipher_type': data[pos+3]
         }
         pos += 4
-    
-    if pos + 2 <= len(data):
+
+    if pos + 2 <= tag_length:
         pairwise_count = struct.unpack_from('<H', data, pos)[0]
         result['pairwise_cipher_count'] = pairwise_count
         pos += 2
-        
-        pairwise_list = []
+
+        pairwise_dict = {}
         for i in range(pairwise_count):
-            if pos + 4 <= len(data):
-                pairwise_list.append({
+            if pos + 4 <= tag_length:
+                pairwise_dict[f'pairwise_cipher_{i+1}'] = {
                     'oui': data[pos:pos+3].hex(':'),
                     'cipher_type': data[pos+3]
-                })
+                }
                 pos += 4
-        result['pairwise_cipher_list'] = pairwise_list
-    
-    if pos + 2 <= len(data):
+        if pairwise_dict:
+            result['pairwise_ciphers'] = pairwise_dict
+
+    if pos + 2 <= tag_length:
         akm_count = struct.unpack_from('<H', data, pos)[0]
         result['akm_suite_count'] = akm_count
         pos += 2
-        
-        akm_list = []
+
+        akm_dict = {}
         for i in range(akm_count):
-            if pos + 4 <= len(data):
-                akm_list.append({
+            if pos + 4 <= tag_length:
+                akm_dict[f'akm_suite_{i+1}'] = {
                     'oui': data[pos:pos+3].hex(':'),
                     'akm_type': data[pos+3]
-                })
+                }
                 pos += 4
-        result['akm_suite_list'] = akm_list
-    
-    if pos + 2 <= len(data):
+        if akm_dict:
+            result['akm_suites'] = akm_dict
+
+    if pos + 2 <= tag_length:
         rsn_caps = struct.unpack_from('<H', data, pos)[0]
         result['capabilities'] = {
             'pre_auth': bool(rsn_caps & 0x0001),
@@ -279,34 +279,35 @@ def rsn_information(data: bytes) -> dict:
             'peerkey_enabled': bool(rsn_caps & 0x0200)
         }
         pos += 2
-    
-    if pos + 2 <= len(data):
+
+    if pos + 2 <= tag_length:
         pmkid_count = struct.unpack_from('<H', data, pos)[0]
         result['pmkid_count'] = pmkid_count
         pos += 2
-        
-        pmkid_list = []
+
+        pmkid_dict = {}
         for i in range(pmkid_count):
-            if pos + 16 <= len(data):
+            if pos + 16 <= tag_length:
                 pmkid = data[pos:pos+16].hex()
-                pmkid_list.append(pmkid)
+                pmkid_dict[f'pmkid_{i+1}'] = pmkid
                 pos += 16
-        if pmkid_list:
-            result['pmkids'] = pmkid_list
-    
+        if pmkid_dict:
+            result['pmkids'] = pmkid_dict
+
     return result
 
-def rates(data: bytes) -> dict:
+def rates(data: bytes, tag_length: int) -> dict:
     rates_info = {}
-    for i, r in enumerate(data):
+    for i in range(min(len(data), tag_length)):
+        r = data[i]
         rate_value = r & 0x7F
         rates_info[f"rate_{i}_value"] = rate_value
         rates_info[f"rate_{i}_basic"] = bool(r & 0x80)
     return rates_info
 
-def tim_info(data: bytes):
+def tim_info(data: bytes, tag_length: int):
     if tag_length >= 3:
-        tim_info = {
+        return {
             'dtim_count': data[0],
             'dtim_period': data[1],
             'bitmap_control': data[2],
@@ -314,33 +315,40 @@ def tim_info(data: bytes):
             'multicast': bool(data[2] & 0x01),
             'bitmap_offset': (data[2] >> 1) & 0x7F
        }
-    return tim_info
+    return {}
 
-def country_code(data: bytes):
-    country_info = {'country_code': data[:3].decode(errors='ignore'), 'environment': data[3] if tag_length > 3 else 0}
+def country_code(data: bytes, tag_length: int):
+    country_info = {
+        'country_code': data[:3].decode(errors='ignore'),
+        'environment': data[3] if tag_length > 3 else 0
+    }
     if tag_length > 4:
-        sub_elements = []
+        sub_elements = {}
         sub_offset = 4
+        i = 0
         while sub_offset + 3 <= tag_length:
-            sub_elements.append({
+            sub_elements[i] = {
                 'first_channel': data[sub_offset],
                 'num_channels': data[sub_offset + 1],
                 'max_tx_power': data[sub_offset + 2]
-            })
+            }
+            i += 1
             sub_offset += 3
         country_info['sub_elements'] = sub_elements
     return country_info
 
-def erp_info(data: bytes):
-    return  {
-        'non_erp_present': bool(data[0] & 0x01),
-        'use_protection': bool(data[0] & 0x02),
-        'barker_preamble_mode': bool(data[0] & 0x04)
-    }
+def erp_info(data: bytes, tag_length: int):
+    if tag_length >= 1:
+        return {
+            'non_erp_present': bool(data[0] & 0x01),
+            'use_protection': bool(data[0] & 0x02),
+            'barker_preamble_mode': bool(data[0] & 0x04)
+        }
+    return {}
 
-def ht_capabilities(data: bytes) -> dict:
+def ht_capabilities(data: bytes, tag_length: int) -> dict:
     ht_caps = {}
-    if len(data) >= 2:
+    if tag_length >= 2:
         ht_caps_info = struct.unpack_from('<H', data)[0]
         ht_caps['ldpc_coding_capable'] = bool(ht_caps_info & 0x0001)
         ht_caps['supported_channel_width'] = bool(ht_caps_info & 0x0002)
@@ -354,11 +362,11 @@ def ht_capabilities(data: bytes) -> dict:
         ht_caps['max_amsdu_length'] = bool(ht_caps_info & 0x2000)
         ht_caps['dsss_cck_40mhz'] = bool(ht_caps_info & 0x4000)
         ht_caps['psmp_support'] = bool(ht_caps_info & 0x8000)
-    if len(data) >= 3:
+    if tag_length >= 3:
         ampdu_params = data[2]
         ht_caps['max_rx_ampdu_length'] = ampdu_params & 0x03
         ht_caps['mpdu_density'] = (ampdu_params >> 2) & 0x07
-    if len(data) >= 19:
+    if tag_length >= 19:
         mcs_set = data[3:19]
         ht_caps['rx_mcs_set'] = mcs_set.hex()
         if len(mcs_set) >= 10:
@@ -367,50 +375,52 @@ def ht_capabilities(data: bytes) -> dict:
             ht_caps['tx_rx_mcs_set_equal'] = bool(mcs_set[10] & 0x02)
             ht_caps['max_tx_spatial_streams'] = (mcs_set[10] >> 2) & 0x03
             ht_caps['unequal_modulation'] = bool(mcs_set[10] & 0x10)
-    if len(data) >= 21:
+    if  tag_length >= 21:
         ht_ext_caps = struct.unpack_from('<H', data, 19)[0]
         ht_caps['pco_support'] = bool(ht_ext_caps & 0x0001)
         ht_caps['transition_time'] = (ht_ext_caps >> 1) & 0x03
         ht_caps['mcs_feedback'] = (ht_ext_caps >> 4) & 0x03
-    if len(data) >= 25:
+    if  tag_length >= 25:
         txbf_caps = struct.unpack_from('<I', data, 21)[0]
         ht_caps['transmit_beamforming'] = bool(txbf_caps & 0x00000001)
         ht_caps['receive_staggered_sounding'] = bool(txbf_caps & 0x00000002)
         ht_caps['transmit_staggered_sounding'] = bool(txbf_caps & 0x00000004)
-    if len(data) >= 26:
+    if  tag_length >= 26:
         asel_caps = data[25]
         ht_caps['asel_capable'] = bool(asel_caps & 0x01)
         ht_caps['explicit_csi_feedback_tx_asel'] = bool(asel_caps & 0x02)
     return ht_caps
 
-def rm_enable_capabilities(data: bytes) -> dict:
-    rm_caps = {}
-    rm_caps['link_measurement'] = bool(data[0] & 0x01)
-    rm_caps['neighbor_report'] = bool(data[0] & 0x02)
-    rm_caps['parallel_measurements'] = bool(data[0] & 0x04)
-    rm_caps['repeated_measurements'] = bool(data[0] & 0x08)
-    rm_caps['beacon_passive_measurement'] = bool(data[0] & 0x10)
-    rm_caps['beacon_active_measurement'] = bool(data[0] & 0x20)
-    rm_caps['beacon_table_measurement'] = bool(data[0] & 0x40)
-    rm_caps['beacon_measurement_reporting'] = bool(data[0] & 0x80)
-    rm_caps['frame_measurement'] = bool(data[1] & 0x01)
-    rm_caps['channel_load_measurement'] = bool(data[1] & 0x02)
-    rm_caps['noise_histogram_measurement'] = bool(data[1] & 0x04)
-    rm_caps['statistics_measurement'] = bool(data[1] & 0x08)
-    rm_caps['lci_measurement'] = bool(data[1] & 0x10)
-    rm_caps['lci_azimuth'] = bool(data[1] & 0x20)
-    rm_caps['tx_stream_category_measurement'] = bool(data[1] & 0x40)
-    rm_caps['triggered_tx_stream_measurement'] = bool(data[1] & 0x80)
-    return rm_caps
+def rm_enable_capabilities(data: bytes, tag_length: int) -> dict:
+    if tag_length >= 2:
+        rm_caps = {}
+        rm_caps['link_measurement'] = bool(data[0] & 0x01)
+        rm_caps['neighbor_report'] = bool(data[0] & 0x02)
+        rm_caps['parallel_measurements'] = bool(data[0] & 0x04)
+        rm_caps['repeated_measurements'] = bool(data[0] & 0x08)
+        rm_caps['beacon_passive_measurement'] = bool(data[0] & 0x10)
+        rm_caps['beacon_active_measurement'] = bool(data[0] & 0x20)
+        rm_caps['beacon_table_measurement'] = bool(data[0] & 0x40)
+        rm_caps['beacon_measurement_reporting'] = bool(data[0] & 0x80)
+        rm_caps['frame_measurement'] = bool(data[1] & 0x01)
+        rm_caps['channel_load_measurement'] = bool(data[1] & 0x02)
+        rm_caps['noise_histogram_measurement'] = bool(data[1] & 0x04)
+        rm_caps['statistics_measurement'] = bool(data[1] & 0x08)
+        rm_caps['lci_measurement'] = bool(data[1] & 0x10)
+        rm_caps['lci_azimuth'] = bool(data[1] & 0x20)
+        rm_caps['tx_stream_category_measurement'] = bool(data[1] & 0x40)
+        rm_caps['triggered_tx_stream_measurement'] = bool(data[1] & 0x80)
+        return rm_caps
+    return {}
 
-def extended_capabilities(data: bytes) -> dict:
+def extended_capabilities(data: bytes, tag_length: int) -> dict:
     ext_caps = {}
-    if len(data) >= 1:
+    if tag_length >= 1:
         ext_caps['bss_coexistence'] = bool(data[0] & 0x01)
         ext_caps['extended_channel_switching'] = bool(data[0] & 0x04)
         ext_caps['psmp_capability'] = bool(data[0] & 0x10)
-    if len(data) >= 3:
+    if tag_length >= 3:
         ext_caps['bss_transition'] = bool(data[2] & 0x08)
-    if len(data) >= 4:
+    if tag_length >= 4:
         ext_caps['interworking'] = bool(data[3] & 0x80)
     return ext_caps

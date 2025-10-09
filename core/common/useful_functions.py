@@ -105,6 +105,12 @@ def safe_unpack(fmt: str, frame: bytes, offset: int):
         return None, offset
     return struct.unpack_from(fmt, frame, offset), offset + size
 
+def unpack(fmt, off):
+    res, new_off = safe_unpack(fmt, frame, off)
+    if res is None:
+        return None, off
+    return res[0], new_off
+
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
     #if len(s) % 2 != 0: May malform the package!!

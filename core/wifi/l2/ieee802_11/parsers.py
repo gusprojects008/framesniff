@@ -6,7 +6,7 @@ import socket
 from core.common.useful_functions import (safe_unpack, bytes_for_mac)
 from core.wifi.l2.ieee802_11 import ies_parsers
 
-def mac_header(frame, offset, mac_vendor_resolver):
+def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict, int):
     def _get_frame_type_subtype_name(frame_type: int, subtype: int):
         type_names = {0: "Management", 1: "Control", 2: "Data"}
         subtype_names = {
@@ -29,17 +29,47 @@ def mac_header(frame, offset, mac_vendor_resolver):
     mac_data = {}
 
     try:
-        unpacked, new_offset = safe_unpack("<HH6s6s6sH", frame, offset)
-        if unpacked is None:
-            return mac_data, offset
-        frame_control, duration_id, addr1, addr2, addr3, sequence_number = unpacked
-        offset = new_offset
-
-        protected = bool(frame_control & 0x4000)
-        protocol_version = frame_control & 0b11
+        (frame_control,), offset = safe_unpack("<H", frame, offset)
         frame_type = (frame_control >> 2) & 0b11
         frame_subtype = (frame_control >> 4) & 0b1111
         frame_type_name, frame_subtype_name = _get_frame_type_subtype_name(frame_type, frame_subtype)
+
+        fmt = ""
+
+        duration_id, addr1, addr2, addr3, sequence_number = None, None, None, None, None
+
+        if frame_type == 1:  # Control
+            if frame_subtype in (8, 9,10, 11, 14, 15):  # RTS, Block Ack Req, Block Ack, PS-Poll, CF-End, CF-End+CF-Ack
+                fmt = "<H6s6s"  # FC, Duration, RA, TA
+                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                if unpacked is None:
+                   return mac_data, offset
+                duration_id, addr1, addr2 = unpacked
+                offset = new_offset
+            elif frame_subtype in (12, 13):  # CTS, ACK
+                fmt = "<H6s"  # FC, Duration, RA
+                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                if unpacked is None:
+                   return mac_data, offset
+                duration_id, addr1 = unpacked
+                offset = new_offset
+            else:
+                fmt = "<H"  # fallback minimal
+                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                if unpacked is None:
+                   return mac_data, offset
+                duration_id = unpacked
+                offset = new_offset
+        else: # Data and Management
+            fmt = "<H6s6s6sH"
+            unpacked, new_offset = safe_unpack(fmt, frame, offset)
+            duration_id, addr1, addr2, addr3, sequence_number = unpacked
+            if unpacked is None:
+               return mac_data, offset
+            offset = new_offset
+
+        protected = bool(frame_control & 0x4000)
+        protocol_version = frame_control & 0b11
 
         to_ds = (frame_control >> 8) & 1
         from_ds = (frame_control >> 9) & 1
@@ -91,7 +121,6 @@ def mac_header(frame, offset, mac_vendor_resolver):
                 if unpacked is not None:
                     mac_data["qos_control"] = unpacked[0]
                     offset = new_offset
-
         return mac_data, offset
 
     except struct.error as error:
@@ -125,32 +154,28 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
             if tag_number == 0:
                 tagged_parameters['ssid'] = data.decode(errors='ignore')
             elif tag_number == 1:
-                tagged_parameters['supported_rates'] = ies_parsers.rates(data)
+                tagged_parameters['supported_rates'] = ies_parsers.rates(data, tag_length)
             elif tag_number == 3:
                 if tag_length >= 1:
                     tagged_parameters['current_channel'] = data[0]
-            #elif tag_number == 5: # TIM info
-             #    tagged_parameters['tim'] = tim_info
-            #elif tag_number == 7:
-                    #tagged_parameters['country_info'] = IEs
+            elif tag_number == 7:
+                tagged_parameters['country_info'] = ies_parsers.country_code(data, tag_length)
             elif tag_number == 32 and tag_length >= 1:
                 tagged_parameters['power_constraint'] = data[0]
             elif tag_number == 35 and tag_length >= 2:
                 tagged_parameters['tpc_report'] = {'tx_power': data[0], 'reserved': data[1]}
-            #elif tag_number == 42 and tag_length >= 1:
-             #  tagged_parameters['erp_info'] = 
-            #elif tag_number == 45 and tag_length >= 26:
-             #    tagged_parameters['ht_capabilities'] = ht_caps
+            elif tag_number == 42:
+                tagged_parameters['erp_info'] = ies_parsers.erp_info(data, tag_length)
+            elif tag_number == 45:
+                tagged_parameters['ht_capabilities'] = ies_parsers.ht_capabilities(data, tag_length)
+            elif tag_number == 70:
+                tagged_parameters['rm_enabled_capabilities'] = ies_parsers.rm_enable_capabilities(data, tag_length)
             elif tag_number == 48 and tag_length >= 2:
-                 tagged_parameters['rsn_information'] = ies_parsers.rsn_information(data)
+                 tagged_parameters['rsn_information'] = ies_parsers.rsn_information(data, tag_length)
             elif tag_number == 50:
-                tagged_parameters['extended_supported_rates'] = ies_parsers.rates(data)
-            #elif tag_number == 61 and tag_length >= 22:
-                #tagged_parameters['ht_information'] = ht_info
-            #elif tag_number == 70 and tag_length >= 5:
-                #tagged_parameters['rm_enabled_capabilities'] = rm_caps
-            #elif tag_number == 127 and tag_length >= 1:
-                #tagged_parameters['extended_capabilities'] = ext_caps
+                tagged_parameters['extended_supported_rates'] = ies_parsers.rates(data, tag_length)
+            elif tag_number == 127:
+                tagged_parameters['extended_capabilities'] = ies_parsers.extended_capabilities(data, tag_length)
             elif tag_number == 221:
                 if "vendor_specific" not in tagged_parameters:
                     tagged_parameters["vendor_specific"] = {}
@@ -229,6 +254,19 @@ def eapol(frame, offset):
         if unpacked is None:
             return result, offset
         desc_type, key_info, key_len = unpacked
+
+        key_descriptor_version = key_info & 0x0007
+        key_type_bit = (key_info >> 3) & 0x01
+        key_index = (key_info >> 4) & 0x03
+        install_bit = (key_info >> 6) & 0x01
+        ack_bit = (key_info >> 7) & 0x01
+        mic_bit = (key_info >> 8) & 0x01
+        secure_bit = (key_info >> 9) & 0x01
+        error_bit = (key_info >> 10) & 0x01
+        request_bit = (key_info >> 11) & 0x01
+        encrypted_key_data = (key_info >> 12) & 0x01
+        smk_message = (key_info >> 13) & 0x01
+
         version_map = {
             0: "Reserved (0)",
             1: "HMAC-MD5 + ARC4 (WPA1)",
@@ -239,29 +277,37 @@ def eapol(frame, offset):
             6: "Reserved (6)",
             7: "Reserved (7)"
         }
+        
         result.update({
             "key_descriptor_type": desc_type,
             "key_information": {
-                "key_descriptor_version": version_map.get(key_info & 0x0007),
-                "key_type": "Group/SMK" if (key_info >> 3) & 0x01 else "Pairwise",
-                "key_index": (key_info >> 4) & 0x03,
-                "install": bool((key_info >> 6) & 0x01),
-                "key_ack": bool((key_info >> 7) & 0x01),
-                "key_mic": bool((key_info >> 8) & 0x01),
-                "secure": bool((key_info >> 9) & 0x01),
-                "error": bool((key_info >> 10) & 0x01),
-                "request": bool((key_info >> 11) & 0x01),
-                "encrypted_key_data": bool((key_info >> 12) & 0x01),
-                "smk_message": bool((key_info >> 13) & 0x01),
-        },
+                "key_descriptor_version": {
+                    "value": key_descriptor_version,
+                    "description": version_map.get(key_descriptor_version, "Unknown")
+                },
+                "key_type": {
+                    "value": key_type_bit,
+                    "description": "Group/SMK" if key_type_bit else "Pairwise"
+                },
+                "key_index": key_index,
+                "install": bool(install_bit),
+                "key_ack": bool(ack_bit),
+                "key_mic": bool(mic_bit),
+                "secure": bool(secure_bit),
+                "error": bool(error_bit),
+                "request": bool(request_bit),
+                "encrypted_key_data": bool(encrypted_key_data),
+                "smk_message": bool(smk_message),
+            },
             "key_length": key_len
         })
+
         offset = new_offset
+
         unpacked, new_offset = safe_unpack("!Q32s16s8s8s16sH", frame, offset)
         if unpacked is None:
             return result, offset
         replay, nonce, iv, rsc, key_id, mic, data_len = unpacked
-        offset = new_offset
         result.update({
             "replay_counter": replay,
             "key_nonce": nonce.hex(),
@@ -271,6 +317,8 @@ def eapol(frame, offset):
             "key_mic": mic.hex(),
             "key_data_length": data_len
         })
+
+        offset = new_offset
 
         if data_len > 0 and offset + data_len <= len(frame):
             key_data = frame[offset:offset + data_len]

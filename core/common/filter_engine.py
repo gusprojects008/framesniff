@@ -83,12 +83,12 @@ def _parse_filter_expression(filter_expression: str, parsed_frame: dict) -> bool
         return value
     return value is not None
 
-def apply_filters(store_filter: str = "", display_filter: str = "", parsed_frame: dict = None):
+def apply_filters(store_filter: str = None, display_filter: str = None, parsed_frame: dict = None):
     store_filter_result = False
     display_filter_result = None
     if parsed_frame is None:
         parsed_frame = {}
-    if store_filter == "":
+    if not store_filter:
         store_filter_result = True
     else:
         store_filter_result = _parse_filter_expression(store_filter, parsed_frame)

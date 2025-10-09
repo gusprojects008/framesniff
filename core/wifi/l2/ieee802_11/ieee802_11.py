@@ -1,7 +1,7 @@
 import struct
 import time
 import json
-from core.common.useful_functions import (random_mac, safe_unpack, extract_fcs_from_frame, new_file_path, clean_hex_string)
+from core.common.useful_functions import (random_mac, safe_unpack, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string)
 from core.wifi.l2.radiotap_header import RadiotapHeader
 from core.wifi.l2.ieee802_11 import parsers
 from core.wifi.l2.ieee802_11 import ies_parsers
@@ -89,14 +89,6 @@ class IEEE802_11:
                 body["payload"] = frame[offset:flen].hex()
                 return body
         
-            def unpack(fmt, off):
-                res, new_off = safe_unpack(fmt, frame, off)
-                if res is None:
-                    return None, off
-                if len(res) == 1:
-                    return res[0], new_off
-                return res, new_off
-        
             if subtype == 0:
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
@@ -174,15 +166,15 @@ class IEEE802_11:
                 body["payload"] = frame[offset:flen].hex()
                 return body
 
-            def unpack(fmt, off):
-                res, new_off = safe_unpack(fmt, frame, off)
-                if res is None:
-                    return None, off
-                if len(res) == 1:
-                    return res[0], new_off
-                return res, new_off
-
             try:
+                if subtype == 4: # Beamforming report poll
+                   beamforming_report_poll, offset = unpack("<B", offset)
+                   body.update({
+                       "beamforming_report_poll": beamforming_report_poll,
+                   })
+                #if subtype == 5: # VHT/HE NDP Announcement
+                #if subtype == 6: # Control frame extension
+                #if subtype == 7: # Control wrapper
                 if subtype == 8:  # Block Ack Request (BAR)
                     block_ack_control, offset = unpack("<H", offset)
                     block_ack_start_seq, offset = unpack("<H", offset)
@@ -190,41 +182,24 @@ class IEEE802_11:
                         "block_ack_control": block_ack_control,
                         "block_ack_start_seq": block_ack_start_seq
                     })
-
                 elif subtype == 9:  # Block Ack (BA)
                     block_ack_bitmap, offset = unpack("<Q", offset)
                     body.update({"block_ack_bitmap": block_ack_bitmap})
-
                 elif subtype == 10:  # PS-Poll
                     aid, offset = unpack("<H", offset)
-                    body["aid"] = aid & 0x3FFF
-
-                elif subtype == 11:  # RTS
-                    duration, offset = unpack("<H", offset)
-                    body["duration"] = duration
-
-                elif subtype == 12:  # CTS
-                    duration, offset = unpack("<H", offset)
-                    body["duration"] = duration
-
+                    body.update({"aid": aid & 0x3FFF})
                 elif subtype == 13:  # ACK
-                    pass
-
+                    return body
                 elif subtype == 14:  # CF-End
-                    pass
-
+                    return body
                 elif subtype == 15:  # CF-End + CF-Ack
-                    pass
-
+                    return body
                 else:
                     body["payload"] = frame[offset:flen].hex()
-
-            except Exception as e:
-                body["parser_error"] = str(e)
+            except Exception as error:
+                body["parser_error"] = str(error)
                 body["payload"] = frame[offset:flen].hex()
-
             return body
-            pass
     
     class Data:
         class build:
@@ -232,6 +207,7 @@ class IEEE802_11:
             def basic(dst_mac: str = "ff:ff:ff:ff:ff:ff", src_mac: str = "ff:ff:ff:ff:ff:ff", payload = b""):
                 pass
 
+        @staticmethod
         def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
             body = {}
             flen = len(frame)
@@ -245,7 +221,7 @@ class IEEE802_11:
         
             llc_type = llc.get("type", "")
         
-            def unpack_parser(parser_func, off):
+            def unpack_parser(parser_func, off: int):
                 try:
                     res, new_off = parser_func(frame, off)
                     return res, new_off
@@ -253,7 +229,7 @@ class IEEE802_11:
                     return frame[off:flen].hex(), flen
         
             if llc_type == "0x888e":
-                eapol, eapol_offset = unpack_parser(parsers.eapol, llc_offset)
+                eapol, eapol_offset = parsers.eapol(frame, llc_offset)
                 body["eapol"] = eapol
             elif llc_type == "0x0800":
                 ip, ip_offset = unpack_parser(parsers.ip, llc_offset)
@@ -286,11 +262,11 @@ class IEEE802_11:
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(frame)
         fcs_bytes, frame_no_fcs = extract_fcs_from_frame(frame, rt_hdr_len)
-        #frame = frame_no_fcs
-        mac_hdr, mac_hdr_offset = parsers.mac_header(frame, rt_hdr_len, mac_vendor_resolver)
+        frame = frame_no_fcs
+        mac_hdr, mac_hdr_offset = parsers.mac_header(frame, 0, mac_vendor_resolver)
+        parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
         if not mac_hdr:
             return parsed_frame
-        parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
         try:
             protected = mac_hdr.get("protected", False)
             frame_type = mac_hdr.get("fc").get("type")
@@ -299,7 +275,8 @@ class IEEE802_11:
                 body = IEEE802_11.Management.parse(frame, mac_hdr_offset, subtype, protected)
                 parsed_frame["body"] = body
             elif frame_type == 1:
-                parsed_frame["body"] = IEEE802_11.Control.parse(frame, mac_hdr_offset, subtype, protected)
+                body = IEEE802_11.Control.parse(frame, mac_hdr_offset, subtype, protected)
+                parsed_frame["body"] = body
             elif frame_type == 2:
                 body = IEEE802_11.Data.parse(frame, mac_hdr_offset, subtype, protected)
                 parsed_frame["body"] = body
