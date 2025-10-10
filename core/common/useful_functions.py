@@ -6,6 +6,7 @@ import re
 import json
 import time
 import binascii
+import os
 from typing import Tuple, Optional
 from pathlib import Path
 
@@ -55,20 +56,25 @@ def new_file_path(base: str, ext: str, output_file: Optional[str] = None) -> Pat
 
     return candidate_path
 
-def import_dpkt():
+def import_module(module_name):
     try:
-        import dpkt
+        __import__(module_name)
         return True
-    except Exception as error:
-        print(f'''
+    except ImportError:
+        raise ImportError(f'''
     {error}
-    Error when trying to import dpkt, run the following commands:\n
+    Error when trying to import {module_name}, run the following commands:\n
     python -m venv venv
     source venv/bin/activate
-    pip install dpkt
+    pip install {module_name}
     python {' '.join(sys.argv)}
 ''')
-        return False
+
+def check_root():
+    if os.geteuid() != 0:
+       raise PermissionError(f"This program requires root permissions to run.\nRun: sudo {' '.join(sys.argv)}")
+    else:
+       return True
 
 # returns the hexadecimal contents of a dictionary of a bitmap.
 def bitmap_dict_to_hex(bitmap_dict: dict):
@@ -105,7 +111,7 @@ def safe_unpack(fmt: str, frame: bytes, offset: int):
         return None, offset
     return struct.unpack_from(fmt, frame, offset), offset + size
 
-def unpack(fmt, off):
+def unpack(fmt, frame, off):
     res, new_off = safe_unpack(fmt, frame, off)
     if res is None:
         return None, off
@@ -202,3 +208,14 @@ class MacVendorResolver:
             return None
         oui = mac_address.upper()[:8]
         return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "unknown")}
+
+def finish_capture(sock, start_time: int, captured_frames: list, output_file_path: str):
+    sock.close()
+    capture_duration = time.time() - start_time
+    if captured_frames:
+        with open(output_file_path, "w") as file:
+            json.dump(captured_frames, file, indent=2)
+        print(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
+        print(f"Saved to: {output_file_path}")
+    else:
+        print("No frames captured")

@@ -242,7 +242,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
         pairwise_dict = {}
         for i in range(pairwise_count):
             if pos + 4 <= tag_length:
-                pairwise_dict[f'pairwise_cipher_{i+1}'] = {
+                pairwise_dict[i+1] = {
                     'oui': data[pos:pos+3].hex(':'),
                     'cipher_type': data[pos+3]
                 }
@@ -258,7 +258,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
         akm_dict = {}
         for i in range(akm_count):
             if pos + 4 <= tag_length:
-                akm_dict[f'akm_suite_{i+1}'] = {
+                akm_dict[i+1] = {
                     'oui': data[pos:pos+3].hex(':'),
                     'akm_type': data[pos+3]
                 }
@@ -301,8 +301,7 @@ def rates(data: bytes, tag_length: int) -> dict:
     for i in range(min(len(data), tag_length)):
         r = data[i]
         rate_value = r & 0x7F
-        rates_info[f"rate_{i}_value"] = rate_value
-        rates_info[f"rate_{i}_basic"] = bool(r & 0x80)
+        rates_info[i+1] = {"value": rate_value, "basic": bool(r & 0x80)}
     return rates_info
 
 def tim_info(data: bytes, tag_length: int):

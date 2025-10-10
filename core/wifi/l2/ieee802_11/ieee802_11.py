@@ -84,64 +84,82 @@ class IEEE802_11:
         def parse(frame: bytes, offset: int, subtype: int, protected: bool):
             body = {}
             flen = len(frame)
-        
+
             if protected:
                 body["payload"] = frame[offset:flen].hex()
                 return body
         
             if subtype == 0:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 1:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 2:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 3:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 4:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 5:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 8:
+                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 9:
                 remaining = flen - offset
                 if remaining >= 2:
-                    aid_raw, offset = unpack("<H", offset)
+                    aid_raw, offset = unpack("<H", frame, offset)
                     body["aid"] = aid_raw & 0x3FFF
                 else:
                     body["aid"] = None
             elif subtype == 10:
-                body["reason_code"], offset = unpack("<H", offset)
+                body["reason_code"], offset = unpack("<H", frame, offset)
             elif subtype == 11:
-                body["auth_algorithm"], offset = unpack("<H", offset)
-                body["auth_sequence"], offset = unpack("<H", offset)
-                body["status_code"], offset = unpack("<H", offset)
+                body["auth_algorithm"], offset = unpack("<H", frame, offset)
+                body["auth_sequence"], offset = unpack("<H", frame, offset)
+                body["status_code"], offset = unpack("<H", frame, offset)
                 if offset < flen:
                     try:
+                        fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                        body["fixed_parameters"] = fixed_parameters
                         tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
                         body["extra"] = frame[offset:flen].hex()
             elif subtype == 12:
-                body["reason_code"], offset = unpack("<H", offset)
+                body["reason_code"], offset = unpack("<H", frame, offset)
             elif subtype == 13:
                 if offset < flen:
-                    body["category"], offset = unpack("B", offset)
+                    body["category"], offset = unpack("B", frame, offset)
                 else:
                     body["category"] = None
                 if offset < flen:
-                    body["action"], offset = unpack("B", offset)
+                    body["action"], offset = unpack("B", frame, offset)
                 else:
                     body["action"] = None
                 if offset < flen:
                     try:
+                        fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                        body["fixed_parameters"] = fixed_parameters
                         tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
@@ -168,7 +186,7 @@ class IEEE802_11:
 
             try:
                 if subtype == 4: # Beamforming report poll
-                   beamforming_report_poll, offset = unpack("<B", offset)
+                   beamforming_report_poll, offset = unpack("<B", frame, offset)
                    body.update({
                        "beamforming_report_poll": beamforming_report_poll,
                    })
@@ -176,17 +194,17 @@ class IEEE802_11:
                 #if subtype == 6: # Control frame extension
                 #if subtype == 7: # Control wrapper
                 if subtype == 8:  # Block Ack Request (BAR)
-                    block_ack_control, offset = unpack("<H", offset)
-                    block_ack_start_seq, offset = unpack("<H", offset)
+                    block_ack_control, offset = unpack("<H", frame, offset)
+                    block_ack_start_seq, offset = unpack("<H", frame, offset)
                     body.update({
                         "block_ack_control": block_ack_control,
                         "block_ack_start_seq": block_ack_start_seq
                     })
                 elif subtype == 9:  # Block Ack (BA)
-                    block_ack_bitmap, offset = unpack("<Q", offset)
+                    block_ack_bitmap, offset = unpack("<Q", frame, offset)
                     body.update({"block_ack_bitmap": block_ack_bitmap})
                 elif subtype == 10:  # PS-Poll
-                    aid, offset = unpack("<H", offset)
+                    aid, offset = unpack("<H", frame, offset)
                     body.update({"aid": aid & 0x3FFF})
                 elif subtype == 13:  # ACK
                     return body
@@ -221,24 +239,17 @@ class IEEE802_11:
         
             llc_type = llc.get("type", "")
         
-            def unpack_parser(parser_func, off: int):
-                try:
-                    res, new_off = parser_func(frame, off)
-                    return res, new_off
-                except Exception:
-                    return frame[off:flen].hex(), flen
-        
             if llc_type == "0x888e":
                 eapol, eapol_offset = parsers.eapol(frame, llc_offset)
                 body["eapol"] = eapol
             elif llc_type == "0x0800":
-                ip, ip_offset = unpack_parser(parsers.ip, llc_offset)
+                ip, ip_offset = parsers.ip(frame, llc_offset)
                 body["ip"] = ip
             elif llc_type == "0x0806":
-                arp, arp_offset = unpack_parser(parsers.arp, llc_offset)
+                arp, arp_offset = parsers.arp(frame, llc_offset)
                 body["arp"] = arp
             elif llc_type == "0x86dd":
-                ipv6, ipv6_offset = unpack_parser(parsers.ipv6, llc_offset)
+                ipv6, ipv6_offset = parsers.ipv6(frame, llc_offset)
                 body["ipv6"] = ipv6
             elif llc_type in ["0x888f", "0x890d", "0x88b4", "0x88b5", "0x88b6", "0x8902", "0x88c0", "0x8903"]:
                 body_name = {

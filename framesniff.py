@@ -6,6 +6,7 @@ import argparse
 #sys.path.append(str(modules_path))
 
 from core.user_operations import Operations
+from core.common.useful_functions import check_root
 
 operations = Operations()
 
@@ -78,8 +79,8 @@ def main():
     monitor_scan_parser = subparsers.add_parser("monitor-scan", help="scans nearby APs and devices DLT_IEEE802_11_RADIO only")
     monitor_scan_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
     monitor_scan_parser.add_argument("--channel-hopping", default=True, help="Channel hopping, default True.")
-    monitor_scan_parser.add_argument("--hopping-interval", default=None, help="Channel hopping interval, default 2.0 seconds.")
-    monitor_scan_parser.add_argument("--bands", default=None, help="Channel hopping bands, default 2.4.")
+    monitor_scan_parser.add_argument("--hopping-interval", default=4.0, help="Channel hopping interval, default 2.0 seconds.")
+    monitor_scan_parser.add_argument("--bands", default=["2.4", "5"], help="Channel hopping bands, default 2.4.")
     monitor_scan_parser.add_argument("--timeout", default=None, help="Scan timeout, default None.")
 
     args = parser.parse_args()
@@ -109,7 +110,7 @@ def main():
             count=args.count,
             timeout=args.timeout,
             display_interval=args.display_interval,
-            output_file=args.output
+            output_path=args.output
         )
     elif args.command == "eapol-capture":
         operations.eapol_capture(
@@ -132,6 +133,7 @@ def main():
     elif args.command == "send-raw":
          operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
     elif args.command == "monitor-scan":
+         check_root()
          operations.monitor_scan(args.ifname, args.channel_hopping, args.hopping_interval, args.bands, args.timeout)
 
 if __name__ == "__main__":

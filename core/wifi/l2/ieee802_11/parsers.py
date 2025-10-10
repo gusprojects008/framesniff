@@ -3,7 +3,7 @@ import struct
 import binascii
 import re
 import socket
-from core.common.useful_functions import (safe_unpack, bytes_for_mac)
+from core.common.useful_functions import (safe_unpack, bytes_for_mac, bitmap_value_for_dict)
 from core.wifi.l2.ieee802_11 import ies_parsers
 
 def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict, int):
@@ -127,19 +127,22 @@ def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict,
         mac_data['error'] = str(error)
         return mac_data, offset
 
+def fixed_parameters(frame: bytes, offset: int) -> (dict, int):
+    fixed_parameters = {}
+    result, offset = safe_unpack("<QHH", frame, offset)
+    if result is None:
+        return fixed_parameters, offset
+    timestamp, beacon_interval, capabilities_information = result
+    fixed_parameters['timestamp'] = timestamp
+    fixed_parameters['beacon_interval'] = beacon_interval
+    capabilities_information_list = ["ess capabilities", "ibss status", "reserved1", "reserved2", "privacy", "short preamble", "critical update flag", "nontransmitted bssid critical update flag", "spectrum management", "qos", "short slot time", "automatic power save delivery", "radio measurement", "epd", "reserved3", "reserved4"]
+    fixed_parameters['capabilities_information'] = bitmap_value_for_dict(capabilities_information, capabilities_information_list)
+    return fixed_parameters, offset
+
 def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
     tagged_parameters = {
     }
     try:
-        result, offset = safe_unpack("<QHH", frame, offset)
-        if result is None:
-            return tagged_parameters, offset
-
-        timestamp, beacon_interval, capabilities_information = result
-        tagged_parameters['timestamp'] = timestamp
-        tagged_parameters['beacon_interval'] = beacon_interval
-        tagged_parameters['capabilities_information'] = capabilities_information
-
         while offset < len(frame):
             result, offset = safe_unpack("<BB", frame, offset)
             if result is None:
@@ -235,7 +238,7 @@ def eapol(frame, offset):
                 vendor_result = ies_parsers.vendor_specific_ie(elem_data)
                 result.update(vendor_result)
             elif elem_id == 48:  # RSN IE
-                result["rsn_information"] = ies_parsers.rsn_information(elem_data)
+                result["rsn_information"] = ies_parsers.rsn_information(elem_data, elem_len)
             pos += elem_len
         return result
     try:

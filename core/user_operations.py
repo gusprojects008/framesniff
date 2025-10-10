@@ -10,12 +10,11 @@ import traceback
 import asyncio
 import shlex
 import traceback
-import curses
 import os
 import logging
 from typing import Optional, Tuple, List
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
-from core.common.useful_functions import (import_dpkt, new_file_path, iter_packets_from_json, MacVendorResolver)
+from core.common.useful_functions import (import_module, new_file_path, iter_packets_from_json, MacVendorResolver, check_root, finish_capture)
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
@@ -195,57 +194,69 @@ class Operations:
                 _print_network_summary(block, network_count)
             
             print(f"\nTotal networks found: {network_count}")
-   
+
     @staticmethod
     def sniff(link_type: str = "wifi", layer: int = 2, standard: str = "802.11", 
               ifname: str = None, store_filter: str = None, display_filter: str = None, 
               count: Optional[int] = None, timeout: Optional[float] = None, 
-              display_interval: float = 0.0, output_file: Optional[str] = None, 
-              packet_callback: Optional[callable] = None):
-
+              display_interval: float = 0.0, store_callback: callable = None,
+              display_callback: callable = None, stop_event: threading.Event = None,
+              output_path: str = None
+          ):
+    
         mac_vendor_resolver = MacVendorResolver("./core/common/mac-vendors-export.json")
         parser = None
-
+    
         if link_type == "wifi" and layer == 2 and standard == "802.11":
             parser = IEEE802_11.frames_parser
-
+    
         if parser is None:
             raise ValueError("Unsupported sniff parameters")
-
+    
         sock = create_raw_socket(ifname)
-        output_file_path = new_file_path("framesniff-capture", ".json", output_file)
+        output_file_path = new_file_path("framesniff-capture", ".json", output_path)
         captured_frames = []
         frame_counter = 0
         last_display_time = 0.0
-
+    
         try:
             if timeout:
                 sock.settimeout(timeout)
-
+    
             print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
+            print(f"Store filter: {store_filter}")
+            print(f"Display filter: {display_filter}")
             start_time = time.time()
-
+    
             while True:
+                if stop_event and stop_event.is_set():
+                    print("Stop event received, finishing capture...")
+                    break
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = parser(frame, mac_vendor_resolver)
-
                     if parsed_frame is None:
                         continue
-
+                    
                     parsed_frame["counter"] = frame_counter
                     parsed_frame["raw"] = frame.hex()
-
+                    
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
-
+                    
+                    # DEBUG: Verificar o que está sendo retornado
+                    if frame_counter % 10 == 0:  # A cada 10 frames
+                        print(f"Frame {frame_counter}: store_result={store_result}, display_result={display_result is not None}")
+                    
                     if store_result:
                         frame_counter += 1
                         captured_frames.append(parsed_frame)
-
-                    if packet_callback and store_result:
-                        packet_callback(parsed_frame)
-
-                    if display_result:
+                        if store_callback:
+                            store_callback(parsed_frame)
+                    
+                    if display_callback and display_result:
+                        display_callback(display_result)
+                    
+                    if display_result and not display_callback:
                         current_time = time.time()
                         if store_result and current_time - last_display_time >= display_interval:
                             try:
@@ -253,10 +264,10 @@ class Operations:
                             except Exception:
                                 print(f"[{frame_counter}] {display_result}")
                             last_display_time = current_time
-
+                    
                     if count is not None and frame_counter >= count:
                         break
-
+                        
                 except socket.timeout:
                     print("Capture timeout reached")
                     break
@@ -267,22 +278,19 @@ class Operations:
                     print(f"Error receiving frame: {error}")
                     continue
         finally:
-            sock.close()
-            capture_duration = time.time() - start_time
-            if captured_frames:
-                with open(output_file_path, "w") as file:
-                    json.dump(captured_frames, file, indent=2)
-                print(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
-                print(f"Saved to: {output_file_path}")
-            else:
-                print("No frames captured")
+             finish_capture(sock, start_time, captured_frames, output_file_path)   
 
     @staticmethod
     def set_frequency(ifname: str, frequency_mhz: str, channel: Optional[int] = None, timeout: float = 2.0) -> bool:
         frequency_mhz = str(frequency_mhz)
         attempts = [["sudo", "iw", ifname, "set", "freq", frequency_mhz]]
         if channel is not None:
-            attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", str(int(channel))])
+            try:
+                ch_str = str(int(channel))
+                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", ch_str])
+            except Exception as e:
+                logging.error(f"Invalid channel value: {channel} ({e})")
+                return False
         last_err = None
         for cmd in attempts:
             try:
@@ -313,292 +321,79 @@ class Operations:
         return channel_map
 
     @staticmethod
-    def channel_hopper_sync(ifname: str, interval: float = 2.0, bands: Optional[List[str]] = None, callback: Optional[callable] = None, stop_event=None):
+    def channel_hopper_sync(ifname: str, channel_hopping_interval: float = 4.0, bands: [str] = ["2.4", "5"], callback: Optional[callable] = None, stop_event=None):
         bands = bands or ['2.4', '5']
         all_channels = Operations.get_channels(bands)
         channels_to_scan = []
+        
         for band in bands:
             if band in all_channels and all_channels[band]:
                 for channel in all_channels[band]:
-                    if band == '2.4':
-                        freq = 2407 + (channel * 5)
-                    else:
-                        freq = 5000 + (channel * 5)
-                    channels_to_scan.append((channel, freq, band))
-
+                    if channel is None:
+                        continue
+                    try:
+                        channel_int = int(channel)
+                        if band == '2.4':
+                            freq = 2407 + (channel_int * 5)
+                        else:
+                            freq = 5000 + (channel_int * 5)
+                        channels_to_scan.append((channel_int, freq, band))
+                    except (TypeError, ValueError) as e:
+                        logging.warning(f"Invalid channel: {e}")
+                        continue
+        
         if not channels_to_scan:
             logging.warning("No channels to scan")
             return
-
+        
         idx = 0
         try:
             while True:
                 if stop_event is not None and stop_event.is_set():
                     break
 
+                if not isinstance(idx, int) or idx is None:
+                    logging.error(f"Invalid idx value: {idx}, resetting to 0")
+                    idx = 0
+                    continue
+                    
+                if idx >= len(channels_to_scan) or idx < 0:
+                    idx = 0
+                    
                 ch, freq, band = channels_to_scan[idx]
+                
                 success = Operations.set_frequency(ifname, str(freq), channel=ch)
-
                 if success:
                     logging.info(f"Channel changed {ch} {freq}/{band}")
+                else:
+                    logging.error(f"Channel {ch} {freq}/{band}")
 
                 if callback:
                     try:
                         callback(ch, band)
                     except Exception as e:
                         logging.error(f"Channel hopper callback error: {e}")
-
-                idx = (idx + 1) % len(channels_to_scan)
-                time.sleep(interval)
+                try:
+                    next_idx = (idx + 1) % len(channels_to_scan)
+                    if not isinstance(next_idx, int) or next_idx is None:
+                        logging.error(f"Invalid next_idx: {next_idx}, resetting to 0")
+                        idx = 0
+                    else:
+                        idx = next_idx
+                except Exception as e:
+                    logging.error(f"Error calculating next index: {e}")
+                    idx = 0
+    
+                time.sleep(channel_hopping_interval)
+                
         except KeyboardInterrupt:
             logging.info("Channel hopping stopped by KeyboardInterrupt")
         except Exception as e:
             logging.error(f"Unexpected error in channel hopper: {e}")
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            logging.error(f"Current state - idx: {idx}, type: {type(idx)}, channels length: {len(channels_to_scan)}")
         finally:
             logging.info("Hopper finished.")
-
-    @staticmethod
-    def monitor_scan(ifname: str = "wlan0", channel_hop: bool = True,
-                     hop_interval: float = 2.0, bands: Optional[List[str]] = None,
-                     timeout: Optional[float] = None):
-
-        frame_queue = queue.Queue()
-        error_queue = queue.Queue()
-        networks, clients, associations = {}, {}, {}
-        current_channel, current_band = 1, "2.4"
-        frames_processed = 0
-        start_time = time.time()
-        error_message = ""
-        running = True
-
-        def process_errors():
-            nonlocal error_message
-            try:
-                while not error_queue.empty():
-                    error_msg = error_queue.get_nowait()
-                    error_message = error_msg
-                    logging.error(error_msg)
-            except Exception:
-                logging.exception("Error processing errors")
-
-        def update_current_channel(channel, band):
-            nonlocal current_channel, current_band
-            current_channel = channel
-            current_band = band
-
-        def start_channel_hopper_thread():
-            def hopper_thread():
-                print("Channel hopper thread starting...")
-                try:
-                    Operations.channel_hopper_sync(
-                        ifname="wlan0",
-                        interval=2.0,
-                        bands=['2.4', '5'],
-                        callback=update_current_channel
-                    )
-                except Exception as e:
-                    logging.error(f"Channel hopper thread error: {e}\n{traceback.format_exc()}")
-        
-            thread = threading.Thread(target=hopper_thread, daemon=True)
-            thread.name = "channel_hopper"
-            thread.start()
-            print(f"Channel hopper thread started: {thread.name}")
-            print(f"Active threads: {threading.active_count()}")
-            for t in threading.enumerate():
-                print(f"   - {t.name} (daemon: {t.daemon})")
-
-        def detect_security(tagged_params):
-            try:
-                if not tagged_params:
-                    return {'enc': 'UNKN', 'cipher': '', 'auth': ''}
-                capabilities = tagged_params.get('capabilities_information', 0)
-                rsn_info = tagged_params.get('rsn_information')
-                vendor_specific = tagged_params.get('vendor_specific', {})
-                if rsn_info:
-                    akm_list = rsn_info.get('akm_suite_list', [])
-                    cipher_list = rsn_info.get('pairwise_cipher_list', [])
-                    auth = "PSK"
-                    for akm in akm_list:
-                        if akm.get('akm_type') in [1,3,5,12]:
-                            auth = "MGT"
-                        elif akm.get('akm_type') in [8,9,18]:
-                            return {'enc': 'WPA3', 'cipher': 'GCMP', 'auth': 'SAE'}
-                    cipher = "CCMP"
-                    for c in cipher_list:
-                        if c.get('cipher_type') == 2:
-                            cipher = "TKIP"
-                    return {'enc': 'WPA2', 'cipher': cipher, 'auth': auth}
-                for oui, vendors in vendor_specific.items():
-                    if oui == '00:50:f2' and vendors.get(1):
-                        return {'enc': 'WPA', 'cipher': 'TKIP', 'auth': 'PSK'}
-                return {'enc': 'WEP', 'cipher': 'WEP', 'auth': ''}
-            except Exception:
-                return {'enc': 'UNKN', 'cipher': '', 'auth': ''}
-
-        def process_frame(parsed_frame):
-            nonlocal frames_processed
-            try:
-                mac_hdr = parsed_frame.get('mac_hdr')
-                rt_hdr = parsed_frame.get('rt_hdr', {})
-                signal = rt_hdr.get('dbm_antenna_signal')
-                if not mac_hdr or signal is None:
-                    return
-
-                fc = mac_hdr.get('fc', {})
-                subtype_name = fc.get('subtype_name')
-                bssid_info = mac_hdr.get('bssid')
-                source_info = mac_hdr.get('mac_src')
-
-                if subtype_name in ["Beacon", "Probe Response"] and bssid_info:
-                    bssid = bssid_info.get('mac')
-                    tagged_params = parsed_frame.get('body', {}).get('tagged_parameters', {})
-                    if bssid and bssid != 'ff:ff:ff:ff:ff:ff':
-                        if bssid not in networks:
-                            networks[bssid] = {
-                                'ssid': tagged_params.get('ssid', '[Hidden]'),
-                                'channel': tagged_params.get('current_channel', current_channel),
-                                'signal': -100,
-                                'beacons': 0,
-                                'vendor': bssid_info.get('vendor', 'Unknown'),
-                                'last_seen': time.time(),
-                                'security': detect_security(tagged_params)
-                            }
-                        net = networks[bssid]
-                        net['beacons'] += 1
-                        net['signal'] = max(net['signal'], signal)
-                        net['last_seen'] = time.time()
-                        if tagged_params.get('ssid'):
-                            net['ssid'] = tagged_params['ssid']
-
-                if source_info and bssid_info:
-                    client_mac = source_info.get('mac')
-                    ap_mac = bssid_info.get('mac')
-                    if client_mac and ap_mac and client_mac != ap_mac and client_mac != 'ff:ff:ff:ff:ff:ff':
-                        if client_mac not in clients:
-                            clients[client_mac] = {
-                                'vendor': source_info.get('vendor', 'Unknown'),
-                                'signal': -100,
-                                'frames': 0,
-                                'last_seen': time.time()
-                            }
-                        cli = clients[client_mac]
-                        cli['frames'] += 1
-                        cli['signal'] = max(cli['signal'], signal)
-                        cli['last_seen'] = time.time()
-                        associations[client_mac] = ap_mac
-                frames_processed += 1
-            except Exception as e:
-                error_queue.put(f"Frame processing error: {e}")
-                logging.exception("Frame processing error")
-
-        def start_sniff_thread():
-            def sniff_thread():
-                try:
-                    def packet_callback(parsed_frame):
-                        try:
-                            frame_queue.put(parsed_frame)
-                        except Exception:
-                            error_queue.put("Packet callback error")
-                            logging.exception("Packet callback error")
-                    Operations.sniff(
-                        ifname=ifname,
-                        store_filter="mac_hdr.fc.type == 0 or mac_hdr.fc.type == 2",
-                        display_filter=None,
-                        display_interval=0,
-                        timeout=timeout,
-                        packet_callback=packet_callback
-                    )
-                except Exception:
-                    error_msg = traceback.format_exc()
-                    error_queue.put(error_msg)
-                    logging.exception("Sniff thread error")
-            thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
-            thread.start()
-            logging.info(f"Sniff thread started: {thread.name}")
-
-        def process_queued_frames():
-            processed_count = 0
-            while not frame_queue.empty() and processed_count < 50:
-                try:
-                    process_frame(frame_queue.get_nowait())
-                    processed_count += 1
-                except queue.Empty:
-                    break
-
-        def curses_ui(stdscr):
-            nonlocal running
-            curses.curs_set(0)
-            stdscr.timeout(100)
-            if curses.has_colors():
-                curses.start_color()
-                curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-                curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
-                curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-                curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
-                curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-
-            while running:
-                process_queued_frames()
-                process_errors()
-                key = stdscr.getch()
-                if key in (ord('q'), ord('Q')):
-                    running = False
-                    break
-                stdscr.clear()
-                height, width = stdscr.getmaxyx()
-                duration = time.time() - start_time
-                hop_status = "ON" if channel_hop else "OFF"
-                header = f"Network Scanner | Chan: {current_channel}({current_band}GHz) | Frames: {frames_processed} | Networks: {len(networks)} | Clients: {len(clients)} | Time: {duration:.0f}s | Hop: {hop_status}"
-                stdscr.addstr(0, 0, header[:width-1], curses.A_REVERSE)
-
-                start_row = 2 if error_message else 1
-                if error_message:
-                    stdscr.addstr(1, 0, f"ERROR: {error_message}"[:width-1], curses.color_pair(1) | curses.A_BOLD)
-
-                networks_start = start_row
-                stdscr.addstr(networks_start, 0, "NETWORKS:", curses.A_BOLD)
-                networks_start += 1
-                header_net = "BSSID              CH PWR  BCNS ESSID              ENC     CLIENTS VENDOR"
-                stdscr.addstr(networks_start, 0, header_net[:width-1], curses.A_UNDERLINE)
-                networks_start += 1
-
-                for i, (bssid, info) in enumerate(sorted(networks.items(), key=lambda x: x[1]['signal'], reverse=True)[:10]):
-                    if networks_start + i >= height - 5:
-                        break
-                    client_count = sum(1 for client, ap in associations.items() if ap == bssid)
-                    security = info['security']
-                    row = f"{bssid[:17]:17} {info['channel']:2} {info['signal']:3} {info['beacons']:5} {info['ssid'][:18]:18} {security['enc']:7} {client_count:7} {info['vendor'][:15]:15}"
-                    stdscr.addstr(networks_start + i, 0, row[:width-1])
-
-                clients_start = networks_start + 11
-                stdscr.addstr(clients_start, 0, "CLIENTS:", curses.A_BOLD)
-                clients_start += 1
-                header_cli = "MAC               PWR  FRAMES ESSID              VENDOR"
-                stdscr.addstr(clients_start, 0, header_cli[:width-1], curses.A_UNDERLINE)
-                clients_start += 1
-
-                for i, (client_mac, info) in enumerate(sorted(clients.items(), key=lambda x: x[1]['signal'], reverse=True)[:5]):
-                    if clients_start + i >= height - 1:
-                        break
-                    associated_ap = associations.get(client_mac, '')
-                    ssid = networks.get(associated_ap, {}).get('ssid', '(not associated)')
-                    row = f"{client_mac[:17]:17} {info['signal']:3} {info['frames']:6} {ssid[:18]:18} {info['vendor'][:15]:15}"
-                    stdscr.addstr(clients_start + i, 0, row[:width-1])
-
-                #if height > 0:
-                    #stdscr.addstr(height-1, 10, "Press 'q' to quit"[:width-1], curses.A_REVERSE)
-                stdscr.refresh()
-                time.sleep(0.1)
-
-        if os.geteuid() != 0:
-            logging.warning("Not running as root - may not capture packets")
-
-        start_sniff_thread()
-        if channel_hop:
-            start_channel_hopper_thread()
-        curses.wrapper(curses_ui)
-        running = False
-        logging.info("Network Scanner finished")
 
     @staticmethod
     def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
@@ -606,10 +401,8 @@ class Operations:
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_file: str, output_path: str):
-        if not import_dpkt():
-            sys.exit(1)
-
-        import dpkt
+        if import_module("dpkt"):
+           import dpkt
 
         output_path = new_file_path("packets", ".pcap", output_path)
 
@@ -654,8 +447,11 @@ class Operations:
                     except Exception as error:
                         print(f"Unexpected error: {error}")
                         break
-    
         finally:
             sock.close()
-if __name__ == "__main__":
-   Operations.monitor_scan("wlan0")
+
+    @staticmethod
+    def monitor_scan(ifname: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, bands: [str] = ["2.4", "5"], timeout: float = None):
+        if import_module("textual") and check_root():
+            from core.tui.monitor_scan import monitor_scan
+        monitor_scan(ifname=ifname, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, bands=bands, timeout=timeout, logging=logging, Operations=Operations)
