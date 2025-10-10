@@ -300,7 +300,7 @@ def rates(data: bytes, tag_length: int) -> dict:
     rates_info = {}
     for i in range(min(len(data), tag_length)):
         r = data[i]
-        rate_value = r & 0x7F
+        rate_value = (r & 0x7F) / 2
         rates_info[i+1] = {"value": rate_value, "basic": bool(r & 0x80)}
     return rates_info
 

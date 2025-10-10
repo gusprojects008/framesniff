@@ -7,6 +7,7 @@ import json
 import time
 import binascii
 import os
+import subprocess
 from typing import Tuple, Optional
 from pathlib import Path
 
@@ -39,42 +40,15 @@ def freq_converter(freq_unit: tuple, to_unit: str):
     else:
         raise ValueError(f"Destiny unit invalid: {to_unit}. Use 'kHz', 'MHz' ou 'GHz'")
 
-def new_file_path(base: str, ext: str, output_file: Optional[str] = None) -> Path:
-    base = Path(base)
-    i = 0
-    if output_file:
-        candidate_path = Path(f"{output_file}")
+def new_file_path(base: str = None, ext: str = None, filename: str = None) -> Path:
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    if not filename:
+       if base and ext:
+           return Path(f"{base}-{timestamp}{ext}")
+       else:
+           return Path(timestamp)
     else:
-        candidate_path = Path(f"{base}{i}{ext}")
-
-    while candidate_path.exists():
-        i += 1
-        if output_file:
-            candidate_path = Path(f"{i}-{output_file}")
-        else:
-            candidate_path = Path(f"{base}{i}{ext}")
-
-    return candidate_path
-
-def import_module(module_name):
-    try:
-        __import__(module_name)
-        return True
-    except ImportError:
-        raise ImportError(f'''
-    {error}
-    Error when trying to import {module_name}, run the following commands:\n
-    python -m venv venv
-    source venv/bin/activate
-    pip install {module_name}
-    python {' '.join(sys.argv)}
-''')
-
-def check_root():
-    if os.geteuid() != 0:
-       raise PermissionError(f"This program requires root permissions to run.\nRun: sudo {' '.join(sys.argv)}")
-    else:
-       return True
+       return Path(f"{timestamp}-{filename}")
 
 # returns the hexadecimal contents of a dictionary of a bitmap.
 def bitmap_dict_to_hex(bitmap_dict: dict):
@@ -186,7 +160,7 @@ def extract_fcs_from_frame(frame: bytes, radiotap_len: int) -> Tuple[Optional[by
 
 class MacVendorResolver:
     _vendor_map = None
-    def __init__(self, filepath='~/Downloads/framesniff/core/common/mac-vendors-export.json'):
+    def __init__(self, filepath: str = '~/Downloads/framesniff/core/common/mac-vendors-export.json'):
         if MacVendorResolver._vendor_map is None:
             print("INFO: Loading MAC vendors file for the first time...")
             try:
@@ -207,15 +181,57 @@ class MacVendorResolver:
         if not self._vendor_map or not mac_address:
             return None
         oui = mac_address.upper()[:8]
-        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "unknown")}
+        return {"mac": mac_address, "vendor": self._vendor_map.get(oui)}
+        #return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "unknown")}
 
 def finish_capture(sock, start_time: int, captured_frames: list, output_file_path: str):
     sock.close()
     capture_duration = time.time() - start_time
+    print(f"DEBUG: Finish capture called with {len(captured_frames)} frames")  # DEBUG
+    print(f"DEBUG: Output path: {output_file_path}")  # DEBUG
     if captured_frames:
-        with open(output_file_path, "w") as file:
-            json.dump(captured_frames, file, indent=2)
-        print(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
-        print(f"Saved to: {output_file_path}")
+        try:
+            with open(output_file_path, "w") as file:
+                json.dump(captured_frames, file, indent=2)
+            print(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
+            print(f"Saved to: {output_file_path}")
+        except Exception as e:
+            print(f"Error saving file: {e}")
     else:
         print("No frames captured")
+
+def import_module(module_name):
+    try:
+        __import__(module_name)
+    except ImportError:
+        raise ImportError(f'''
+    Error when trying to import {module_name}, run the following commands:\n
+    python -m venv venv
+    source venv/bin/activate
+    pip install {module_name}
+    python {' '.join(sys.argv)}
+''')
+
+def check_root():
+    if os.geteuid() != 0:
+       raise PermissionError(f"This program requires root permissions to run.\nRun: sudo {' '.join(sys.argv)}")
+
+def check_interface_mode(ifname: str, mode: str) -> bool:
+    try:
+        result = subprocess.run(['iw', 'dev', ifname, 'info'], 
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode != 0:
+            raise RuntimeError(f"Interface {ifname} not found or iw command failed")
+        match = re.search(r'type\s+(\w+)', result.stdout)
+        if match:
+            if match.group(1).lower() == mode:
+               return True
+            else:
+                raise Exception(f"error, set the interface to {mode}:\n RUN: sudo framesniff.py set-{mode} -i {ifname}")
+        raise RuntimeError(f"Could not determine interface type for {ifname}")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("iw command timed out")
+    except FileNotFoundError:
+        raise RuntimeError("iw command not found")
+    except Exception as error:
+        raise RuntimeError(f"Error checking interface mode: {error}")

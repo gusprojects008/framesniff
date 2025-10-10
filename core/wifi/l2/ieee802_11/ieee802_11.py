@@ -298,14 +298,14 @@ class IEEE802_11:
         return parsed_frame
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000", message_pair: int = 0):
-        if not input_file:
+    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000", message_pair: int = 0):
+        if not input_filename:
             raise ValueError("Input file must be provided.")
     
-        output_file = new_file_path("hashcat", ".22000", output_file)
+        output_filename = str(new_file_path("hashcat", ".22000", output_filename))
         essid = ssid.encode("utf-8", errors="ignore").hex()
     
-        with open(input_file, "r") as f:
+        with open(input_filename, "r") as f:
             data = json.load(f)
 
         if bitmask_message_pair == 1:
@@ -322,7 +322,7 @@ class IEEE802_11:
             eapol_msg2_hex = None
             seen = 0
     
-            for hexstr, _ in iter_packets_from_json(input_file):
+            for hexstr, _ in iter_packets_from_json(input_filename):
                 if seen == 0:
                     eapol_msg1_hex = hexstr
                 elif seen == 1:
@@ -374,7 +374,7 @@ class IEEE802_11:
     
             line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair_hex}"
     
-            with open(output_file, "w", newline="\n") as f:
+            with open(output_filename, "w", newline="\n") as f:
                 f.write(line)
 
             print(line)

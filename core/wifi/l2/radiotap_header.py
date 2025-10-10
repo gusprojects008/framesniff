@@ -159,7 +159,7 @@ class RadiotapHeader:
                 return {"error": "Frame too short for Radiotap header"}, 0
             rth_version, rth_pad, rth_length = unpacked
 
-            radiotap_info.update({"version": rth_version, "length": rth_length})
+            radiotap_info.update({"version": rth_version, "pad": rth_pad, "length": rth_length})
 
             if rth_length > len(frame):
                 return {"error": "Radiotap length exceeds frame size"}, rth_length

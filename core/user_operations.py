@@ -14,17 +14,19 @@ import os
 import logging
 from typing import Optional, Tuple, List
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
-from core.common.useful_functions import (import_module, new_file_path, iter_packets_from_json, MacVendorResolver, check_root, finish_capture)
+from core.common.useful_functions import (import_module, new_file_path, iter_packets_from_json, MacVendorResolver, check_root, finish_capture, check_interface_mode)
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
+
+log_filename = str(new_file_path("framesniff", ".log"))
 
 logging.basicConfig(
     level=logging.INFO,
     format='[%(levelname)s] %(message)s',
-    handlers=[logging.FileHandler("network_scanner.log"), logging.StreamHandler()]
+    handlers=[logging.FileHandler(log_filename), logging.StreamHandler()]
 )
 
-file_handler = logging.FileHandler("network_scanner.log")
+file_handler = logging.FileHandler(log_filename)
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
 
@@ -81,7 +83,7 @@ class Operations:
             print(f"error configure {ifname} to station mode: {error}")
 
     @staticmethod
-    def scan_station_mode(ifname: str = None, output_path: str = None):
+    def scan_station_mode(ifname: str = None, output_filename: str = None):
         print(" In development, see https://github.com/gusprojects008/wnlpy\n")
     
         if not ifname:
@@ -180,10 +182,10 @@ class Operations:
             
             print(f"└{'─' * 60}")
     
-        output_path = str(new_file_path("scan-station-result", ".txt", output_path))
+        output_filename = str(new_file_path("scan-station-result", ".txt", output_filename))
     
         if result.stdout:
-            with open(output_path, "w") as file:
+            with open(output_filename, "w") as file:
                 file.write(result.stdout)
         
             blocks = result.stdout.strip().split("\nBSS ")
@@ -201,8 +203,11 @@ class Operations:
               count: Optional[int] = None, timeout: Optional[float] = None, 
               display_interval: float = 0.0, store_callback: callable = None,
               display_callback: callable = None, stop_event: threading.Event = None,
-              output_path: str = None
+              output_filename: str = None
           ):
+
+        check_root()
+        check_interface_mode(ifname, "monitor")
     
         mac_vendor_resolver = MacVendorResolver("./core/common/mac-vendors-export.json")
         parser = None
@@ -214,7 +219,8 @@ class Operations:
             raise ValueError("Unsupported sniff parameters")
     
         sock = create_raw_socket(ifname)
-        output_file_path = new_file_path("framesniff-capture", ".json", output_path)
+        
+        output_filename = new_file_path("framesniff-capture", ".json", output_filename)
         captured_frames = []
         frame_counter = 0
         last_display_time = 0.0
@@ -226,12 +232,14 @@ class Operations:
             print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
             print(f"Store filter: {store_filter}")
             print(f"Display filter: {display_filter}")
+            print(f"Output path: {output_filename}")
             start_time = time.time()
     
             while True:
                 if stop_event and stop_event.is_set():
                     print("Stop event received, finishing capture...")
                     break
+                    
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = parser(frame, mac_vendor_resolver)
@@ -243,19 +251,13 @@ class Operations:
                     
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
                     
-                    # DEBUG: Verificar o que está sendo retornado
-                    if frame_counter % 10 == 0:  # A cada 10 frames
-                        print(f"Frame {frame_counter}: store_result={store_result}, display_result={display_result is not None}")
-                    
                     if store_result:
                         frame_counter += 1
                         captured_frames.append(parsed_frame)
                         if store_callback:
                             store_callback(parsed_frame)
-                    
                     if display_callback and display_result:
                         display_callback(display_result)
-                    
                     if display_result and not display_callback:
                         current_time = time.time()
                         if store_result and current_time - last_display_time >= display_interval:
@@ -264,21 +266,21 @@ class Operations:
                             except Exception:
                                 print(f"[{frame_counter}] {display_result}")
                             last_display_time = current_time
-                    
                     if count is not None and frame_counter >= count:
                         break
-                        
                 except socket.timeout:
-                    print("Capture timeout reached")
-                    break
+                    continue
                 except KeyboardInterrupt:
                     print("Capture interrupted by user")
                     break
                 except Exception as error:
                     print(f"Error receiving frame: {error}")
                     continue
+        except Exception as error:
+            print(f"Unexpected error in sniff: {error}")
         finally:
-             finish_capture(sock, start_time, captured_frames, output_file_path)   
+            print(f"Finishing capture, saving {len(captured_frames)} frames...")
+            finish_capture(sock, start_time, captured_frames, output_filename)
 
     @staticmethod
     def set_frequency(ifname: str, frequency_mhz: str, channel: Optional[int] = None, timeout: float = 2.0) -> bool:
@@ -396,43 +398,40 @@ class Operations:
             logging.info("Hopper finished.")
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_file: str = None, output_file: str = "hashcat.22000") -> str:
-        IEEE802_11.generate_22000(bitmask_message_pair, ssid, input_file, output_file)
+    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_file: str = "hashcat.22000") -> str:
+        IEEE802_11.generate_22000(bitmask_message_pair, ssid, input_filename, output_file)
 
     @staticmethod
-    def write_pcap_from_json(dlt: str, input_file: str, output_path: str):
-        if import_module("dpkt"):
-           import dpkt
-
-        output_path = new_file_path("packets", ".pcap", output_path)
-
+    def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
+        import_module("dpkt")
+        import dpkt
+        output_filename = new_file_path("packets", ".pcap", output_path)
         linktypes = {
             "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
             "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
             "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
         }
-
         if dlt not in linktypes:
             raise ValueError(f"Unsupported DLT: {dlt}\n{''.join(linktypes.keys())}")
-        with open(output_path, "wb") as out:
+        with open(output_filename, "wb") as out:
             writer = dpkt.pcap.Writer(out, linktype=linktypes[dlt])
             count = 0
-            for hexstr, b in iter_packets_from_json(input_file):
+            for hexstr, b in iter_packets_from_json(input_filename):
                 writer.writepkt(b, ts=time.time())
                 count += 1
                 print(f"{count} packet writed: {b[:50]}...")
             writer.close()
-            print(f"Output file: {output_path}")
+            print(f"Output file: {output_filename}")
 
     @staticmethod
-    def send_raw(ifname: str, input_file: str, count: int = 1, interval: float = 1.0, timeout: float = None):
+    def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
         sock = create_raw_socket(ifname)
     
         if timeout is not None:
             sock.settimeout(timeout)
     
         try:
-            for cleaned, raw_bytes in iter_packets_from_json(input_file):
+            for cleaned, raw_bytes in iter_packets_from_json(input_filename):
                 for i in range(count):
                     try:
                         bytes_sent = sock.send(raw_bytes)
@@ -452,6 +451,6 @@ class Operations:
 
     @staticmethod
     def monitor_scan(ifname: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, bands: [str] = ["2.4", "5"], timeout: float = None):
-        if import_module("textual") and check_root():
-            from core.tui.monitor_scan import monitor_scan
+
+        from core.tui.monitor_scan import monitor_scan
         monitor_scan(ifname=ifname, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, bands=bands, timeout=timeout, logging=logging, Operations=Operations)

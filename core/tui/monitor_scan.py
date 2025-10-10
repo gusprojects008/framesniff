@@ -151,9 +151,7 @@ class NetworkScannerTUI(App):
                     except Exception:
                         self.error_queue.put("Display callback error")
                         self.logging.exception("Display callback error")
-                    
                 display_filter_str = ', '.join(self.DISPLAY_FIELDS)
-                
                 self.logging.info(display_filter_str)
                 self.Operations.sniff(
                     ifname=self.ifname,
@@ -164,13 +162,12 @@ class NetworkScannerTUI(App):
                     store_callback=None,
                     display_callback=display_callback,
                     stop_event=self.sniff_stop_event,
-                    output_path=None
+                    output_filename="monitor-scan.json"
                 )
             except Exception:
                 error_msg = "Sniff thread error"
                 self.error_queue.put(error_msg)
                 self.logging.exception("Sniff thread error")
-        
         self.sniff_thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
         self.sniff_thread.start()
         self.logging.info(f"Sniff thread started: {self.sniff_thread.name}")
@@ -220,7 +217,7 @@ class NetworkScannerTUI(App):
                 if bssid_mac and bssid_mac != 'ff:ff:ff:ff:ff:ff':
                     if bssid_mac not in self.networks:
                         self.networks[bssid_mac] = {
-                            'ssid': ssid if ssid is not None else '',
+                            'ssid': ssid if ssid is not None else "[Hidden]",
                             'channel': channel if channel is not None else self.current_channel,
                             'signal': -100,
                             'beacons': 0,
@@ -250,9 +247,7 @@ class NetworkScannerTUI(App):
                 cli['signal'] = max(cli['signal'], signal if signal is not None else -100)
                 cli['last_seen'] = time.time()
                 self.associations[src_mac] = bssid_mac
-                
             self.frames_processed += 1
-            
         except Exception as e:
             self.error_queue.put(f"Display data processing error: {e}")
             self.logging.exception("Display data processing error")
@@ -268,7 +263,6 @@ class NetworkScannerTUI(App):
                             if entry_data.get('description') == 'Microsoft Corporation WPS':
                                 wps_detected = True
                                 break
-            
             if rsn_info:
                 akm_suites = rsn_info.get('akm_suites', {})
                 auth = "PSK"
@@ -302,10 +296,12 @@ class NetworkScannerTUI(App):
             return {'enc': 'UNKN', 'cipher': '', 'auth': '', 'wps': False}
 
     def process_queued_frames(self):
+        max_frames_per_cycle = 100
         processed_count = 0
-        while not self.display_queue.empty() and processed_count < 50:
+        while not self.display_queue.empty() and processed_count < max_frames_per_cycle:
             try:
-                self.process_display_data(self.display_queue.get_nowait())
+                display_data = self.display_queue.get_nowait()
+                self.process_display_data(display_data)
                 processed_count += 1
             except queue.Empty:
                 break
@@ -314,7 +310,7 @@ class NetworkScannerTUI(App):
         try:
             while not self.error_queue.empty():
                 error_msg = self.error_queue.get_nowait()
-                self.error_message = error_msg
+                self.error_message = f"{error_msg}\nMore details in framesniff.log"
                 self.logging.error(error_msg)
         except Exception:
             self.logging.exception("Error processing errors")
@@ -325,8 +321,11 @@ class NetworkScannerTUI(App):
         self.networks_count = len(self.networks)
         self.clients_count = len(self.clients)
         
+        queue_size = self.display_queue.qsize()
+        
         hop_status = "ON" if self.channel_hopping else "OFF"
-        header_text = f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | Frames: {self.frames_processed} | Networks: {self.networks_count} | Clients: {self.clients_count} | Time: {self.duration:.0f}s | Hop: {hop_status}"
+        header_text = f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | Frames: {self.frames_processed} | Queue: {queue_size} | Networks: {self.networks_count} | Clients: {self.clients_count} | Time: {self.duration:.0f}s | Hop: {hop_status}"
+
         self.query_one("#header", Static).update(header_text)
         
         error_panel = self.query_one("#error-panel", Static)
@@ -348,7 +347,7 @@ class NetworkScannerTUI(App):
             ssid = info['ssid'] if info['ssid'] is not None else ''
             vendor = info['vendor'] if info['vendor'] is not None else 'unknown'
             
-            row = f"{bssid[:17]:17} {channel:2} {signal:3} {beacons:5} {ssid[:18]:18} {security['enc']:7} {client_count:7} {vendor[:12]:12} {wps_status:3}"
+            row = f"{bssid[:17]:17} {channel:3} {signal:3} {beacons:5} {ssid[:18]:18} {security['enc']:7} {client_count:7} {vendor[:12]:12} {wps_status:3}"
             networks_content.append(row)
         
         self.query_one("#networks-content", Static).update("\n".join(networks_content))
@@ -374,14 +373,21 @@ class NetworkScannerTUI(App):
         
         self.query_one("#clients-content", Static).update("\n".join(clients_content))
 
-
     def on_key(self, event):
         if event.key in ("q", "Q", "ctrl+c"):
             self.exit_application()
 
     def exit_application(self):
         self.running = False
-        self.logging.info("Network Scanner finished")
+        if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
+            self.sniff_stop_event.set()
+            print("Stop event set for sniff thread")
+        if self.sniff_thread and self.sniff_thread.is_alive():
+            self.sniff_thread.join(timeout=2.0)
+            if self.sniff_thread.is_alive():
+                print("Sniff thread still alive after timeout")
+        self.logging.info(f"Network Monitor finished!")
+        print(f"Network Monitor finished!\nSee the logs in {self.logging}")
         self.exit()
 
 

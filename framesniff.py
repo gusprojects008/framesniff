@@ -2,11 +2,7 @@ import sys
 import pathlib
 import argparse
 
-#modules_path = pathlib.Path(__file__).parent / "core"
-#sys.path.append(str(modules_path))
-
 from core.user_operations import Operations
-from core.common.useful_functions import check_root
 
 operations = Operations()
 
@@ -76,7 +72,7 @@ def main():
     send_raw_parser.add_argument("--interval", type=float, default=1.0, help="Interval between sends in seconds (default: 1.0).")
     send_raw_parser.add_argument("--timeout", type=float, default=None, help="Socket timeout in seconds (optional).")
 
-    monitor_scan_parser = subparsers.add_parser("monitor-scan", help="scans nearby APs and devices DLT_IEEE802_11_RADIO only")
+    monitor_scan_parser = subparsers.add_parser("monitor-scan", help="scans nearby APs and devices (DLT_IEEE802_11_RADIO only)")
     monitor_scan_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
     monitor_scan_parser.add_argument("--channel-hopping", default=True, help="Channel hopping, default True.")
     monitor_scan_parser.add_argument("--hopping-interval", default=4.0, help="Channel hopping interval, default 2.0 seconds.")
@@ -110,30 +106,20 @@ def main():
             count=args.count,
             timeout=args.timeout,
             display_interval=args.display_interval,
-            output_path=args.output
-        )
-    elif args.command == "eapol-capture":
-        operations.eapol_capture(
-            ifname=args.ifname,
-            bssid=args.bssid,
-            mac=args.mac,
-            count=args.count,
-            timeout=args.timeout,
-            output=args.output,
+            output_filename=args.output
         )
     elif args.command == "generate-22000":
         operations.generate_22000(
             bitmask_message_pair=args.bitmask,
             ssid=args.ssid,
-            input_file=args.input,
-            output_file=args.output
+            input_filename=args.input,
+            output_filename=args.output
         )
     elif args.command == "hextopcap":
          operations.write_pcap_from_json(args.dlt, args.input, args.output)
     elif args.command == "send-raw":
          operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
     elif args.command == "monitor-scan":
-         check_root()
          operations.monitor_scan(args.ifname, args.channel_hopping, args.hopping_interval, args.bands, args.timeout)
 
 if __name__ == "__main__":
