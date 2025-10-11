@@ -55,3 +55,5 @@ This section contains some insights I have during development, but they are not 
 * Use more logging for operation messages.
 * Review all code.
 * Review the operation of all features, and verify whether they are functioning properly.
+* Develop a TUI interface for sniff, which will be similar to tshark.
+* Develop a TUI interface for createpkt.
