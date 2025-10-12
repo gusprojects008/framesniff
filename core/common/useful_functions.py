@@ -250,13 +250,10 @@ def export_tui_for_txt(app, output_filename: str = None):
     out_path = str(new_file_path(filename=output_filename))
     try:
         snapshot_lines = []
-        
         def extract_table_data(table_widget):
             try:
-                # Método mais robusto para DataTable
                 if hasattr(table_widget, 'data') and hasattr(table_widget, 'columns'):
                     rows = []
-                    # Extrair cabeçalhos
                     headers = []
                     for col in table_widget.columns:
                         if hasattr(col, 'label'):
@@ -266,8 +263,6 @@ def export_tui_for_txt(app, output_filename: str = None):
                         else:
                             headers.append(str(col))
                     rows.append(" | ".join(headers))
-                    
-                    # Extrair dados das linhas
                     if hasattr(table_widget, 'get_row'):
                         for row_key in table_widget.rows:
                             row_data = table_widget.get_row(row_key)
@@ -281,32 +276,23 @@ def export_tui_for_txt(app, output_filename: str = None):
                 return None
         
         def extract_text_from_widget(widget):
-            """Extrai texto de qualquer tipo de widget"""
             try:
-                # Para DataTable
                 if hasattr(widget, '__class__') and 'DataTable' in str(widget.__class__):
                     return extract_table_data(widget)
-                
-                # Para widgets com texto direto
                 if hasattr(widget, 'value'):
                     text = str(widget.value)
                     if text.strip():
                         return text
-                
-                # Para Static, Label e similares
                 if hasattr(widget, 'renderable'):
                     renderable = widget.renderable
                     if renderable is not None:
                         text = str(renderable)
                         if text.strip():
                             return text.strip()
-                
                 if hasattr(widget, '_text'):
                     text = str(widget._text)
                     if text.strip():
                         return text.strip()
-                
-                # Tentar método render para widgets complexos
                 if hasattr(widget, 'render') and callable(widget.render):
                     try:
                         rendered = widget.render()
@@ -316,12 +302,9 @@ def export_tui_for_txt(app, output_filename: str = None):
                                 return text.strip()
                     except:
                         pass
-                
                 return None
             except Exception:
                 return None
-        
-        # Coletar dados de todos os widgets
         for widget in app.walk_children():
             try:
                 text_content = extract_text_from_widget(widget)
@@ -329,19 +312,13 @@ def export_tui_for_txt(app, output_filename: str = None):
                     snapshot_lines.append(text_content)
             except Exception:
                 continue
-        
-        # Se não encontrou conteúdo, tentar método alternativo
         if not snapshot_lines:
             snapshot_lines = extract_fallback_data(app)
-        
         snapshot = "\n".join(snapshot_lines)
-        
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(snapshot)
-        
         print(f"[SUCCESS] TUI content exported to: {out_path}")
         return out_path
-        
     except Exception as error:
         print(f"[ERROR] Failed to export TUI content: {error}")
         return None
