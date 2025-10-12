@@ -15,7 +15,7 @@ def main():
     subparsers.add_parser("list-interfaces", help="List all network interfaces")
 
     list_interface_parser = subparsers.add_parser("list-interface", help="Show info about a specific interface")
-    list_interface_parser.add_argument("--ifname", "-i", required=True, help="Network interface name.")
+    list_interface_parser.add_argument("ifname", type=str, default=None, help="Network interface name.")
 
     set_monitor_parser = subparsers.add_parser("set-monitor", help="Set interface to monitor mode")
     set_monitor_parser.add_argument("ifname", type=str, help="Network interface name.")
