@@ -57,3 +57,5 @@ This section contains some insights I have during development, but they are not 
 * Review the operation of all features, and verify whether they are functioning properly.
 * Develop a TUI interface for sniff, which will be similar to tshark.
 * Develop a TUI interface for createpkt.
+* Improve argparse in the sniff.py frame, using type etc...
+* Leave safety checks at critical points in the program.
