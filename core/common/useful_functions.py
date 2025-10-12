@@ -43,12 +43,14 @@ def freq_converter(freq_unit: tuple, to_unit: str):
 def new_file_path(base: str = None, ext: str = None, filename: str = None) -> Path:
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     if not filename:
-       if base and ext:
-           return Path(f"{base}-{timestamp}{ext}")
-       else:
-           return Path(timestamp)
+        if base and ext:
+            return Path(f"{base}-{timestamp}{ext}")
+        elif base:
+            return Path(f"{base}-{timestamp}")
+        else:
+            return Path(f"{timestamp}")
     else:
-       return Path(f"{timestamp}-{filename}")
+        return Path(f"{timestamp}-{filename}")
 
 # returns the hexadecimal contents of a dictionary of a bitmap.
 def bitmap_dict_to_hex(bitmap_dict: dict):
@@ -160,9 +162,9 @@ def extract_fcs_from_frame(frame: bytes, radiotap_len: int) -> Tuple[Optional[by
 
 class MacVendorResolver:
     _vendor_map = None
-    def __init__(self, filepath: str = '~/Downloads/framesniff/core/common/mac-vendors-export.json'):
+    def __init__(self, filepath: str = "./core/common/mac-vendors-export.json"):
         if MacVendorResolver._vendor_map is None:
-            print("INFO: Loading MAC vendors file for the first time...")
+            print(f"INFO: Loading MAC vendors file {filepath} ...")
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     data = json.load(f)
@@ -181,8 +183,7 @@ class MacVendorResolver:
         if not self._vendor_map or not mac_address:
             return None
         oui = mac_address.upper()[:8]
-        return {"mac": mac_address, "vendor": self._vendor_map.get(oui)}
-        #return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "unknown")}
+        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "Unknown")}
 
 def finish_capture(sock, start_time: int, captured_frames: list, output_file_path: str):
     sock.close()
@@ -219,7 +220,7 @@ def check_root():
 def check_interface_mode(ifname: str, mode: str) -> bool:
     try:
         result = subprocess.run(['iw', 'dev', ifname, 'info'], 
-                              capture_output=True, text=True, timeout=5)
+                              capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(f"Interface {ifname} not found or iw command failed")
         match = re.search(r'type\s+(\w+)', result.stdout)
@@ -235,3 +236,112 @@ def check_interface_mode(ifname: str, mode: str) -> bool:
         raise RuntimeError("iw command not found")
     except Exception as error:
         raise RuntimeError(f"Error checking interface mode: {error}")
+
+def verify_supported_dlts(dlt: str = None):
+    linktypes = [
+        "DLT_IEEE802_11_RADIO",
+        "DLT_EN10MB",
+        "DLT_BLUETOOTH_HCI_H4"
+    ]
+    if dlt not in linktypes:
+        raise ValueError(f"Unsupported DLT: {dlt}\n{', '.join(linktypes)}")
+
+def export_tui_for_txt(app, output_filename: str = None):
+    out_path = str(new_file_path(filename=output_filename))
+    try:
+        snapshot_lines = []
+        
+        def extract_table_data(table_widget):
+            try:
+                # Método mais robusto para DataTable
+                if hasattr(table_widget, 'data') and hasattr(table_widget, 'columns'):
+                    rows = []
+                    # Extrair cabeçalhos
+                    headers = []
+                    for col in table_widget.columns:
+                        if hasattr(col, 'label'):
+                            headers.append(str(col.label))
+                        elif hasattr(col, 'header'):
+                            headers.append(str(col.header))
+                        else:
+                            headers.append(str(col))
+                    rows.append(" | ".join(headers))
+                    
+                    # Extrair dados das linhas
+                    if hasattr(table_widget, 'get_row'):
+                        for row_key in table_widget.rows:
+                            row_data = table_widget.get_row(row_key)
+                            if row_data:
+                                row_str = " | ".join(str(cell) for cell in row_data)
+                                rows.append(row_str)
+                    return "\n".join(rows)
+                return None
+            except Exception as e:
+                print(f"Table extraction error: {e}")
+                return None
+        
+        def extract_text_from_widget(widget):
+            """Extrai texto de qualquer tipo de widget"""
+            try:
+                # Para DataTable
+                if hasattr(widget, '__class__') and 'DataTable' in str(widget.__class__):
+                    return extract_table_data(widget)
+                
+                # Para widgets com texto direto
+                if hasattr(widget, 'value'):
+                    text = str(widget.value)
+                    if text.strip():
+                        return text
+                
+                # Para Static, Label e similares
+                if hasattr(widget, 'renderable'):
+                    renderable = widget.renderable
+                    if renderable is not None:
+                        text = str(renderable)
+                        if text.strip():
+                            return text.strip()
+                
+                if hasattr(widget, '_text'):
+                    text = str(widget._text)
+                    if text.strip():
+                        return text.strip()
+                
+                # Tentar método render para widgets complexos
+                if hasattr(widget, 'render') and callable(widget.render):
+                    try:
+                        rendered = widget.render()
+                        if rendered is not None:
+                            text = str(rendered)
+                            if text.strip():
+                                return text.strip()
+                    except:
+                        pass
+                
+                return None
+            except Exception:
+                return None
+        
+        # Coletar dados de todos os widgets
+        for widget in app.walk_children():
+            try:
+                text_content = extract_text_from_widget(widget)
+                if text_content:
+                    snapshot_lines.append(text_content)
+            except Exception:
+                continue
+        
+        # Se não encontrou conteúdo, tentar método alternativo
+        if not snapshot_lines:
+            snapshot_lines = extract_fallback_data(app)
+        
+        snapshot = "\n".join(snapshot_lines)
+        
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(snapshot)
+        
+        print(f"[SUCCESS] TUI content exported to: {out_path}")
+        return out_path
+        
+    except Exception as error:
+        print(f"[ERROR] Failed to export TUI content: {error}")
+        return None

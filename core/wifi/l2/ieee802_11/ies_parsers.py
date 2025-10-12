@@ -190,6 +190,7 @@ def vendor_specific_ie(data: bytes):
                         result["version2"] = f"{version_major}.{version_minor}"
                         break
         return result
+
     oui = bytes_for_mac(data[:3])
     vendor_type = data[3]
     vendor_data = data[4:]

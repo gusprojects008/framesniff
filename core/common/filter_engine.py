@@ -35,12 +35,12 @@ def _to_value(val: str, parsed_frame: dict):
         return int(val)
     if re.fullmatch(r"[-+]?\d*\.\d+", val):
         return float(val)
-
+    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        return val[1:-1]
     nested = _get_nested(val, parsed_frame)
     if nested is not None:
         return nested
-
-    return val.strip("'").strip('"')
+    return None
 
 def _extract_tuple_values(text: str, parsed_frame: dict):
     text = text.strip()
@@ -52,19 +52,16 @@ def _extract_tuple_values(text: str, parsed_frame: dict):
 
 def _evaluate_simple(expr: str, parsed_frame: dict):
     expr = expr.strip()
-    
     if " not in " in expr:
         left, right = expr.split(" not in ", 1)
         left_val = _to_value(left, parsed_frame)
         options = _extract_tuple_values(right, parsed_frame)
         return left_val not in options
-        
     if " in " in expr:
         left, right = expr.split(" in ", 1)
         left_val = _to_value(left, parsed_frame)
         options = _extract_tuple_values(right, parsed_frame)
         return left_val in options
-
     for op_str, op_func in operators.items():
         if op_str in expr:
             parts = expr.split(op_str, 1)
@@ -73,7 +70,6 @@ def _evaluate_simple(expr: str, parsed_frame: dict):
                 left_val = _to_value(left.strip(), parsed_frame)
                 right_val = _to_value(right.strip(), parsed_frame)
                 return op_func(left_val, right_val)
-
     return bool(_to_value(expr, parsed_frame))
 
 def _split_by_operator(expr: str, operator: str):

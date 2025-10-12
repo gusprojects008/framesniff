@@ -1,11 +1,12 @@
 import struct
 import time
 import json
-from core.common.useful_functions import (random_mac, safe_unpack, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string)
+from core.common.useful_functions import (random_mac, safe_unpack, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string, iter_packets_from_json, MacVendorResolver)
 from core.wifi.l2.radiotap_header import RadiotapHeader
-from core.wifi.l2.ieee802_11 import parsers
+from core.wifi.l2.ieee802_11 import parsers as l2_parsers
 from core.wifi.l2.ieee802_11 import ies_parsers
 from core.wifi.l2.ieee802_11 import builders
+from core.wifi.l3 import parsers as l3_parsers
 
 class IEEE802_11:
     class Management:
@@ -90,39 +91,39 @@ class IEEE802_11:
                 return body
         
             if subtype == 0:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 1:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 2:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 3:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 4:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 5:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 8:
-                fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
             elif subtype == 9:
                 remaining = flen - offset
@@ -139,9 +140,9 @@ class IEEE802_11:
                 body["status_code"], offset = unpack("<H", frame, offset)
                 if offset < flen:
                     try:
-                        fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                        fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                         body["fixed_parameters"] = fixed_parameters
-                        tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                        tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
                         body["extra"] = frame[offset:flen].hex()
@@ -158,9 +159,9 @@ class IEEE802_11:
                     body["action"] = None
                 if offset < flen:
                     try:
-                        fixed_parameters, offset = parsers.fixed_parameters(frame, offset)
+                        fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                         body["fixed_parameters"] = fixed_parameters
-                        tagged_parameters, offset = parsers.tagged_parameters(frame, offset)
+                        tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
                         body["payload"] = frame[offset:flen].hex()
@@ -179,7 +180,6 @@ class IEEE802_11:
         def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
             body = {}
             flen = len(frame)
-
             if protected:
                 body["payload"] = frame[offset:flen].hex()
                 return body
@@ -230,7 +230,7 @@ class IEEE802_11:
             body = {}
             flen = len(frame)
         
-            llc, llc_offset = parsers.llc(frame, offset)
+            llc, llc_offset = l2_parsers.llc(frame, offset)
             body["llc"] = llc
         
             if protected:
@@ -240,16 +240,16 @@ class IEEE802_11:
             llc_type = llc.get("type", "")
         
             if llc_type == "0x888e":
-                eapol, eapol_offset = parsers.eapol(frame, llc_offset)
+                eapol, eapol_offset = l2_parsers.eapol(frame, llc_offset)
                 body["eapol"] = eapol
             elif llc_type == "0x0800":
-                ip, ip_offset = parsers.ip(frame, llc_offset)
+                ip, ip_offset = l3_parsers.ip(frame, llc_offset)
                 body["ip"] = ip
             elif llc_type == "0x0806":
-                arp, arp_offset = parsers.arp(frame, llc_offset)
+                arp, arp_offset = l3_parsers.arp(frame, llc_offset)
                 body["arp"] = arp
             elif llc_type == "0x86dd":
-                ipv6, ipv6_offset = parsers.ipv6(frame, llc_offset)
+                ipv6, ipv6_offset = l3_parsers.ipv6(frame, llc_offset)
                 body["ipv6"] = ipv6
             elif llc_type in ["0x888f", "0x890d", "0x88b4", "0x88b5", "0x88b6", "0x8902", "0x88c0", "0x8903"]:
                 body_name = {
@@ -269,19 +269,19 @@ class IEEE802_11:
             return body
 
     @staticmethod
-    def frames_parser(frame: bytes, mac_vendor_resolver) -> dict:
+    def frames_parser(frame: bytes, mac_vendor_resolver: object) -> dict:
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(frame)
         fcs_bytes, frame_no_fcs = extract_fcs_from_frame(frame, rt_hdr_len)
         frame = frame_no_fcs
-        mac_hdr, mac_hdr_offset = parsers.mac_header(frame, 0, mac_vendor_resolver)
+        mac_hdr, mac_hdr_offset = l2_parsers.mac_header(frame, 0, mac_vendor_resolver)
         parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
         if not mac_hdr:
             return parsed_frame
         try:
-            protected = mac_hdr.get("protected", False)
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
+            protected = mac_hdr.get("protected", False)
             if frame_type == 0:
                 body = IEEE802_11.Management.parse(frame, mac_hdr_offset, subtype, protected)
                 parsed_frame["body"] = body
@@ -298,20 +298,21 @@ class IEEE802_11:
         return parsed_frame
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000", message_pair: int = 0):
+    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000"):
         if not input_filename:
             raise ValueError("Input file must be provided.")
     
         output_filename = str(new_file_path("hashcat", ".22000", output_filename))
         essid = ssid.encode("utf-8", errors="ignore").hex()
+        message_pair = 0
     
         with open(input_filename, "r") as f:
             data = json.load(f)
 
         if bitmask_message_pair == 1:
-            pmkid = clean_hex_string(data.get("pmkid", ""))
-            mac_ap = clean_hex_string(data.get("mac_ap", ""))
-            mac_client = clean_hex_string(data.get("mac_client", ""))
+            pmkid = clean_hex_string(data.get("pmkid"))
+            mac_ap = clean_hex_string(data.get("mac_ap"))
+            mac_client = clean_hex_string(data.get("mac_client"))
             if not all([ssid, pmkid, mac_ap, mac_client]):
                 raise ValueError("Missing one or more required keys: pmkid, mac_ap, mac_client")
             line = f"WPA*01*{pmkid}*{mac_ap}*{mac_client}*{essid}***{message_pair:02x}"
@@ -338,16 +339,20 @@ class IEEE802_11:
             msg1 = bytes.fromhex(eapol_msg1_hex)
             msg2 = bytes.fromhex(eapol_msg2_hex)
     
+            mac_vendor_resolver = MacVendorResolver()
+
             _, rth_len1 = RadiotapHeader.parse(msg1)
-            mac_hdr1, mac_offset1 = parsers.mac_header(msg1, rth_len1)
-            body1 = IEEE802_11.Data.parse(msg1, mac_offset1)
+            mac_hdr1, mac_offset1 = l2_parsers.mac_header(msg1, rth_len1, mac_vendor_resolver)
+            subtype, protected = (mac_hdr1.get("fc").get("subtype"), mac_hdr1.get("protected", False))
+            body1 = IEEE802_11.Data.parse(msg1, mac_offset1, subtype, protected)
     
             _, rth_len2 = RadiotapHeader.parse(msg2)
-            mac_hdr2, mac_offset2 = parsers.mac_header(msg2, rth_len2)
-            body2 = IEEE802_11.Data.parse(msg2, mac_offset2)
+            mac_hdr2, mac_offset2 = l2_parsers.mac_header(msg2, rth_len2, mac_vendor_resolver)
+            subtype, protected = (mac_hdr2.get("fc").get("subtype"), mac_hdr2.get("protected", False))
+            body2 = IEEE802_11.Data.parse(msg2, mac_offset2, subtype, protected)
     
-            mac_ap = clean_hex_string(mac_hdr2.get("bssid", "") or mac_hdr2.get("mac_dst", ""))
-            mac_client = clean_hex_string(mac_hdr2.get("mac_src", "") or mac_hdr2.get("mac_transmitter", ""))
+            mac_ap = clean_hex_string(mac_hdr2.get("bssid").get("mac") or mac_hdr2.get("mac_dst").get("mac"))
+            mac_client = clean_hex_string(mac_hdr2.get("mac_src").get("mac") or mac_hdr2.get("mac_transmitter").get("mac"))
     
             eapol_data1 = body1.get("eapol", {})
             eapol_data2 = body2.get("eapol", {})
@@ -361,8 +366,8 @@ class IEEE802_11:
             if len(anonce) != 64:
                 raise ValueError(f"Invalid ANonce length: {len(anonce)}")
     
-            llc, llc_offset = parsers.llc(msg2, mac_offset2)
-            eapol_frame, eapol_frame_offset = parsers.eapol(msg2, llc_offset)
+            llc, llc_offset = l2_parsers.llc(msg2, mac_offset2)
+            eapol_frame, eapol_frame_offset = l2_parsers.eapol(msg2, llc_offset)
             eapol_frame = msg2[llc_offset:eapol_frame_offset]
     
             mic_offset = struct.calcsize("!BBHBHHQ32s16s8s8s")

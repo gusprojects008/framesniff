@@ -9,7 +9,7 @@ def main():
 
     mac_vendor_resolver = MacVendorResolver("./core/common/mac-vendors-export.json")
 
-    parsed_frame = IEEE802_11.frames_parser(beacon, mac_vendor_resolver)
+    parsed_frame = IEEE802_11.frames_parser(LB, mac_vendor_resolver)
     store_filter_result, frame_filter_result = apply_filters("", "rt_hdr, mac_hdr, body, fcs", parsed_frame) 
     print(parsed_frame)
     #for k, v in parsed_frame.items():
