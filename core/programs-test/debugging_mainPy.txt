@@ -1,0 +1,1125 @@
+execve("/usr/bin/python", ["python", "main.py"], 0x7ffe3246b0a8 /* 84 vars */) = 0
+brk(NULL)                               = 0x557fce482000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fae805ad000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v3/libc.so.6", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v3/", 0x7ffdc3638df0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v2/libc.so.6", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v2/", 0x7ffdc3638df0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/libc.so.6", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=73198, ...}) = 0
+mmap(NULL, 73198, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7fae8059b000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib64/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0000c\2\0\0\0\0\0"..., 832) = 832
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+fstat(3, {st_mode=S_IFREG|0755, st_size=1982720, ...}) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 2014136, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fae803af000
+mmap(0x7fae803d3000, 1462272, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x24000) = 0x7fae803d3000
+mmap(0x7fae80538000, 348160, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x189000) = 0x7fae80538000
+mmap(0x7fae8058d000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1dd000) = 0x7fae8058d000
+mmap(0x7fae80593000, 31672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7fae80593000
+close(3)                                = 0
+mmap(NULL, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fae803ac000
+arch_prctl(ARCH_SET_FS, 0x7fae803ac740) = 0
+set_tid_address(0x7fae803aca10)         = 13111
+set_robust_list(0x7fae803aca20, 24)     = 0
+rseq(0x7fae803ad060, 0x20, 0, 0x53053053) = 0
+mprotect(0x7fae8058d000, 16384, PROT_READ) = 0
+mprotect(0x557fa0a9a000, 4096, PROT_READ) = 0
+mprotect(0x7fae805e9000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x7fae8059b000, 73198)           = 0
+access("/usr/local/sbin/python", X_OK)  = -1 ENOENT (Arquivo ou diretório inexistente)
+access("/usr/local/bin/python", X_OK)   = -1 ENOENT (Arquivo ou diretório inexistente)
+access("/usr/bin/python", X_OK)         = 0
+readlink("/usr/bin/python", "python-exec2c", 8183) = 13
+readlink("/usr/bin/python-exec2c", 0x7ffdc3635bd9, 8183) = -1 EINVAL (Argumento inválido)
+getrandom("\xd7\x55\x30\x3d\x08\xd0\x91\xb0", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x557fce482000
+brk(0x557fce4a3000)                     = 0x557fce4a3000
+openat(AT_FDCWD, "/etc/python-exec/python.conf", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/etc/python-exec/python-exec.conf", O_RDONLY) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1247, ...}) = 0
+read(3, "#/etc/python-exec/python-exec.co"..., 4096) = 1247
+read(3, "", 4096)                       = 0
+close(3)                                = 0
+execve("/usr/lib/python-exec/python3.13/python", ["/usr/lib/python-exec/python3.13/"..., "main.py"], 0x7ffdc3639d30 /* 84 vars */) = 0
+brk(NULL)                               = 0x55873a6a4000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04b5f1000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v3/libpython3.13.so.1.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v3/", 0x7ffdb3b62670, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v2/libpython3.13.so.1.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/glibc-hwcaps/x86-64-v2/", 0x7ffdb3b62670, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/opt/firefox/libpython3.13.so.1.0", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/opt/firefox/", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=73198, ...}) = 0
+mmap(NULL, 73198, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7fc04b5df000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib64/libpython3.13.so.1.0", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=5125648, ...}) = 0
+mmap(NULL, 5591272, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04b000000
+mmap(0x7fc04b03f000, 2514944, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3f000) = 0x7fc04b03f000
+mmap(0x7fc04b2a5000, 1495040, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2a5000) = 0x7fc04b2a5000
+mmap(0x7fc04b412000, 856064, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x412000) = 0x7fc04b412000
+mmap(0x7fc04b4e3000, 467176, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7fc04b4e3000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/firefox/libc.so.6", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/usr/lib64/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0000c\2\0\0\0\0\0"..., 832) = 832
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+fstat(3, {st_mode=S_IFREG|0755, st_size=1982720, ...}) = 0
+pread64(3, "\6\0\0\0\4\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0@\0\0\0\0\0\0\0"..., 784, 64) = 784
+mmap(NULL, 2014136, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04ae14000
+mmap(0x7fc04ae38000, 1462272, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x24000) = 0x7fc04ae38000
+mmap(0x7fc04af9d000, 348160, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x189000) = 0x7fc04af9d000
+mmap(0x7fc04aff2000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1dd000) = 0x7fc04aff2000
+mmap(0x7fc04aff8000, 31672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7fc04aff8000
+close(3)                                = 0
+openat(AT_FDCWD, "/opt/firefox/libm.so.6", O_RDONLY|O_CLOEXEC) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/usr/lib64/libm.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=935952, ...}) = 0
+mmap(NULL, 933912, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04ad2f000
+mmap(0x7fc04ad3d000, 503808, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xe000) = 0x7fc04ad3d000
+mmap(0x7fc04adb8000, 368640, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x89000) = 0x7fc04adb8000
+mmap(0x7fc04ae12000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xe3000) = 0x7fc04ae12000
+close(3)                                = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04b5dd000
+arch_prctl(ARCH_SET_FS, 0x7fc04b5ddb80) = 0
+set_tid_address(0x7fc04b5dde50)         = 13111
+set_robust_list(0x7fc04b5dde60, 24)     = 0
+rseq(0x7fc04b5de4a0, 0x20, 0, 0x53053053) = 0
+mprotect(0x7fc04aff2000, 16384, PROT_READ) = 0
+mprotect(0x7fc04ae12000, 4096, PROT_READ) = 0
+mprotect(0x7fc04b412000, 327680, PROT_READ) = 0
+mprotect(0x5586fdaab000, 4096, PROT_READ) = 0
+mprotect(0x7fc04b62d000, 8192, PROT_READ) = 0
+prlimit64(0, RLIMIT_STACK, NULL, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+munmap(0x7fc04b5df000, 73198)           = 0
+getrandom("\x3d\x82\x65\x2c\x71\xe1\x11\xfd\x6d\xe4\x88\x97\x74\xbf\x9e\xb9\x60\x6e\x8a\x56\x78\xd9\x37\x4b\xd7\x5c\x3b\x6c\x50\x09\x44\x9f", 32, GRND_NONBLOCK) = 32
+open("/proc/sys/vm/overcommit_memory", O_RDONLY) = 3
+read(3, "0\n", 32)                      = 2
+close(3)                                = 0
+getrandom("\xc7\xf4\x90\xa0\x94\xbf\x66\x5f", 8, GRND_NONBLOCK) = 8
+brk(NULL)                               = 0x55873a6a4000
+brk(0x55873a6c5000)                     = 0x55873a6c5000
+openat(AT_FDCWD, "/usr/lib/locale/locale-archive", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=3061392, ...}) = 0
+mmap(NULL, 3061392, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7fc04aa00000
+close(3)                                = 0
+openat(AT_FDCWD, "/usr/lib64/gconv/gconv-modules.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=27012, ...}) = 0
+mmap(NULL, 27012, PROT_READ, MAP_SHARED, 3, 0) = 0x7fc04b5ea000
+close(3)                                = 0
+futex(0x7fc04aff772c, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+getcwd("/home/gus/Documents/Pentest/WPA_WPA2/main", 4096) = 42
+getrandom("\xd0\xfd\x0c\x77\xa6\x43\x88\x99\x69\xf3\x76\x08\xd1\x67\xba\xca\x22\x50\x62\xee\x7d\x23\x0f\xc2", 24, GRND_NONBLOCK) = 24
+gettid()                                = 13111
+mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04a900000
+mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04b59c000
+mmap(NULL, 135168, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04b57b000
+brk(0x55873a6e7000)                     = 0x55873a6e7000
+mmap(NULL, 16384, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04b5e6000
+openat(AT_FDCWD, "/usr/lib/python-exec/pyvenv.cfg", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/usr/lib/python-exec/python3.13/pyvenv.cfg", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+readlink("/usr/lib/python-exec/python3.13/python", "python3", 4096) = 7
+readlink("/usr/lib/python-exec/python3.13/python3", "../../../bin/python3.13", 4096) = 23
+readlink("/usr/bin/python3.13", 0x7ffdb3b5dc50, 4096) = -1 EINVAL (Argumento inválido)
+openat(AT_FDCWD, "/usr/lib/python-exec/python3.13/python._pth", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/usr/bin/python3.13._pth", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+openat(AT_FDCWD, "/usr/bin/pybuilddir.txt", O_RDONLY) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/bin/Modules/Setup.local", 0x7ffdb3b62c20, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/bin/lib/python313.zip", 0x7ffdb3b629a0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python313.zip", 0x7ffdb3b62a00, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/bin/lib/python3.13/os.py", 0x7ffdb3b62a00, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/bin/lib/python3.13/os.pyc", 0x7ffdb3b62a00, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/os.py", {st_mode=S_IFREG|0644, st_size=41598, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/lib/python3.13/lib-dynload", 0x7ffdb3b62a00, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+brk(0x55873a708000)                     = 0x55873a708000
+mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04a800000
+brk(0x55873a729000)                     = 0x55873a729000
+openat(AT_FDCWD, "/etc/localtime", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1010, ...}) = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1010, ...}) = 0
+read(3, "TZif2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096) = 1010
+lseek(3, -631, SEEK_CUR)                = 379
+read(3, "TZif2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 4096) = 631
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python313.zip", 0x7ffdb3b62400, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python313.zip", 0x7ffdb3b627a0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a7093a0 /* 194 entries */, 32768) = 6496
+getdents64(3, 0x55873a7093a0 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b627a0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/__init__.abi3.so", 0x7ffdb3b627a0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/__init__.so", 0x7ffdb3b627a0, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/__init__.py", {st_mode=S_IFREG|0644, st_size=5884, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/__init__.py", {st_mode=S_IFREG|0644, st_size=5884, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/encodings/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFD)                       = 0x1 (flags FD_CLOEXEC)
+fstat(3, {st_mode=S_IFREG|0644, st_size=6017, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b624d0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=6017, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\374\26\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 6018) = 6017
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/encodings", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a714c50 /* 125 entries */, 32768) = 4224
+getdents64(3, 0x55873a714c50 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/aliases.py", {st_mode=S_IFREG|0644, st_size=15713, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/aliases.py", {st_mode=S_IFREG|0644, st_size=15713, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/encodings/__pycache__/aliases.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=12385, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b61980)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=12385, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eha=\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 12386) = 12385
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/utf_8.py", {st_mode=S_IFREG|0644, st_size=1005, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/utf_8.py", {st_mode=S_IFREG|0644, st_size=1005, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/encodings/__pycache__/utf_8.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=2284, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b624d0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=2284, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\355\3\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 2285) = 2284
+read(3, "", 1)                          = 0
+close(3)                                = 0
+rt_sigaction(SIGPIPE, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGXFSZ, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGHUP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGINT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGQUIT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGILL, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGTRAP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGABRT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGBUS, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGFPE, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGKILL, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGUSR1, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGSEGV, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGUSR2, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGPIPE, NULL, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, 8) = 0
+rt_sigaction(SIGALRM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGTERM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGSTKFLT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGCHLD, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGCONT, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGSTOP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGTSTP, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGTTIN, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGTTOU, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGURG, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGXCPU, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGXFSZ, NULL, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, 8) = 0
+rt_sigaction(SIGVTALRM, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGPROF, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGWINCH, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGIO, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGPWR, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGSYS, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_2, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_3, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_4, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_5, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_6, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_7, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_8, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_9, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_10, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_11, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_12, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_13, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_14, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_15, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_16, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_17, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_18, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_19, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_20, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_21, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_22, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_23, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_24, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_25, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_26, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_27, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_28, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_29, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_30, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_31, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGRT_32, NULL, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGINT, {sa_handler=0x7fc04b2560c0, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+fstat(0, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x6), ...}) = 0
+fcntl(0, F_GETFD)                       = 0
+fstat(0, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x6), ...}) = 0
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+lseek(0, 0, SEEK_CUR)                   = -1 ESPIPE (Procura ilegal)
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+fcntl(1, F_GETFD)                       = 0
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x6), ...}) = 0
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+lseek(1, 0, SEEK_CUR)                   = -1 ESPIPE (Procura ilegal)
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+fcntl(2, F_GETFD)                       = 0
+fstat(2, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x6), ...}) = 0
+ioctl(2, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+lseek(2, 0, SEEK_CUR)                   = -1 ESPIPE (Procura ilegal)
+ioctl(2, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+brk(0x55873a75f000)                     = 0x55873a75f000
+newfstatat(AT_FDCWD, "/usr/lib/python-exec/python3.13/pyvenv.cfg", 0x7ffdb3b62300, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python-exec/pyvenv.cfg", 0x7ffdb3b62360, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+geteuid()                               = 1000
+getuid()                                = 1000
+getegid()                               = 1000
+getgid()                                = 1000
+newfstatat(AT_FDCWD, "/home/gus/.local/lib/python3.13/site-packages", 0x7ffdb3b62570, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/site-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a74f280 /* 106 entries */, 32768) = 4200
+getdents64(3, 0x55873a74f280 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/distutils-precedence.pth", {st_mode=S_IFREG|0644, st_size=151, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/site-packages/distutils-precedence.pth", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=151, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62300)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=151, ...}) = 0
+read(3, "import os; var = 'SETUPTOOLS_USE"..., 152) = 151
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/utf_8_sig.py", {st_mode=S_IFREG|0644, st_size=4133, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/encodings/utf_8_sig.py", {st_mode=S_IFREG|0644, st_size=4133, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/encodings/__pycache__/utf_8_sig.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=6913, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b61ac0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=6913, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh%\20\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 6914) = 6913
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+brk(0x55873a781000)                     = 0x55873a781000
+getdents64(3, 0x55873a758c00 /* 79 entries */, 32768) = 5032
+getdents64(3, 0x55873a758c00 /* 0 entries */, 32768) = 0
+brk(0x55873a779000)                     = 0x55873a779000
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/site-packages", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a758c00 /* 106 entries */, 32768) = 4200
+getdents64(3, 0x55873a758c00 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b61d50, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__init__.abi3.so", 0x7ffdb3b61d50, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__init__.so", 0x7ffdb3b61d50, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__init__.py", {st_mode=S_IFREG|0644, st_size=6755, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__init__.py", {st_mode=S_IFREG|0644, st_size=6755, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/site-packages/_distutils_hack/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=10777, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b61ae0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=10777, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\241IOhc\32\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 10778) = 10777
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/main.py", {st_mode=S_IFREG|0644, st_size=1161, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/main.py", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1161, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62b20)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_END)                   = 1161
+lseek(3, 0, SEEK_CUR)                   = 1161
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "import sys\nfrom pathlib import P"..., 65536) = 1161
+read(3, "", 61440)                      = 0
+lseek(3, 0, SEEK_SET)                   = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/main.py", {st_mode=S_IFREG|0644, st_size=1161, ...}, 0) = 0
+readlink("main.py", 0x7ffdb3b522c0, 4096) = -1 EINVAL (Argumento inválido)
+getcwd("/home/gus/Documents/Pentest/WPA_WPA2/main", 1024) = 42
+readlink("/home/gus/Documents/Pentest/WPA_WPA2/main/main.py", 0x7ffdb3b51e60, 1023) = -1 EINVAL (Argumento inválido)
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/main.py", O_RDONLY) = 3
+ioctl(3, FIOCLEX)                       = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1161, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b63260)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1161, ...}) = 0
+read(3, "import sys\nfrom pathlib import P"..., 4096) = 1161
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "import sys\nfrom pathlib import P"..., 4096) = 1161
+read(3, "", 4096)                       = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a76bbb0 /* 9 entries */, 32768) = 296
+getdents64(3, 0x55873a76bbb0 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b62990, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__init__.abi3.so", 0x7ffdb3b62990, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__init__.so", 0x7ffdb3b62990, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__init__.py", {st_mode=S_IFREG|0644, st_size=296, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__init__.py", {st_mode=S_IFREG|0644, st_size=296, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=477, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62720)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=477, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh(\1\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 478) = 477
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/pathlib", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a76bbb0 /* 6 entries */, 32768) = 176
+getdents64(3, 0x55873a76bbb0 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/_abc.py", {st_mode=S_IFREG|0644, st_size=33565, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/_abc.py", {st_mode=S_IFREG|0644, st_size=33565, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__pycache__/_abc.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=39998, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62000)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=39998, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\35\203\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 39999) = 39998
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/functools.py", {st_mode=S_IFREG|0644, st_size=39123, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/functools.py", {st_mode=S_IFREG|0644, st_size=39123, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/functools.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=42271, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=42271, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\323\230\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 42272) = 42271
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/collections/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/collections/__init__.abi3.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/collections/__init__.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/collections/__init__.py", {st_mode=S_IFREG|0644, st_size=52500, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/collections/__init__.py", {st_mode=S_IFREG|0644, st_size=52500, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/collections/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=73200, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=73200, ...}) = 0
+brk(0x55873a79f000)                     = 0x55873a79f000
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\24\315\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 73201) = 73200
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/keyword.py", {st_mode=S_IFREG|0644, st_size=1073, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/keyword.py", {st_mode=S_IFREG|0644, st_size=1073, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/keyword.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1041, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1041, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh1\4\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\3\0\0"..., 1042) = 1041
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/operator.py", {st_mode=S_IFREG|0644, st_size=10980, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/operator.py", {st_mode=S_IFREG|0644, st_size=10980, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/operator.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=17365, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=17365, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\344*\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 17366) = 17365
+read(3, "", 1)                          = 0
+close(3)                                = 0
+mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04a700000
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/reprlib.py", {st_mode=S_IFREG|0644, st_size=7192, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/reprlib.py", {st_mode=S_IFREG|0644, st_size=7192, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/reprlib.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=10423, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=10423, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\30\34\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 10424) = 10423
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/glob.py", {st_mode=S_IFREG|0644, st_size=19720, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/glob.py", {st_mode=S_IFREG|0644, st_size=19720, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/glob.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=23666, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=23666, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\10M\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 23667) = 23666
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/contextlib.py", {st_mode=S_IFREG|0644, st_size=27801, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/contextlib.py", {st_mode=S_IFREG|0644, st_size=27801, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/contextlib.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=30494, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=30494, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\231l\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 30495) = 30494
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/types.py", {st_mode=S_IFREG|0644, st_size=11207, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/types.py", {st_mode=S_IFREG|0644, st_size=11207, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/types.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=15545, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=15545, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\307+\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 15546) = 15545
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/__init__.abi3.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/__init__.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/__init__.py", {st_mode=S_IFREG|0644, st_size=17876, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/__init__.py", {st_mode=S_IFREG|0644, st_size=17876, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=19368, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=19368, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\324E\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\10\0\0"..., 19369) = 19368
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/enum.py", {st_mode=S_IFREG|0644, st_size=85485, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/enum.py", {st_mode=S_IFREG|0644, st_size=85485, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/enum.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=85706, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=85706, ...}) = 0
+brk(0x55873a7ce000)                     = 0x55873a7ce000
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\355M\1\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 85707) = 85706
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a79d370 /* 8 entries */, 32768) = 248
+getdents64(3, 0x55873a79d370 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_compiler.py", {st_mode=S_IFREG|0644, st_size=26290, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_compiler.py", {st_mode=S_IFREG|0644, st_size=26290, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re/__pycache__/_compiler.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=26866, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60610)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=26866, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\262f\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\10\0\0"..., 26867) = 26866
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_parser.py", {st_mode=S_IFREG|0644, st_size=41237, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_parser.py", {st_mode=S_IFREG|0644, st_size=41237, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re/__pycache__/_parser.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=43564, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b5fa60)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=43564, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\25\241\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\v\0\0"..., 43565) = 43564
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_constants.py", {st_mode=S_IFREG|0644, st_size=5939, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_constants.py", {st_mode=S_IFREG|0644, st_size=5939, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re/__pycache__/_constants.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=5379, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b5f340)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=5379, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh3\27\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\24\0\0"..., 5380) = 5379
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_casefix.py", {st_mode=S_IFREG|0644, st_size=5444, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/re/_casefix.py", {st_mode=S_IFREG|0644, st_size=5444, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/re/__pycache__/_casefix.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1816, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b5fef0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1816, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316EhD\25\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 1817) = 1816
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/copyreg.py", {st_mode=S_IFREG|0644, st_size=7614, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/copyreg.py", {st_mode=S_IFREG|0644, st_size=7614, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/copyreg.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=7536, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=7536, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\276\35\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 7537) = 7536
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/fnmatch.py", {st_mode=S_IFREG|0644, st_size=6180, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/fnmatch.py", {st_mode=S_IFREG|0644, st_size=6180, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/fnmatch.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=6804, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=6804, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh$\30\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 6805) = 6804
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/_local.py", {st_mode=S_IFREG|0644, st_size=31412, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/pathlib/_local.py", {st_mode=S_IFREG|0644, st_size=31412, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/pathlib/__pycache__/_local.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=40869, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62000)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=40869, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\264z\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 40870) = 40869
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/warnings.py", {st_mode=S_IFREG|0644, st_size=26948, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/warnings.py", {st_mode=S_IFREG|0644, st_size=26948, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/warnings.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=29538, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=29538, ...}) = 0
+brk(0x55873a7f5000)                     = 0x55873a7f5000
+read(3, "\363\r\r\n\0\0\0\0s\316EhDi\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\7\0\0"..., 29539) = 29538
+read(3, "", 1)                          = 0
+close(3)                                = 0
+mmap(NULL, 208896, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04acfc000
+brk(0x55873a7ee000)                     = 0x55873a7ee000
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/grp.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=14848, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/grp.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=14848, ...}) = 0
+mmap(NULL, 16984, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04b5e1000
+mmap(0x7fc04b5e2000, 4096, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x7fc04b5e2000
+mmap(0x7fc04b5e3000, 4096, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04b5e3000
+mmap(0x7fc04b5e4000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04b5e4000
+close(3)                                = 0
+mprotect(0x7fc04b5e4000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/socket.py", {st_mode=S_IFREG|0644, st_size=37759, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/socket.py", {st_mode=S_IFREG|0644, st_size=37759, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/socket.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=42219, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62720)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=42219, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\177\223\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 42220) = 42219
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_socket.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=107192, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_socket.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=107192, ...}) = 0
+mmap(NULL, 105232, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04b561000
+mmap(0x7fc04b564000, 49152, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7fc04b564000
+mmap(0x7fc04b570000, 36864, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xf000) = 0x7fc04b570000
+mmap(0x7fc04b579000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x18000) = 0x7fc04b579000
+close(3)                                = 0
+mprotect(0x7fc04b579000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/selectors.py", {st_mode=S_IFREG|0644, st_size=19457, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/selectors.py", {st_mode=S_IFREG|0644, st_size=19457, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/selectors.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=26355, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62000)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=26355, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\1L\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 26356) = 26355
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/math.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=65776, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/math.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=65776, ...}) = 0
+mmap(NULL, 67912, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04a6ef000
+mmap(0x7fc04a6f1000, 32768, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04a6f1000
+mmap(0x7fc04a6f9000, 20480, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xa000) = 0x7fc04a6f9000
+mmap(0x7fc04a6fe000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xe000) = 0x7fc04a6fe000
+close(3)                                = 0
+mprotect(0x7fc04a6fe000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/select.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=36352, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/select.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=36352, ...}) = 0
+mmap(NULL, 34392, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04b558000
+mmap(0x7fc04b55a000, 12288, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04b55a000
+mmap(0x7fc04b55d000, 8192, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x5000) = 0x7fc04b55d000
+mmap(0x7fc04b55f000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x7fc04b55f000
+close(3)                                = 0
+mprotect(0x7fc04b55f000, 4096, PROT_READ) = 0
+epoll_create1(EPOLL_CLOEXEC)            = 3
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/array.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=61712, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/array.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=61712, ...}) = 0
+mmap(NULL, 59752, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04aced000
+mmap(0x7fc04acf0000, 24576, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7fc04acf0000
+mmap(0x7fc04acf6000, 16384, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x9000) = 0x7fc04acf6000
+mmap(0x7fc04acfa000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xd000) = 0x7fc04acfa000
+close(3)                                = 0
+mprotect(0x7fc04acfa000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/struct.py", {st_mode=S_IFREG|0644, st_size=257, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/struct.py", {st_mode=S_IFREG|0644, st_size=257, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/struct.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=325, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62720)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=325, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\1\1\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 326) = 325
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_struct.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=50272, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_struct.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=50272, ...}) = 0
+mmap(NULL, 48312, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04a6e3000
+mmap(0x7fc04a6e5000, 20480, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04a6e5000
+mmap(0x7fc04a6ea000, 12288, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x7000) = 0x7fc04a6ea000
+mmap(0x7fc04a6ed000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0xa000) = 0x7fc04a6ed000
+close(3)                                = 0
+mprotect(0x7fc04a6ed000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a7d6290 /* 15 entries */, 32768) = 664
+getdents64(3, 0x55873a7d6290 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/ansi_code_colors.py", {st_mode=S_IFREG|0644, st_size=681, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/ansi_code_colors.py", {st_mode=S_IFREG|0644, st_size=681, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/ansi_code_colors.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1336, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62720)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1336, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\244>Kh\251\2\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 1337) = 1336
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_abstraction_client.py", {st_mode=S_IFREG|0644, st_size=4481, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_abstraction_client.py", {st_mode=S_IFREG|0644, st_size=4481, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/netlink_abstraction_client.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=4707, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62720)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=4707, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0J\262]h\201\21\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 4708) = 4707
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_messages.py", {st_mode=S_IFREG|0644, st_size=7444, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_messages.py", {st_mode=S_IFREG|0644, st_size=7444, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/netlink_messages.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=8311, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b62000)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=8311, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\244>Kh\24\35\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 8312) = 8311
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/random.py", {st_mode=S_IFREG|0644, st_size=37006, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/random.py", {st_mode=S_IFREG|0644, st_size=37006, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/random.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=35256, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=35256, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh\216\220\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\6\0\0"..., 35257) = 35256
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/bisect.py", {st_mode=S_IFREG|0644, st_size=3423, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/bisect.py", {st_mode=S_IFREG|0644, st_size=3423, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/__pycache__/bisect.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=3497, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=3497, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0s\316Eh_\r\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\4\0\0"..., 3498) = 3497
+read(3, "", 1)                          = 0
+close(3)                                = 0
+mmap(NULL, 1048576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc04a5e3000
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_bisect.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=23064, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_bisect.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=23064, ...}) = 0
+mmap(NULL, 21256, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04a5dd000
+mmap(0x7fc04a5de000, 8192, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x7fc04a5de000
+mmap(0x7fc04a5e0000, 4096, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7fc04a5e0000
+mmap(0x7fc04a5e1000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x4000) = 0x7fc04a5e1000
+close(3)                                = 0
+mprotect(0x7fc04a5e1000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_random.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=18824, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_random.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=18824, ...}) = 0
+mmap(NULL, 21032, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04a5d7000
+mmap(0x7fc04a5d8000, 8192, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1000) = 0x7fc04a5d8000
+mmap(0x7fc04a5da000, 4096, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7fc04a5da000
+mmap(0x7fc04a5db000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x3000) = 0x7fc04a5db000
+close(3)                                = 0
+mprotect(0x7fc04a5db000, 4096, PROT_READ) = 0
+getrandom("\x7a\x86\x30\x30\xb9\x39\xa9\x94\x8d\x19\xb8\x48\xfa\x1d\xe8\x70\x54\x4a\x66\x61\xb2\xe5\xac\x3b\x15\xd6\x4c\x14\x91\xe2\x9a\x09"..., 2496, GRND_NONBLOCK) = 2496
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/parser_netlink_route.py", {st_mode=S_IFREG|0644, st_size=1878, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/parser_netlink_route.py", {st_mode=S_IFREG|0644, st_size=1878, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/parser_netlink_route.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=2182, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=2182, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\244>KhV\7\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 2183) = 2182
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/parser_nl80211.py", {st_mode=S_IFREG|0644, st_size=21513, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/parser_nl80211.py", {st_mode=S_IFREG|0644, st_size=21513, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/parser_nl80211.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=18637, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b618e0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=18637, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\244>Kh\tT\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 18638) = 18637
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/__init__.cpython-313-x86_64-linux-gnu.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/__init__.abi3.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/__init__.so", 0x7ffdb3b61430, 0) = -1 ENOENT (Arquivo ou diretório inexistente)
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/__init__.py", {st_mode=S_IFREG|0644, st_size=14020, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/__init__.py", {st_mode=S_IFREG|0644, st_size=14020, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/json/__pycache__/__init__.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=13510, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=13510, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\3046\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\n\0\0"..., 13511) = 13510
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/json", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 3
+fstat(3, {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+getdents64(3, 0x55873a7e4eb0 /* 8 entries */, 32768) = 240
+getdents64(3, 0x55873a7e4eb0 /* 0 entries */, 32768) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/decoder.py", {st_mode=S_IFREG|0644, st_size=12872, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/decoder.py", {st_mode=S_IFREG|0644, st_size=12872, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=13822, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=13822, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316EhH2\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\t\0\0"..., 13823) = 13822
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/scanner.py", {st_mode=S_IFREG|0644, st_size=2434, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/scanner.py", {st_mode=S_IFREG|0644, st_size=2434, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/json/__pycache__/scanner.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=3363, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b5fef0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=3363, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\202\t\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\5\0\0"..., 3364) = 3363
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_json.cpython-313-x86_64-linux-gnu.so", {st_mode=S_IFREG|0755, st_size=44224, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload/_json.cpython-313-x86_64-linux-gnu.so", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\0\0\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=44224, ...}) = 0
+mmap(NULL, 46592, PROT_READ, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7fc04a5cb000
+mmap(0x7fc04a5cd000, 24576, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x2000) = 0x7fc04a5cd000
+mmap(0x7fc04a5d3000, 8192, PROT_READ, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x8000) = 0x7fc04a5d3000
+mmap(0x7fc04a5d5000, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x9000) = 0x7fc04a5d5000
+close(3)                                = 0
+mprotect(0x7fc04a5d5000, 4096, PROT_READ) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/encoder.py", {st_mode=S_IFREG|0644, st_size=16079, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/json/encoder.py", {st_mode=S_IFREG|0644, st_size=16079, ...}, 0) = 0
+openat(AT_FDCWD, "/usr/lib/python3.13/json/__pycache__/encoder.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=15135, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b60aa0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=15135, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0t\316Eh\317>\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\n\0\0"..., 15136) = 15135
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/lib-dynload", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/lib/python3.13/site-packages", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_subsystems_constants.py", {st_mode=S_IFREG|0644, st_size=1212, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/netlink_subsystems_constants.py", {st_mode=S_IFREG|0644, st_size=1212, ...}, 0) = 0
+openat(AT_FDCWD, "/home/gus/Documents/Pentest/WPA_WPA2/main/modules/__pycache__/netlink_subsystems_constants.cpython-313.pyc", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1551, ...}) = 0
+ioctl(3, TCGETS, 0x7ffdb3b611c0)        = -1 ENOTTY (ioctl inapropriado para dispositivo)
+lseek(3, 0, SEEK_CUR)                   = 0
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1551, ...}) = 0
+read(3, "\363\r\r\n\0\0\0\0\244>Kh\274\4\0\0\343\0\0\0\0\0\0\0\0\0\0\0\0\2\0\0"..., 1552) = 1551
+read(3, "", 1)                          = 0
+close(3)                                = 0
+socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, NETLINK_GENERIC) = 3
+getpid()                                = 13111
+bind(3, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, 12) = 0
+sendto(3, [{nlmsg_len=32, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_GETFAMILY, version=0}, [{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "nl80211"]], 32, 0, NULL, 0) = 32
+brk(0x55873a81a000)                     = 0x55873a81a000
+recvfrom(3, [[{nlmsg_len=136, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "nlctrl"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x10], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 2], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETPOLICY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x10], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "notify"]]]]]], [{nlmsg_len=96, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "VFS_DQUOT"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x11], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x11], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "events"]]]]]], [{nlmsg_len=216, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "dpll"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x13], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x2], [{nla_len=12, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "monitor"]]]]]], [{nlmsg_len=244, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "netdev"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x14], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_DEV_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_PAGE_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_QUEUE_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_NAPI_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_QSTATS_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, 0xd /* NETDEV_CMD_??? */], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=56, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x3], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mgmt"]]], [{nla_len=28, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x4], [{nla_len=14, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "page-pool"]]]]]]], [{nlmsg_len=996, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "ethtool"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x15], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=904, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_STRSET_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKINFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKINFO_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKMODES_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKMODES_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKSTATE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_DEBUG_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_DEBUG_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_WOL_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_WOL_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_SET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PRIVFLAGS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PRIVFLAGS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_RINGS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_RINGS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CHANNELS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CHANNELS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_COALESCE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_COALESCE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PAUSE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PAUSE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_EEE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_EEE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_TSINFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CABLE_TEST_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CABLE_TEST_TDR_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_TUNNEL_INFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEC_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEC_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_MODULE_EEPROM_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], ...]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x5], [{nla_len=12, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "monitor"]]]]]], [{nlmsg_len=1236, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "devlink"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x16], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=1144, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_NEW], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_SPLIT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_UNSPLIT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_POOL_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_PORT_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_PORT_POOL_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_TC_POOL_BIND_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_TC_POOL_BIND_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_OCC_SNAPSHOT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_OCC_MAX_CLEAR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_ESWITCH_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_ESWITCH_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_TABLE_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_ENTRIES_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_HEADERS_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_TABLE_COUNTERS_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RESOURCE_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RESOURCE_DUMP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RELOAD], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PARAM_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PARAM_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_NEW], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_READ], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_PARAM_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], ...]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x6], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "config"]]]]]], [{nlmsg_len=232, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_MGMT"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x17], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 12], [{nla_len=164, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=156, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=17, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_CIPSOv4"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x18], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 12], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]]]]]], [{nlmsg_len=156, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=17, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_CALIPSO"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x19], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 2], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]]]]]], [{nlmsg_len=232, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=15, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_UNLBL"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1a], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=164, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]]], 65536, 0, NULL, NULL) = 3700
+brk(0x55873a80b000)                     = 0x55873a80b000
+recvfrom(3, [[{nlmsg_len=188, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "NCSI"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1b], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 0], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 8], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=104, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=15, nla_type=CTRL_ATTR_FAMILY_NAME}, "acpi_event"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1c], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 1], [{nla_len=36, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x7], [{nla_len=18, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "acpi_mc_group"]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=16, nla_type=CTRL_ATTR_FAMILY_NAME}, "tcp_metrics"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1d], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 13], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TCP_METRICS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TCP_METRICS_CMD_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=360, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=13, nla_type=CTRL_ATTR_FAMILY_NAME}, "mptcp_pm"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1e], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=224, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_ADD_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_DEL_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_GET_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_FLUSH_ADDRS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SET_LIMITS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_GET_LIMITS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SET_FLAGS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_ANNOUNCE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_REMOVE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SUBFLOW_CREATE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SUBFLOW_DESTROY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]]]], [{nla_len=68, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x8], [{nla_len=18, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mptcp_pm_cmds"]]], [{nla_len=32, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x9], [{nla_len=20, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mptcp_pm_events"]]]]]]], [{nlmsg_len=196, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "NET_DM"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1f], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 2], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 23], [{nla_len=104, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x1], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "events"]]]]]], [{nlmsg_len=148, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "SEG6"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x20], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_SETHMAC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_DUMPHMAC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_SET_TUNSRC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_GET_TUNSRC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=244, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=10, nla_type=CTRL_ATTR_FAMILY_NAME}, "IOAM6"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x21], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=144, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_ADD_NAMESPACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DEL_NAMESPACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DUMP_NAMESPACES], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_ADD_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DEL_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DUMP_SCHEMAS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_NS_SET_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=36, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xa], [{nla_len=17, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "ioam6_events"]]]]]], [{nlmsg_len=164, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "handshake"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x22], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=52, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xb], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "none"]]], [{nla_len=24, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xc], [{nla_len=10, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "tlshd"]]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "TASKSTATS"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x23], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TASKSTATS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CGROUPSTATS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=2516, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "nl80211"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x24], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 332], [{nla_len=2304, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_WIPHY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_WIPHY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_BEACON], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_START_AP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_STOP_AP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MPP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_BSS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_REQ_SET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_RELOAD_REGDB], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MESH_CONFIG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_MESH_CONFIG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_TRIGGER_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_ABORT_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], ...]], [{nla_len=148, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x13], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "config"]]], [{nla_len=24, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x14], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "scan"]]], [{nla_len=28, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x15], [{nla_len=15, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "regulatory"]]], [{nla_len=24, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x16], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mlme"]]], [{nla_len=24, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x17], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "vendor"]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x18], [{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "nan"]]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "wireguard"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x25], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 8], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_UNSPEC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]]]]]], [{nlmsg_len=20, nlmsg_type=NLMSG_DONE, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, 0]], 65536, 0, NULL, NULL) = 4276
+close(3)                                = 0
+brk(0x55873a80a000)                     = 0x55873a80a000
+socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, NETLINK_GENERIC) = 3
+getpid()                                = 13111
+bind(3, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, 12) = 0
+sendto(3, [{nlmsg_len=32, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_GETFAMILY, version=0}, [{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "nl80211"]], 32, 0, NULL, 0) = 32
+recvfrom(3, [[{nlmsg_len=136, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "nlctrl"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x10], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 2], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETPOLICY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x10], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "notify"]]]]]], [{nlmsg_len=96, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "VFS_DQUOT"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x11], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x11], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "events"]]]]]], [{nlmsg_len=216, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "dpll"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x13], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x2], [{nla_len=12, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "monitor"]]]]]], [{nlmsg_len=244, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "netdev"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x14], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_DEV_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_PAGE_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_QUEUE_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_NAPI_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NETDEV_CMD_QSTATS_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, 0xd /* NETDEV_CMD_??? */], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=56, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x3], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mgmt"]]], [{nla_len=28, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x4], [{nla_len=14, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "page-pool"]]]]]]], [{nlmsg_len=996, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "ethtool"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x15], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=904, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_STRSET_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKINFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKINFO_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKMODES_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKMODES_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_LINKSTATE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_DEBUG_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_DEBUG_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_WOL_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_WOL_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_SET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEATURES_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PRIVFLAGS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PRIVFLAGS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_RINGS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_RINGS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CHANNELS_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CHANNELS_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_COALESCE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_COALESCE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PAUSE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_PAUSE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_EEE_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_EEE_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_TSINFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CABLE_TEST_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_CABLE_TEST_TDR_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_TUNNEL_INFO_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEC_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_FEC_NTF], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, ETHTOOL_MSG_MODULE_EEPROM_GET_REPLY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], ...]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x5], [{nla_len=12, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "monitor"]]]]]], [{nlmsg_len=1236, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "devlink"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x16], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=1144, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_NEW], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_SPLIT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_UNSPLIT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_POOL_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_PORT_POOL_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_PORT_POOL_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_TC_POOL_BIND_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_TC_POOL_BIND_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_OCC_SNAPSHOT], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_SB_OCC_MAX_CLEAR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_ESWITCH_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_ESWITCH_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_TABLE_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_ENTRIES_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_HEADERS_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_DPIPE_TABLE_COUNTERS_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RESOURCE_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RESOURCE_DUMP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_RELOAD], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PARAM_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PARAM_SET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_NEW], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_REGION_READ], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, DEVLINK_CMD_PORT_PARAM_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], ...]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x6], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "config"]]]]]], [{nlmsg_len=232, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_MGMT"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x17], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 12], [{nla_len=164, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=156, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=17, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_CIPSOv4"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x18], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 12], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]]]]]], [{nlmsg_len=156, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=17, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_CALIPSO"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x19], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 2], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]]]]]], [{nlmsg_len=232, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=15, nla_type=CTRL_ATTR_FAMILY_NAME}, "NLBL_UNLBL"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1a], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 3], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=164, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]]], 65536, 0, NULL, NULL) = 3700
+recvfrom(3, [[{nlmsg_len=188, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "NCSI"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1b], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 0], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 8], [{nla_len=124, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=104, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=15, nla_type=CTRL_ATTR_FAMILY_NAME}, "acpi_event"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1c], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 1], [{nla_len=36, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x7], [{nla_len=18, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "acpi_mc_group"]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=16, nla_type=CTRL_ATTR_FAMILY_NAME}, "tcp_metrics"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1d], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 13], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TCP_METRICS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TCP_METRICS_CMD_DEL], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=360, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=13, nla_type=CTRL_ATTR_FAMILY_NAME}, "mptcp_pm"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1e], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=224, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_ADD_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_DEL_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_GET_ADDR], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_FLUSH_ADDRS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SET_LIMITS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_GET_LIMITS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SET_FLAGS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_ANNOUNCE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_REMOVE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SUBFLOW_CREATE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, MPTCP_PM_CMD_SUBFLOW_DESTROY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]]]], [{nla_len=68, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x8], [{nla_len=18, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mptcp_pm_cmds"]]], [{nla_len=32, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x9], [{nla_len=20, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mptcp_pm_events"]]]]]]], [{nlmsg_len=196, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=11, nla_type=CTRL_ATTR_FAMILY_NAME}, "NET_DM"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x1f], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 2], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 23], [{nla_len=104, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETOPS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELMCAST_GRP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=28, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x1], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "events"]]]]]], [{nlmsg_len=148, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=9, nla_type=CTRL_ATTR_FAMILY_NAME}, "SEG6"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x20], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 7], [{nla_len=84, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_SETHMAC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_DUMPHMAC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_SET_TUNSRC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, SEG6_CMD_GET_TUNSRC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=244, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=10, nla_type=CTRL_ATTR_FAMILY_NAME}, "IOAM6"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x21], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=144, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_ADD_NAMESPACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DEL_NAMESPACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DUMP_NAMESPACES], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_ADD_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DEL_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_DUMP_SCHEMAS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DUMP]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, IOAM6_CMD_NS_SET_SCHEMA], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=36, nla_type=CTRL_ATTR_MCAST_GROUPS}, [{nla_len=32, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xa], [{nla_len=17, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "ioam6_events"]]]]]], [{nlmsg_len=164, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "handshake"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x22], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_DELFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_GETFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]], [{nla_len=52, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xb], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "none"]]], [{nla_len=24, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0xc], [{nla_len=10, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "tlshd"]]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "TASKSTATS"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x23], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 0], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, TASKSTATS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CGROUPSTATS_CMD_GET], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]]]]]], [{nlmsg_len=2516, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=12, nla_type=CTRL_ATTR_FAMILY_NAME}, "nl80211"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x24], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 332], [{nla_len=2304, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_WIPHY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_WIPHY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_INTERFACE], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x7}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x8}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x9}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xa}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_KEY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xb}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_BEACON], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xc}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_START_AP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xd}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_STOP_AP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0xe}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0xf}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x10}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x11}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_STATION], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x12}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x13}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MPP], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x14}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x15}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_NEW_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x16}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_DEL_MPATH], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x17}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_BSS], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x18}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x19}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1a}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_REQ_SET_REG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1b}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_RELOAD_REGDB], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_ADMIN_PERM|GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1c}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_MESH_CONFIG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL]]], [{nla_len=20, nla_type=0x1d}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_SET_MESH_CONFIG], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1e}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_TRIGGER_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x1f}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_ABORT_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x20}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, NL80211_CMD_GET_SCAN], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP]]], ...]], [{nla_len=148, nla_type=CTRL_ATTR_MCAST_GROUPS}, [[{nla_len=24, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x13], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "config"]]], [{nla_len=24, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x14], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "scan"]]], [{nla_len=28, nla_type=0x3}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x15], [{nla_len=15, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "regulatory"]]], [{nla_len=24, nla_type=0x4}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x16], [{nla_len=9, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "mlme"]]], [{nla_len=24, nla_type=0x5}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x17], [{nla_len=11, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "vendor"]]], [{nla_len=20, nla_type=0x6}, [[{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_ID}, 0x18], [{nla_len=8, nla_type=CTRL_ATTR_MCAST_GRP_NAME}, "nan"]]]]]]], [{nlmsg_len=112, nlmsg_type=nlctrl, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, {cmd=CTRL_CMD_NEWFAMILY, version=2}, [[{nla_len=14, nla_type=CTRL_ATTR_FAMILY_NAME}, "wireguard"], [{nla_len=6, nla_type=CTRL_ATTR_FAMILY_ID}, 0x25], [{nla_len=8, nla_type=CTRL_ATTR_VERSION}, 1], [{nla_len=8, nla_type=CTRL_ATTR_HDRSIZE}, 0], [{nla_len=8, nla_type=CTRL_ATTR_MAXATTR}, 8], [{nla_len=44, nla_type=CTRL_ATTR_OPS}, [[{nla_len=20, nla_type=0x1}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_UNSPEC], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DUMP|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]], [{nla_len=20, nla_type=0x2}, [[{nla_len=8, nla_type=CTRL_ATTR_OP_ID}, CTRL_CMD_NEWFAMILY], [{nla_len=8, nla_type=CTRL_ATTR_OP_FLAGS}, GENL_CMD_CAP_DO|GENL_CMD_CAP_HASPOL|GENL_UNS_ADMIN_PERM]]]]]]], [{nlmsg_len=20, nlmsg_type=NLMSG_DONE, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=1, nlmsg_pid=13111}, 0]], 65536, 0, NULL, NULL) = 4276
+close(3)                                = 0
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+write(2, "\33[1mChoose the managed/station i"..., 85) = 85
+fstat(0, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0x6), ...}) = 0
+read(0, "wlan0\n", 1024)                = 6
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(0, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(1, TCGETS, {c_iflag=ICRNL|IXON|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+write(2, "\33[1mChoose the monitor interface"..., 77) = 77
+read(0, "\n", 1024)                     = 1
+socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0) = 3
+ioctl(3, SIOCGIFINDEX, {ifr_name="wlan0", ifr_ifindex=5}) = 0
+close(3)                                = 0
+socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0) = 3
+ioctl(3, SIOCGIFINDEX, {ifr_name=""})   = -1 ENODEV (Dispositivo inexistente)
+close(3)                                = 0
+write(1, "no interface with this name\n", 28) = 28
+getpid()                                = 13111
+socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, NETLINK_ROUTE) = 3
+bind(3, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, 12) = 0
+socket(AF_NETLINK, SOCK_RAW|SOCK_CLOEXEC, NETLINK_GENERIC) = 4
+bind(4, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, 12) = 0
+sendto(4, [{nlmsg_len=28, nlmsg_type=nl80211, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=0, nlmsg_pid=13111}, {cmd=0x1, version=0}, [{nla_len=8, nla_type=0x3}, "\x05\x00\x00\x00"]], 28, 0, NULL, 0) = 28
+recvfrom(4, [{nlmsg_len=2908, nlmsg_type=nl80211, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=0, nlmsg_pid=13111}, {cmd=0x3, version=1}, [[{nla_len=8, nla_type=0x1}, "\x00\x00\x00\x00"], [{nla_len=9, nla_type=0x2}, "\x70\x68\x79\x30\x00"], [{nla_len=8, nla_type=0x2e}, "\x01\x00\x00\x00"], [{nla_len=5, nla_type=0x3d}, "\x07"], [{nla_len=5, nla_type=0x3e}, "\x04"], [{nla_len=8, nla_type=0x3f}, "\xff\xff\xff\xff"], [{nla_len=8, nla_type=0x40}, "\xff\xff\xff\xff"], [{nla_len=5, nla_type=0x59}, "\x00"], [{nla_len=5, nla_type=0x2b}, "\x14"], [{nla_len=5, nla_type=0x7b}, "\x14"], [{nla_len=6, nla_type=0x38}, "\x64\x01"], [{nla_len=6, nla_type=0x7c}, "\xe6\x01"], [{nla_len=5, nla_type=0x85}, "\x08"], {nla_len=4, nla_type=0x68}, {nla_len=4, nla_type=0x82}, {nla_len=4, nla_type=0x8b}, {nla_len=4, nla_type=0x8c}, [{nla_len=40, nla_type=0x39}, "\x01\xac\x0f\x00\x05\xac\x0f\x00\x02\xac\x0f\x00\x04\xac\x0f\x00\x08\xac\x0f\x00\x09\xac\x0f\x00\x06\xac\x0f\x00\x0b\xac\x0f\x00"...], [{nla_len=5, nla_type=0x56}, "\x00"], {nla_len=4, nla_type=0x66}, [{nla_len=8, nla_type=0x71}, "\x03\x00\x00\x00"], [{nla_len=8, nla_type=0x72}, "\x03\x00\x00\x00"], [{nla_len=8, nla_type=0x69}, "\x03\x00\x00\x00"], [{nla_len=8, nla_type=0x6a}, "\x03\x00\x00\x00"], [{nla_len=36, nla_type=0x20}, "\x04\x00\x01\x00\x04\x00\x02\x00\x04\x00\x03\x00\x04\x00\x04\x00\x04\x00\x06\x00\x04\x00\x08\x00\x04\x00\x09\x00\x04\x00\x0a\x00"], [{nla_len=2092, nla_type=0x16}, "\x60\x02\x00\x00\x14\x00\x03\x00\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x2c\x01\x01\x00\x00\x00\x06\x00\x04\x00\xef\x19\x00\x00"...], [{nla_len=244, nla_type=0x32}, "\x08\x00\x01\x00\x07\x00\x00\x00\x08\x00\x02\x00\x06\x00\x00\x00\x08\x00\x03\x00\x0b\x00\x00\x00\x08\x00\x04\x00\x0f\x00\x00\x00"...], [{nla_len=8, nla_type=0x6f}, "\x10\x27\x00\x00"], {nla_len=4, nla_type=0x6c}, [{nla_len=60, nla_type=0x76}, "\x04\x00\x02\x00\x04\x00\x03\x00\x04\x00\x05\x00\x04\x00\x06\x00\x04\x00\x07\x00\x04\x00\x08\x00\x04\x00\x09\x00\x14\x00\x04\x00"...], [{nla_len=12, nla_type=0x79}, "\x04\x00\x04\x00\x04\x00\x06\x00"], [{nla_len=184, nla_type=0x78}, "\x58\x00\x01\x00\x44\x00\x01\x00\x14\x00\x01\x00\x08\x00\x01\x00\x01\x00\x00\x00\x08\x00\x02\x00\x04\x00\x02\x00\x18\x00\x02\x00"...], ...]], 65536, 0, NULL, NULL) = 2908
+recvfrom(4, [{nlmsg_len=20, nlmsg_type=NLMSG_DONE, nlmsg_flags=NLM_F_MULTI, nlmsg_seq=0, nlmsg_pid=13111}, 0], 65536, 0, NULL, NULL) = 20
+getsockname(3, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, [12]) = 0
+getpeername(3, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, [12]) = 0
+close(3)                                = 0
+getsockname(4, {sa_family=AF_NETLINK, nl_pid=13111, nl_groups=00000000}, [12]) = 0
+getpeername(4, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, [12]) = 0
+close(4)                                = 0
+write(1, "{'Wiphy name': 'phy0', 'Wiphy DA"..., 11047) = 11047
+write(1, "\n", 1)                       = 1
+rt_sigaction(SIGINT, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, {sa_handler=0x7fc04b2560c0, sa_mask=[], sa_flags=SA_RESTORER|SA_ONSTACK, sa_restorer=0x7fc04ae50650}, 8) = 0
+munmap(0x7fc04acfc000, 208896)          = 0
+munmap(0x7fc04b5e6000, 16384)           = 0
+exit_group(0)                           = ?
++++ exited with 0 +++
