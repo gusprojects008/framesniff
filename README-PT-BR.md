@@ -5,7 +5,7 @@ Uma ferramenta de linha de comando para exploração e análise de redes, com fo
 O foco atual está no desenvolvimento para suporte do padrão IEEE 802.11. Bluetooth e ethernet ainda não são suportados.
 
 ## Licença
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 ## Visão geral
 
