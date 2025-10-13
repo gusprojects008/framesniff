@@ -182,14 +182,12 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
             elif tag_number == 221:
                 if "vendor_specific" not in tagged_parameters:
                     tagged_parameters["vendor_specific"] = {}
-                vendors_ie = ies_parsers.vendor_specific_ie(data)
-                print(vendors_ie)
-                for oui, vendor_entries in vendors_ie.items():
-                    if oui not in tagged_parameters["vendor_specific"]:
-                        tagged_parameters["vendor_specific"][oui] = {}
-                    for vendor_entry in vendor_entries:
-                        vendor_type = vendor_entry["type"]
-                        tagged_parameters["vendor_specific"][oui][vendor_type] = vendor_entry
+                vendor_entry = ies_parsers.vendor_specific_ie(data)
+                oui = vendor_entry["oui"]
+                vendor_type = vendor_entry["type"]
+                if oui not in tagged_parameters["vendor_specific"]:
+                    tagged_parameters["vendor_specific"][oui] = {}
+                tagged_parameters["vendor_specific"][oui][vendor_type] = vendor_entry
         return tagged_parameters, offset
     except struct.error as error:
         tagged_parameters['error'] = str(error)

@@ -2,12 +2,12 @@ import re
 import operator
 
 operators = {
+    ">=": operator.ge,
+    "<=": operator.le,
     "==": operator.eq,
     "!=": operator.ne,
     ">": operator.gt,
     "<": operator.lt,
-    ">=": operator.ge,
-    "<=": operator.le,
 }
 
 def _get_nested(path: str, dct: dict):
@@ -149,3 +149,21 @@ def apply_filters(store_filter: str = None, display_filter: str = None, parsed_f
             value = _get_nested(key, parsed_frame)
             display_filter_result[key] = value
     return store_filter_result, display_filter_result
+
+def _to_value(val: str, parsed_frame: dict):
+    val = val.strip()
+    if val.lower() == "true":
+        return True
+    if val.lower() == "false":
+        return False
+    if re.fullmatch(r"[-+]?\d+", val):
+        return int(val)
+    if re.fullmatch(r"[-+]?\d*\.\d+", val):
+        return float(val)
+    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        return val[1:-1]
+    nested = _get_nested(val, parsed_frame)
+    if nested is not None:
+        return nested
+    return None
+

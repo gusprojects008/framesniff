@@ -130,9 +130,9 @@ sudo python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interv
 
 ```json
 { 
+"ap_mac": "aa:bb:cc:dd:ee:ff", 
+"sta_mac": "11:22:33:44:55:66"
 "pmkid": "e4f3... (32 hex chars)", 
-"mac_ap": "aa:bb:cc:dd:ee:ff", 
-"mac_client": "11:22:33:44:55:66"
 }
 ```
 

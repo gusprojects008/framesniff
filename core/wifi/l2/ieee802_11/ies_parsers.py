@@ -218,7 +218,7 @@ def vendor_specific_ie(data: bytes):
         vendor_entry["description"] = "Generic Vendor Specific"
         vendor_entry["data"] = vendor_data.hex()
     
-    return {oui: [vendor_entry]}
+    return vendor_entry
 
 def rsn_information(data: bytes, tag_length: int) -> dict:
     result = {}

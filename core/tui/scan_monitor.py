@@ -11,7 +11,7 @@ from textual.widgets import Header, Footer, Static, Label, DataTable
 from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
-from core.common.useful_functions import export_tui_for_txt
+from core.common.useful_functions import export_tui_to_txt, freq_to_channel
 
 class NetworkScannerTUI(App):
     CSS = """
@@ -129,7 +129,7 @@ class NetworkScannerTUI(App):
         networks_table.add_columns("BSSID", "SSID", "VENDOR", "CH", "PWR", "ENC", "CLIENTS", "WPS", "BCNS")
         
         clients_table = self.query_one("#clients-table", DataTable) 
-        clients_table.add_columns("MAC", "VENDOR", "PWR", "FRAMES", "BSSID", "SSID")
+        clients_table.add_columns("MAC", "VENDOR", "CH", "PWR", "FRAMES", "BSSID", "SSID")
         
         self.set_interval(0.1, self.process_queued_frames)
         self.set_interval(0.5, self.update_display)
@@ -204,7 +204,8 @@ class NetworkScannerTUI(App):
             src_mac = display_data.get('mac_hdr.mac_src.mac')
             src_vendor = display_data.get('mac_hdr.mac_src.vendor')
             ssid = display_data.get('body.tagged_parameters.ssid', '[Hidden]')
-            channel = display_data.get('body.tagged_parameters.current_channel', self.current_channel)
+            channel_fallback= display_data.get('body.tagged_parameters.current_channel', self.current_channel)
+            channel = freq_to_channel(display_data.get('rt_hdr.channel_freq')) or channel_fallback
             capabilities = display_data.get('body.fixed_parameters.capabilities_information', 0)
             rsn_info = display_data.get('body.tagged_parameters.rsn_information')
             vendor_specific = display_data.get('body.tagged_parameters.vendor_specific', {})
@@ -219,7 +220,7 @@ class NetworkScannerTUI(App):
                     if bssid_mac not in self.networks:
                         self.networks[bssid_mac] = {
                             'ssid': ssid or "[Hidden]",
-                            'channel': channel or self.current_channel,
+                            'channel': channel,
                             'signal': -100,
                             'beacons': 0,
                             'vendor': bssid_vendor,
@@ -237,12 +238,14 @@ class NetworkScannerTUI(App):
                 if src_mac not in self.clients:
                     self.clients[src_mac] = {
                         'vendor': src_vendor,
+                        'channel': channel,
                         'signal': -100,
                         'frames': 0,
                         'last_seen': time.time()
                     }
                 cli = self.clients[src_mac]
                 cli['frames'] += 1
+                cli['channel'] = channel
                 cli['signal'] = max(cli['signal'], signal or -100)
                 cli['last_seen'] = time.time()
                 self.associations[src_mac] = bssid_mac
@@ -359,13 +362,14 @@ class NetworkScannerTUI(App):
             else:
                 ssid = '(not associated)'
                 bssid_display = 'N/A'
-            
+
+            channel = info['channel'] or self.current_channel
             signal = info['signal'] if info['signal'] is not None else -100
             frames = info['frames'] if info['frames'] is not None else 0
             vendor = info['vendor'] if info['vendor'] is not None else 'Unknown'
             
             clients_table.add_row(
-                client_mac, vendor, str(signal), str(frames), bssid_display, ssid
+                client_mac, vendor, channel, str(signal), str(frames), bssid_display, ssid
             )
 
     def on_key(self, event):

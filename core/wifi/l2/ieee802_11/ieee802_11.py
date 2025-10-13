@@ -311,11 +311,11 @@ class IEEE802_11:
 
         if bitmask_message_pair == 1:
             pmkid = clean_hex_string(data.get("pmkid"))
-            mac_ap = clean_hex_string(data.get("mac_ap"))
-            mac_client = clean_hex_string(data.get("mac_client"))
-            if not all([ssid, pmkid, mac_ap, mac_client]):
-                raise ValueError("Missing one or more required keys: pmkid, mac_ap, mac_client")
-            line = f"WPA*01*{pmkid}*{mac_ap}*{mac_client}*{essid}***{message_pair:02x}"
+            ap_mac = clean_hex_string(data.get("ap_mac"))
+            sta_mac = clean_hex_string(data.get("sta_mac"))
+            if not all([ssid, pmkid, ap_mac, sta_mac]):
+                raise ValueError("Missing one or more required keys: pmkid, ap_mac, sta_mac")
+            line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
             print(line)
     
         elif bitmask_message_pair == 2:
@@ -351,15 +351,15 @@ class IEEE802_11:
             subtype, protected = (mac_hdr2.get("fc").get("subtype"), mac_hdr2.get("protected", False))
             body2 = IEEE802_11.Data.parse(msg2, mac_offset2, subtype, protected)
     
-            mac_ap = clean_hex_string(mac_hdr2.get("bssid").get("mac") or mac_hdr2.get("mac_dst").get("mac"))
-            mac_client = clean_hex_string(mac_hdr2.get("mac_src").get("mac") or mac_hdr2.get("mac_transmitter").get("mac"))
+            ap_mac = clean_hex_string(mac_hdr2.get("bssid").get("mac") or mac_hdr2.get("mac_dst").get("mac"))
+            sta_mac = clean_hex_string(mac_hdr2.get("mac_src").get("mac") or mac_hdr2.get("mac_transmitter").get("mac"))
     
             eapol_data1 = body1.get("eapol", {})
             eapol_data2 = body2.get("eapol", {})
     
             anonce = eapol_data1.get("key_nonce", "")
             mic = eapol_data2.get("key_mic", "")
-            if not all([mac_ap, mac_client, anonce, mic]):
+            if not all([ap_mac, sta_mac, anonce, mic]):
                 raise ValueError("Missing essential EAPOL data")
             if len(mic) != 32:
                 raise ValueError(f"Invalid MIC length: {len(mic)}")
@@ -375,9 +375,8 @@ class IEEE802_11:
             zero_mic = b"\x00" * len(mic_bytes)
     
             eapol_zero_mic = (eapol_frame[:mic_offset] + zero_mic + eapol_frame[mic_offset + len(mic_bytes):]).hex()
-            message_pair_hex = f"{message_pair:02x}"
     
-            line = f"WPA*02*{mic}*{mac_ap}*{mac_client}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair_hex}"
+            line = f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair:02x}"
     
             with open(output_filename, "w", newline="\n") as f:
                 f.write(line)

@@ -45,7 +45,7 @@ def main():
     sniff_parser.add_argument("--output", "-o", default=None, help="Output JSON file")
 
     generate_22000_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from json file")
-    generate_22000_parser.add_argument("--bitmask", type=int, choices=[1, 2], default=2, required=True, help="Bitmask message pair (1 or 2)\nbitmask 1 format: {'pmkid': '',  'mac_ap': '', 'mac_client': ''}\nbitmask 2 format: {'raw': ['eapol message 1', 'eapol message 2']}. e.g. {'raw': ['000038002f...', '000038002f...']}")
+    generate_22000_parser.add_argument("--bitmask", type=int, choices=[1, 2], default=2, required=True, help="Bitmask message pair (1 or 2)\nbitmask 1 format: {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\nbitmask 2 format: {'raw': ['eapol message 1', 'eapol message 2']}. e.g. {'raw': ['000038002f...', '000038002f...']}")
     generate_22000_parser.add_argument("--ssid", required=True, help="SSID of the target network (e.g. MyNetwork)")
     generate_22000_parser.add_argument("--input", "-i", required=True, help="JSON file path")
     generate_22000_parser.add_argument("--output", "-o", default="hashcat.22000", help="Output file name")
