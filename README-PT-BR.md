@@ -1,6 +1,6 @@
 # framesniff
 
-Uma ferramenta de linha de comando para exploração e análise de redes, com foco em captura e manipulação de frames em diferentes camadas e padrões de comunicação (Wi-Fi (IEEE 802.11 / DLT_IEEE802_11_RADIO), Ethernet (IEEE 802.3 / DLT10MB), Bluetooth HCI / DLT_BLUETOOTH_HCI_4). Projetada para permitir uma análise profunda de protocolos de rede sem e fio, assim como a exploração dos dispositivos e frames transmitidos pelos eles.
+Uma ferramenta de linha de comando para exploração e análise de redes, com foco em captura e manipulação de frames em diferentes camadas e padrões de comunicação (Wi-Fi (IEEE 802.11 / DLT_IEEE802_11_RADIO), Ethernet (IEEE 802.3 / DLT10MB), Bluetooth HCI / DLT_BLUETOOTH_HCI4). Projetada para permitir uma análise profunda de protocolos de rede sem e fio, assim como a exploração dos dispositivos e frames transmitidos pelos eles.
 
 O foco atual está no desenvolvimento para suporte do padrão IEEE 802.11. Bluetooth e ethernet ainda não são suportados.
 
@@ -15,13 +15,13 @@ framesniff permite:
 * Realizar scan em modo station ou monitor (com channel hopping opcional).
 * Gerar arquivos compatíveis com hashcat (formato `22000`) a partir de JSON contendo dados EAPOL/PMKID.
 * Converter pacotes ou frames hexadecimais brutos em pcap.
-* Enviar frames brutos (hex) por uma interface.
+* Enviar/injetar frames brutos (hex) por uma interface.
 
 ## Principais funcionalidades atualmente
 
 * `set-monitor <ifname>` / `set-station <ifname>` — alternar modo da interface.
 * `scan-monitor` — scan em modo monitor em tempo real com suporte a channel hopping.
-* `sniff <ifname>` — capturar frames com opções de DLT, filtros, contagem, timeout, salvamento em JSON entre outras opções.
+* `sniff <ifname>` — capturar frames com opções de DLT, filtros, contagem, timeout, salvamento em JSON, entre outras opções.
 * `generate-22000` — converter JSON (EAPOL/PMKID) em arquivo `hashcat.22000`.
 * `hextopcap` — gerar um arquivo pcap a partir de JSON contendo pacotes em hexadecimal bruto.
 * `send-raw <ifname>` — enviar frames/packets em hexadecimal bruto por uma interface.
@@ -55,14 +55,14 @@ python framesniff.py --help
 2. Exemplo de ataque de brute force offline em MICs (Message Integrity Code) de frames EAPOL de redes WPA2-Personal. 
 
 ## Aviso Legal
-***Por favor, utilize essas técnicas e conhecimentos passados em ambientes controlados onde você possui autorização para atuar, seja para estudo, exploração, desenvolvimento, ou até, apenas para matar a curiosidade. Não me responsabilizo pelo mal uso da ferramenta, ela foi e está sendo desenvolvida estritamente para fins educaionais e profissionais.
-E é sério, é BEM mais fácil pedir a senha ao dono da rede, ou trabalhar (de preferencia honestamente) e conseguir dinheiro para contratar um ISP (Internet Service Provider), do que passar horas estudando e gastando recursos computacionais para apenas obter a senha da rede (PSK) mas sem nehuma pretensão a mais.***
+***Por favor, utilize essas técnicas e conhecimentos passados em ambientes controlados onde você possui autorização para atuar, seja para estudo, exploração, desenvolvimento, ou até, apenas para matar a curiosidade. Não me responsabilizo pelo mal uso da ferramenta, ela foi e está sendo desenvolvida estritamente para fins educacionais e profissionais.
+E é sério, é BEM mais fácil pedir a senha ao dono da rede, ou trabalhar (de preferencia honestamente) e conseguir dinheiro para contratar um ISP (Internet Service Provider), do que passar horas estudando e gastando recursos computacionais para apenas obter a senha da rede (PSK) mas sem nenhuma pretensão a mais.***
 
 - ### 🧠 Veja meu blog sobre como funcionam as redes Wi-Fi e meu mapa mental sobre os principais métodos de ataque a redes Wi-Fi
   - [Como funcionam as redes sem fio](https://gustavoaraujo.pages.dev/blogs/como-funcionam-as-comunica%C3%A7oes-sem-fio)
   - [Mapas mentais sobre redes Wi-Fi](https://github.com/gusprojects008/mapas-mentais/blob/main/markdowns/ataques-redes-wifi.md)
 
-**Após começar o sniff na frequência dos alvos, é recomendado enviar alguns frames de deauthentication (desautenticação) para redes ou dispositivos que não possuam PMF (Protection Management Frames) ativo, para isso, é recomendado que antes que você capture qualquer frame de deauthentication por meio do sniff do programa ou do wireshark, e abra o conteúdo hexadecimal do frame em um editor de texto ou editor hexadecimal, e utilize o hextopcap para converte-lo para pcap e assim poder se aberto e visualizado pelo wireshark, e por meio do hexdump do wireshark, percorrer os campos e modificar os caracteres hexadecimais do frame de acordo com a correspondência do hexdump do wireshark. Para assim, configura-lo para ser de acordo com o bssid do AP Alvo e MAC do dispositvo alvo.**
+**Após começar o sniff na frequência dos alvos, é recomendado enviar alguns frames de deauthentication (desautenticação) para APs ou dispositivos que não possuem PMF (Protection Management Frames) ativo, para isso, é recomendado que antes que você capture qualquer frame de deauthentication por meio do sniff do programa ou do wireshark, e abra o conteúdo hexadecimal do frame em um editor de texto ou editor hexadecimal, e utilize o hextopcap para converte-lo para pcap e assim poder se aberto e visualizado pelo wireshark, e por meio do hexdump do wireshark, percorrer os campos e modificar os caracteres hexadecimais do frame de acordo com a correspondência do hexdump do wireshark. Para assim, configura-lo para ser de acordo com o bssid do AP alvo e MAC do dispositvo alvo.**
 
 ***
 Visualize informações mais detalhadas de cada frame (incluindo o conteúdo hexadecimal bruto de cada um) após a captura feita pela operação de scan-monitor ou sniff.
@@ -74,16 +74,16 @@ Alternar para monitor:
 ```bash
 sudo python framesniff.py set-monitor wlan0
 ```
-Scan in monitor mode (with TUI and hopping):
 
-**Will display all nearby APs and devices, with real-time updates, including their associations.**
+**Exibirá todos os APs e dispositivos próximos, com atualizações em tempo real, incluindo suas associações. Para verificar outros dispositivo que não estavam associados a um AP, recomendo que analise o arquivo de resultado do scan-monitor (gerado após o encerramento da operação), que contém todos frames capturados durante a operação de scan-monitor.**
 
-***Pay attention and check the WPS status. If enabled (YES), see more information about the WPS configuration in the scan-monitor output file, which will be saved after the program closes. Press ctrl+s or F12 to save the information captured by the TUI (Text User Interface). Depending on the supported WPS operating modes, it is possible to brute force remote numbers and, in a short period of time (2 to 8 hours), discover the PSK (Pre-Shredded Key). Tools like [bully](https://github.com/kimocoder/bully) can do this, but in some cases, the AP may enter a complete blocking mode for WPS authentication, only to return to normal after a few hours.***
+***Preste atenção e verifique o status do WPS. Se habilitado (SIM), veja mais informações sobre a configuração do WPS no arquivo de saída do scan-monitor, que será salvo após o encerramento do programa. Pressione Ctrl+S ou F12 para salvar as informações capturadas pela TUI (Interface de Usuário de Texto). Dependendo dos modos de operação do WPS suportados, é possível explorar ataques de força bruta entre outros como Pixie Dust. Ferramentas como [bully](https://github.com/kimocoder/bully) podem fazer isso, mas, em alguns casos, o AP pode entrar em modo de bloqueio completo para autenticação WPS, retornando ao normal após algumas horas.***
 
 ```bash
 sudo python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO --hopping-interval 5.0 --bands 2.4
 ```
-After detecting and obtaining information from the AP(s) and target device(s), configure the monitor interface to the same frequency or channel as the AP (WPA2-Personal) and target device.
+
+Após detectar e obter informações do(s) AP(s) e do(s) dispositivo(s) de destino, configure a interface monitor para a mesma frequência ou canal que o AP (WPA2-Personal) e dispositivo alvo estão utilizando.
 
 ```bash
 sudo python framesniff.py set-frequency wlan0 2417
@@ -94,9 +94,9 @@ Capture EAPOL frames (sniff):
 sudo python framesniff sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.mac_dst.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == '0x888e' and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
 ```
 
-Generate hashcat file 22000:
+Gerar arquivo hashcat 22000:
 
-***If you analyze the captured EAPOL frames and identify the PMKID (usually in EAPOL frame 1), you can use it to bruteforce faster. For more details see the generate-22000 help.***
+***Se você analisar os quadros EAPOL capturados e identificar a PMKID (geralmente no quadro EAPOL 1), poderá usá-la para realizar uma força bruta mais rapidamente. Para mais detalhes, consulte o help do generate-22000.***
 
 ```bash
 python framesniff.py generate-22000 --bitmask 2 --ssid MyNetwork --input eapol-frames-attack.json --output hashcat.22000
@@ -104,14 +104,13 @@ hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 ---
 
-Other usage options:
+Outros modos de uso:
 
-Convert JSON hex to pcap:
+Converter frames ou pacotes hexadacimais brutos em pcap:
 
 ```bash
 python framesniff.py hextopcap --dlt DLT_IEEE802_11_RADIO -i raw_packets.json -o output.pcap
 ```
-
 Send raw frames:
 
 ```bash
