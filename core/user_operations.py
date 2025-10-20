@@ -22,18 +22,9 @@ log_filename = str(new_file_path("framesniff", ".log"))
 
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(levelname)s] %(message)s',
-    handlers=[logging.FileHandler(log_filename), logging.StreamHandler()]
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[logging.FileHandler(log_filename)]
 )
-
-file_handler = logging.FileHandler(log_filename)
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
-
-for handler in logging.root.handlers[:]:
-    logging.root.removeHandler(handler)
-
-logging.basicConfig(level=logging.INFO, handlers=[file_handler])
 
 class Operations:
     @staticmethod
@@ -192,7 +183,7 @@ class Operations:
     @staticmethod
     def sniff(dlt: str = "DLT_IEEE802_11_RADIO", ifname: str = None,
             store_filter: str = None, display_filter: str = None, 
-            count: Optional[int] = None, timeout: Optional[float] = None, 
+            count: int = None, timeout: float = None, 
             display_interval: float = 0.0, store_callback: callable = None,
             display_callback: callable = None, stop_event: threading.Event = None,
             output_filename: str = None
@@ -220,10 +211,14 @@ class Operations:
         try:
             if timeout:
                 sock.settimeout(timeout)
-            print(f"Starting capture on {ifname}... (Press Ctrl+C to stop)")
-            print(f"Store filter: {store_filter}")
-            print(f"Display filter: {display_filter}")
-            print(f"Output path: {output_filename}")
+
+            print(f'''
+Starting capture on {ifname}... (Press Ctrl+C to stop)\n
+Store filter: {store_filter}"\n
+Display filter: {display_filter}\n
+Output path: {output_filename}
+            ''')
+
             start_time = time.time()
     
             while True:
@@ -234,7 +229,7 @@ class Operations:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = parser(frame, mac_vendor_resolver)
 
-                    if parsed_frame is None:
+                    if not parsed_frame:
                         continue
                     
                     parsed_frame["counter"] = frame_counter
@@ -254,13 +249,15 @@ class Operations:
                         if store_result and current_time - last_display_time >= display_interval:
                             try:
                                 print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
+                                #print(f"[{frame_counter}] {json.dumps(display_result, separators=(',', ':'), ensure_ascii=False)}")
                             except Exception:
                                 print(f"[{frame_counter}] {display_result}")
                             last_display_time = current_time
                     if count is not None and frame_counter >= count:
                         break
                 except socket.timeout:
-                    continue
+                    print("Socket timeout! {timeout} seconds.")
+                    break
                 except KeyboardInterrupt:
                     print("Capture interrupted by user")
                     break
@@ -274,13 +271,14 @@ class Operations:
             finish_capture(sock, start_time, captured_frames, output_filename)
 
     @staticmethod
-    def set_frequency(ifname: str, frequency_mhz: str, channel: Optional[int] = None) -> bool:
-        frequency_mhz = str(frequency_mhz)
-        attempts = [["sudo", "iw", ifname, "set", "freq", frequency_mhz]]
-        if channel is not None:
+    def set_frequency(ifname: str, frequency_mhz: int, channel: int, channel_width: int = None) -> bool:
+        attempts = []
+        if channel_width:
+            attempts.append(["sudo", "iw", ifname, "set", "freq", frequency_mhz, channel_width])
+        attempts.append(["sudo", "iw", ifname, "set", "freq", frequency_mhz])
+        if channel:
             try:
-                ch_str = str(int(channel))
-                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", ch_str])
+                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", channel])
             except Exception as error:
                 logging.error(f"Invalid channel value: {channel} ({error})")
                 return False
@@ -299,87 +297,134 @@ class Operations:
         return False
 
     @staticmethod
-    def get_channels(bands: Optional[List[str]] = None) -> dict:
-        bands = bands or ['2.4', '5']
+    def get_channels(bands: list[int | float] = [2.4, 5]) -> dict:
         channel_map = {}
-        if '2.4' in bands:
-            channel_map['2.4'] = list(range(1, 14))
-        if '5' in bands:
-            channel_map['5'] = [
-                36, 40, 44, 48, 52, 56, 60, 64,
-                100, 104, 108, 112, 116, 120, 124, 128,
-                132, 136, 140, 144,
-                149, 153, 157, 161, 165
+        normalized_bands = []
+        for b in bands:
+            try:
+                if b > 1000:
+                    b = round(b / 1000, 1)
+                normalized_bands.append(b)
+            except Exception as error:
+                logging.warning(f"Ignoring invalid band value {b}: {error}")
+        if 2.4 in normalized_bands:
+            channel_map[2.4] = [(ch, 2407 + ch * 5) for ch in range(1, 14)]
+        if 5 in normalized_bands:
+            channel_map[5] = [
+                (36, 5180), (40, 5200), (44, 5220), (48, 5240),
+                (52, 5260), (56, 5280), (60, 5300), (64, 5320),
+                (100, 5500), (104, 5520), (108, 5540), (112, 5560),
+                (116, 5580), (120, 5600), (124, 5620), (128, 5640),
+                (132, 5660), (136, 5680), (140, 5700), (144, 5720),
+                (149, 5745), (153, 5765), (157, 5785), (161, 5805), (165, 5825)
             ]
+        if 6 in normalized_bands:
+            base_freq = 5955
+            channel_map[6] = [(ch, base_freq + 5 * (ch - 1)) for ch in range(1, 234)]
         return channel_map
 
     @staticmethod
-    def channel_hopper_sync(ifname: str, channel_hopping_interval: float = 4.0, bands: [str] = ["2.4", "5"], callback: Optional[callable] = None, stop_event=None):
-        bands = bands or ["2.4", "5"]
-        all_channels = Operations.get_channels(bands)
-        channels_to_scan = []
-        
-        for band in bands:
-            if band in all_channels and all_channels[band]:
-                for channel in all_channels[band]:
-                    if channel is None:
+    def generate_channel_hopping_config(
+        bands,
+        channel_width: int = 20,
+        dwell: float = 4000,
+        output_filename: str = None
+    ) -> dict:
+        try:
+            logging.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}ms)...")
+            channel_map = Operations.get_channels(bands)
+            config = {}
+            for band, entries in channel_map.items():
+                config[str(band)] = {}
+                for ch, freq in entries:
+                    config[str(band)][str(ch)] = {
+                        "frequency": freq,
+                        "dwell": dwell,
+                        "channel_width": channel_width
+                    }
+            if output_filename:
+                output_filename = str(new_file_path(filename=output_filename))
+                with open(output_filename, "w", encoding="utf-8") as file:
+                    json.dump(config, file, indent=4)
+                logging.info(f"Config file saved to: {output_filename}")
+            else:
+                return config
+        except Exception as error:
+            logging.error(f"Failed to generate channel hopping config: {error}")
+            return {}
+
+    @staticmethod
+    def channel_hopper(
+        ifname: str,
+        channel_hopping_config_path: str = None,
+        channel_hopping_config: dict = None,
+        allowed: list[int] = None,
+        disallowed: list[int] = None,
+        callback: callable = None,
+        stop_event=None
+    ):
+        config = None
+
+        if channel_hopping_config_path:
+           try:
+               with open(config_path, "r", encoding="utf-8") as f:
+                   config = json.load(f)
+           except Exception as error:
+               logging.error(f"Failed to load channel hopping config: {error}")
+               return
+        elif channel_hopping_config:
+            config = channel_hopping_config
+        else:
+            logging.error("Channel hopping config path or channel hopping config is needed!.")
+            return
+        channels_to_scan: list[tuple[int, int, float, int]] = []
+        for band_str, channels in config.items():
+            try:
+                band = float(band_str)
+            except:
+                logging.warning(f"Ignoring invalid band key: {band_str}")
+                continue
+            for ch_str, params in channels.items():
+                try:
+                    ch = ch_str
+                    freq = params.get("frequency")
+                    dwell = params.get("dwell", 500)
+                    width = params.get("channel_width", 20)
+                    if allowed and ch not in allowed:
                         continue
-                    try:
-                        channel_int = int(channel)
-                        if band == "2.4":
-                            freq = 2407 + (channel_int * 5)
-                        else:
-                            freq = 5000 + (channel_int * 5)
-                        channels_to_scan.append((channel_int, freq, band))
-                    except (TypeError, ValueError) as error:
-                        logging.warning(f"Invalid channel: {error}")
+                    if disallowed and ch in disallowed:
                         continue
+                    channels_to_scan.append((ch, freq, band, dwell, width))
+                except Exception as error:
+                    logging.warning(f"Skipping invalid channel entry {ch_str}: {error}")
         if not channels_to_scan:
-            logging.warning("No channels to scan")
+            logging.warning("No valid channels to scan.")
             return
         idx = 0
         try:
             while True:
-                if stop_event is not None and stop_event.is_set():
+                if stop_event and stop_event.is_set():
                     break
-                if not isinstance(idx, int) or idx is None:
-                    logging.error(f"Invalid idx value: {idx}, resetting to 0")
-                    idx = 0
-                    continue
-                if idx >= len(channels_to_scan) or idx < 0:
-                    idx = 0
-                ch, freq, band = channels_to_scan[idx]
-                success = Operations.set_frequency(ifname, str(freq), channel=ch)
+                ch, freq, band, dwell, width = channels_to_scan[idx]
+                success = Operations.set_frequency(ifname, freq, channel=ch, channel_width=width)
                 if success:
-                    logging.info(f"Channel changed {ch} {freq}/{band}")
+                    logging.info(f"Channel set -> ch={ch} freq={freq}MHz band={band}GHz width={width} dwell={dwell}ms")
                 else:
-                    logging.error(f"Channel {ch} {freq}/{band}")
-
+                    logging.error(f"Failed to set channel {ch} ({freq}MHz)")
                 if callback:
                     try:
                         callback(ch, band)
-                    except Exception as e:
-                        logging.error(f"Channel hopper callback error: {e}")
-                try:
-                    next_idx = (idx + 1) % len(channels_to_scan)
-                    if not isinstance(next_idx, int) or next_idx is None:
-                        logging.error(f"Invalid next_idx: {next_idx}, resetting to 0")
-                        idx = 0
-                    else:
-                        idx = next_idx
-                except Exception as e:
-                    logging.error(f"Error calculating next index: {e}")
-                    idx = 0
-                time.sleep(channel_hopping_interval)
-                
+                    except Exception as error:
+                        logging.error(f"Channel hopper callback error: {error}")
+                idx = (idx + 1) % len(channels_to_scan)
+                time.sleep(dwell / 1000.0)
         except KeyboardInterrupt:
-            logging.info("Channel hopping stopped by KeyboardInterrupt")
+            logging.info("Channel hopping interrupted by user.")
         except Exception as error:
             logging.error(f"Unexpected error in channel hopper: {error}")
-            logging.error(f"Traceback: {traceback.format_exc()}")
-            logging.error(f"Current state - idx: {idx}, type: {type(idx)}, channels length: {len(channels_to_scan)}")
+            logging.error(traceback.format_exc())
         finally:
-            logging.info("Hopper finished.")
+            logging.info("Channel hopper finished.")
 
     @staticmethod
     def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000") -> str:
@@ -429,7 +474,7 @@ class Operations:
             sock.close()
 
     @staticmethod
-    def scan_monitor(ifname: str = None, dlt: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 5.0, bands: [str] = ["2.4", "5"], timeout: float = None):
+    def scan_monitor(ifname: str = None, dlt: str = None, channel_hopping: bool = True, timeout: float = None):
         from core.tui.scan_monitor import scan_monitor
         print("press ctrl+s or <F12> to save tui information!")
-        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, bands=bands, timeout=timeout, logging=logging, Operations=Operations)
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, timeout=timeout, logging=logging, Operations=Operations)

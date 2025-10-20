@@ -1,9 +1,10 @@
 import asyncio
 import threading
-from typing import Any
 import queue
 import time
 import os
+from core.common.useful_functions import (export_tui_to_txt, freq_to_channel, import_module)
+import_module("textual")
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
@@ -11,7 +12,6 @@ from textual.widgets import Header, Footer, Static, Label, DataTable
 from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
-from core.common.useful_functions import export_tui_to_txt, freq_to_channel
 
 class NetworkScannerTUI(App):
     CSS = """
@@ -79,16 +79,14 @@ class NetworkScannerTUI(App):
         "body.tagged_parameters.vendor_specific"
     ]
     
-    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True,
-                 channel_hopping_interval: float = 5.0, bands: [str] = ["2.4", "5"],
-                 timeout: float = None, logging: Any = None, Operations: Any = None):
+    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, timeout: float = None, logging = None, Operations: object = None):
 
         super().__init__()
         self.ifname = ifname
         self.dlt = dlt
         self.channel_hopping = channel_hopping
-        self.channel_hopping_interval = channel_hopping_interval
-        self.bands = bands
+        self.bands = [2.4, 5]
+        self.channel_hopping_config = Operations.generate_channel_hopping_config(bands=self.bands)
         self.timeout = timeout
         self.logging = logging
         self.Operations = Operations
@@ -118,6 +116,8 @@ class NetworkScannerTUI(App):
                     DataTable(id="networks-table"),
                     Static("CLIENTS:", classes="section-title"), 
                     DataTable(id="clients-table"),
+                    Static("NOT ASSOCIATED:", classes="section-title"),
+                    DataTable(id="unassociated-table"),
                     classes="networks-container"
                 ),
             ),
@@ -130,6 +130,9 @@ class NetworkScannerTUI(App):
         
         clients_table = self.query_one("#clients-table", DataTable) 
         clients_table.add_columns("MAC", "VENDOR", "CH", "PWR", "FRAMES", "BSSID", "SSID")
+
+        unassociated_table = self.query_one("#unassociated-table", DataTable)
+        unassociated_table.add_columns("MAC", "VENDOR", "CH", "PWR", "FRAMES", "LAST SEEN (s)")
         
         self.set_interval(0.1, self.process_queued_frames)
         self.set_interval(0.5, self.update_display)
@@ -157,7 +160,7 @@ class NetworkScannerTUI(App):
                     dlt=self.dlt,
                     store_filter="(mac_hdr.fc.type == 0 and mac_hdr.fc.subtype in (5, 8)) or mac_hdr.fc.type == 2",
                     display_filter=display_filter_str,
-                    display_interval=0.0,
+                    display_interval=1.0,
                     timeout=self.timeout,
                     store_callback=None,
                     display_callback=display_callback,
@@ -176,10 +179,9 @@ class NetworkScannerTUI(App):
         def hopper_thread():
             self.logging.info("Channel hopper thread starting...")
             try:
-                self.Operations.channel_hopper_sync(
+                self.Operations.channel_hopper(
                     ifname=self.ifname,
-                    channel_hopping_interval=self.channel_hopping_interval,
-                    bands=self.bands,
+                    channel_hopping_config=self.channel_hopping_config,
                     callback=self.update_current_channel
                 )
             except Exception as error:
@@ -372,6 +374,20 @@ class NetworkScannerTUI(App):
                 client_mac, vendor, channel, str(signal), str(frames), bssid_display, ssid
             )
 
+        unassociated_table = self.query_one("#unassociated-table", DataTable)
+        unassociated_table.clear()
+        for client_mac, info in sorted(self.clients.items(), key=lambda x: x[1]['signal'], reverse=True):
+            if client_mac not in self.associations:
+                channel = info['channel'] or self.current_channel
+                signal = info.get('signal', -100)
+                frames = info.get('frames', 0)
+                vendor = info.get('vendor', 'Unknown')
+                last_seen = time.time() - info.get('last_seen', time.time())
+        
+                unassociated_table.add_row(
+                    client_mac, vendor, str(channel), str(signal), str(frames), f"{last_seen:.1f}"
+                )
+
     def on_key(self, event):
         if event.key in ("q", "Q", "ctrl+c"):
             self.exit_application()
@@ -393,14 +409,11 @@ class NetworkScannerTUI(App):
 
 
 def scan_monitor(ifname: str = None, dlt: str = None, channel_hopping: bool = True,
-                 channel_hopping_interval: float = 5.0, bands: [str] = ["2.4", "5"],
-                 timeout: float = None, logging: Any = None, Operations: Any = None):
+                 timeout: float = None, logging = None, Operations: object = None):
     app = NetworkScannerTUI(
         ifname=ifname,
         dlt=dlt,
         channel_hopping=channel_hopping,
-        channel_hopping_interval=channel_hopping_interval,
-        bands=bands,
         timeout=timeout,
         logging=logging,
         Operations=Operations

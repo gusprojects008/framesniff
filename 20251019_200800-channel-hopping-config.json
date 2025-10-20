@@ -1,0 +1,196 @@
+{
+    "2.4": {
+        "1": {
+            "frequency": 2412,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "2": {
+            "frequency": 2417,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "3": {
+            "frequency": 2422,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "4": {
+            "frequency": 2427,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "5": {
+            "frequency": 2432,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "6": {
+            "frequency": 2437,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "7": {
+            "frequency": 2442,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "8": {
+            "frequency": 2447,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "9": {
+            "frequency": 2452,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "10": {
+            "frequency": 2457,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "11": {
+            "frequency": 2462,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "12": {
+            "frequency": 2467,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "13": {
+            "frequency": 2472,
+            "dwell": 4000.0,
+            "channel_width": 20
+        }
+    },
+    "5": {
+        "36": {
+            "frequency": 5180,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "40": {
+            "frequency": 5200,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "44": {
+            "frequency": 5220,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "48": {
+            "frequency": 5240,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "52": {
+            "frequency": 5260,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "56": {
+            "frequency": 5280,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "60": {
+            "frequency": 5300,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "64": {
+            "frequency": 5320,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "100": {
+            "frequency": 5500,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "104": {
+            "frequency": 5520,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "108": {
+            "frequency": 5540,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "112": {
+            "frequency": 5560,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "116": {
+            "frequency": 5580,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "120": {
+            "frequency": 5600,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "124": {
+            "frequency": 5620,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "128": {
+            "frequency": 5640,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "132": {
+            "frequency": 5660,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "136": {
+            "frequency": 5680,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "140": {
+            "frequency": 5700,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "144": {
+            "frequency": 5720,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "149": {
+            "frequency": 5745,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "153": {
+            "frequency": 5765,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "157": {
+            "frequency": 5785,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "161": {
+            "frequency": 5805,
+            "dwell": 4000.0,
+            "channel_width": 20
+        },
+        "165": {
+            "frequency": 5825,
+            "dwell": 4000.0,
+            "channel_width": 20
+        }
+    }
+}
