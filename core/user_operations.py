@@ -188,7 +188,7 @@ class Operations:
             display_callback: callable = None, stop_event: threading.Event = None,
             output_filename: str = None
         ):
-
+    
         check_root()
         check_interface_mode(ifname, "monitor")
     
@@ -202,33 +202,41 @@ class Operations:
             raise ValueError("Unsupported sniff parameters")
     
         sock = create_raw_socket(ifname)
-        
-        output_filename = new_file_path(filename=output_filename)
+
+        output_filename = new_file_path(filename=output_filename) if output_filename else new_file_path(base="framesniff-capture", ext=".json")
+
+  #     output_filename = new_file_path(filename=output_filename)
+
         captured_frames = []
         frame_counter = 0
         last_display_time = 0.0
     
         try:
-            if timeout:
-                sock.settimeout(timeout)
-
+            #sock.settimeout(1.0)
+    
             print(f'''
-Starting capture on {ifname}... (Press Ctrl+C to stop)\n
-Store filter: {store_filter}"\n
-Display filter: {display_filter}\n
-Output path: {output_filename}
+    Starting capture on {ifname}... (Press Ctrl+C to stop)\n
+    Store filter: {store_filter}"\n
+    Display filter: {display_filter}\n
+    Output path: {output_filename}
+    Timeout: {timeout} seconds
             ''')
-
+    
             start_time = time.time()
     
             while True:
                 if stop_event and stop_event.is_set():
                     print("Stop event received, finishing capture...")
                     break
+                
+                if timeout and (time.time() - start_time) >= timeout:
+                    print(f"Capture timeout reached after {timeout} seconds")
+                    break
+                
                 try:
                     frame, _ = sock.recvfrom(65535)
                     parsed_frame = parser(frame, mac_vendor_resolver)
-
+    
                     if not parsed_frame:
                         continue
                     
@@ -249,21 +257,21 @@ Output path: {output_filename}
                         if store_result and current_time - last_display_time >= display_interval:
                             try:
                                 print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
-                                #print(f"[{frame_counter}] {json.dumps(display_result, separators=(',', ':'), ensure_ascii=False)}")
                             except Exception:
                                 print(f"[{frame_counter}] {display_result}")
                             last_display_time = current_time
                     if count is not None and frame_counter >= count:
                         break
+                        
                 except socket.timeout:
-                    print("Socket timeout! {timeout} seconds.")
-                    break
+                    continue
                 except KeyboardInterrupt:
                     print("Capture interrupted by user")
                     break
                 except Exception as error:
                     print(f"Error receiving frame: {error}")
                     continue
+                    
         except Exception as error:
             print(f"Unexpected error in sniff: {error}")
         finally:
@@ -274,11 +282,11 @@ Output path: {output_filename}
     def set_frequency(ifname: str, frequency_mhz: int, channel: int, channel_width: int = None) -> bool:
         attempts = []
         if channel_width:
-            attempts.append(["sudo", "iw", ifname, "set", "freq", frequency_mhz, channel_width])
-        attempts.append(["sudo", "iw", ifname, "set", "freq", frequency_mhz])
+            attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
+        attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz)])
         if channel:
             try:
-                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", channel])
+                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", str(channel)])
             except Exception as error:
                 logging.error(f"Invalid channel value: {channel} ({error})")
                 return False
@@ -297,7 +305,7 @@ Output path: {output_filename}
         return False
 
     @staticmethod
-    def get_channels(bands: list[int | float] = [2.4, 5]) -> dict:
+    def get_channels(bands: list[int | float] = [2.4]) -> dict:
         channel_map = {}
         normalized_bands = []
         for b in bands:
@@ -327,11 +335,11 @@ Output path: {output_filename}
     def generate_channel_hopping_config(
         bands,
         channel_width: int = 20,
-        dwell: float = 4000,
+        dwell: float = 4.0,
         output_filename: str = None
     ) -> dict:
         try:
-            logging.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}ms)...")
+            logging.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}s)...")
             channel_map = Operations.get_channels(bands)
             config = {}
             for band, entries in channel_map.items():
@@ -361,63 +369,70 @@ Output path: {output_filename}
         allowed: list[int] = None,
         disallowed: list[int] = None,
         callback: callable = None,
-        stop_event=None
+        stop_event=None,
+        timeout: float = None,
     ):
         config = None
-
         if channel_hopping_config_path:
-           try:
-               with open(config_path, "r", encoding="utf-8") as f:
-                   config = json.load(f)
-           except Exception as error:
-               logging.error(f"Failed to load channel hopping config: {error}")
-               return
+            try:
+                with open(channel_hopping_config_path, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            except Exception as error:
+                logging.error(f"Failed to load channel hopping config: {error}")
+                return
         elif channel_hopping_config:
             config = channel_hopping_config
         else:
-            logging.error("Channel hopping config path or channel hopping config is needed!.")
+            logging.error("Either 'channel_hopping_config_path' or 'channel_hopping_config' must be provided.")
             return
-        channels_to_scan: list[tuple[int, int, float, int]] = []
+        channels_to_scan: list[tuple[int, int, float, int, int]] = []
         for band_str, channels in config.items():
             try:
                 band = float(band_str)
-            except:
-                logging.warning(f"Ignoring invalid band key: {band_str}")
+            except Exception as error:
+                logging.warning(f"Ignoring invalid band key '{band_str}': {error}")
                 continue
             for ch_str, params in channels.items():
                 try:
-                    ch = ch_str
+                    ch = int(ch_str)
                     freq = params.get("frequency")
-                    dwell = params.get("dwell", 500)
-                    width = params.get("channel_width", 20)
+                    dwell = params.get("dwell", 4.0) # seconds
+                    width = int(params.get("channel_width", 20))
                     if allowed and ch not in allowed:
                         continue
                     if disallowed and ch in disallowed:
                         continue
                     channels_to_scan.append((ch, freq, band, dwell, width))
                 except Exception as error:
-                    logging.warning(f"Skipping invalid channel entry {ch_str}: {error}")
+                    logging.warning(f"Skipping invalid channel entry '{ch_str}': {error}")
         if not channels_to_scan:
             logging.warning("No valid channels to scan.")
             return
         idx = 0
+        start_time = time.time()
         try:
             while True:
+                if timeout is not None and (time.time() - start_time) >= timeout:
+                    logging.info(f"Channel hopping timed out after {timeout} seconds.")
+                    break
                 if stop_event and stop_event.is_set():
+                    logging.info("Stop event detected, stopping channel hopper.")
                     break
                 ch, freq, band, dwell, width = channels_to_scan[idx]
                 success = Operations.set_frequency(ifname, freq, channel=ch, channel_width=width)
                 if success:
-                    logging.info(f"Channel set -> ch={ch} freq={freq}MHz band={band}GHz width={width} dwell={dwell}ms")
+                    logging.info(
+                        f"Channel set -> ch={ch} freq={freq}MHz band={band}GHz width={width} dwell={dwell}s"
+                    )
                 else:
                     logging.error(f"Failed to set channel {ch} ({freq}MHz)")
                 if callback:
                     try:
-                        callback(ch, band)
+                        callback(channel=ch, band=band)
                     except Exception as error:
                         logging.error(f"Channel hopper callback error: {error}")
                 idx = (idx + 1) % len(channels_to_scan)
-                time.sleep(dwell / 1000.0)
+                time.sleep(dwell)
         except KeyboardInterrupt:
             logging.info("Channel hopping interrupted by user.")
         except Exception as error:
@@ -474,7 +489,7 @@ Output path: {output_filename}
             sock.close()
 
     @staticmethod
-    def scan_monitor(ifname: str = None, dlt: str = None, channel_hopping: bool = True, timeout: float = None):
+    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
         from core.tui.scan_monitor import scan_monitor
         print("press ctrl+s or <F12> to save tui information!")
-        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, timeout=timeout, logging=logging, Operations=Operations)
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, logging=logging, Operations=Operations)

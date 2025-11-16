@@ -47,10 +47,12 @@ framesniff permite:
 git clone https://github.com/gusprojects008/framesniff/framesniff.git
 cd framesniff
 ```
-Veja as funcionalidades que o programa fornece:
+Execute o setup.sh, entre no ambiente virtual python e veja as funcionalidades que o programa fornece:
 
 ```bash
-python framesniff.py --help
+./setup.sh
+source venv/bin/activate
+sudo venv/bin/python framesniff.py --help
 ```
 2. Exemplo de ataque de brute force offline em MICs (Message Integrity Code) de frames EAPOL de redes WPA2-Personal. 
 
@@ -72,7 +74,7 @@ Verifique as informações de vendor specific, para mais informações sobre o A
 Alternar para monitor:
 
 ```bash
-sudo python framesniff.py set-monitor wlan0
+sudo venv/bin/python framesniff.py set-monitor wlan0
 ```
 
 **Exibirá todos os APs e dispositivos próximos, com atualizações em tempo real, incluindo suas associações. Para verificar outros dispositivo que não estavam associados a um AP, recomendo que analise o arquivo de resultado do scan-monitor (gerado após o encerramento da operação), que contém todos frames capturados durante a operação de scan-monitor.**
@@ -80,18 +82,18 @@ sudo python framesniff.py set-monitor wlan0
 ***Preste atenção e verifique o status do WPS. Se habilitado (SIM), veja mais informações sobre a configuração do WPS no arquivo de saída do scan-monitor, que será salvo após o encerramento do programa. Pressione Ctrl+S ou F12 para salvar as informações capturadas pela TUI (Interface de Usuário de Texto). Dependendo dos modos de operação do WPS suportados, é possível explorar ataques de força bruta entre outros como Pixie Dust. Ferramentas como [bully](https://github.com/kimocoder/bully) podem fazer isso, mas, em alguns casos, o AP pode entrar em modo de bloqueio completo para autenticação WPS, retornando ao normal após algumas horas.***
 
 ```bash
-sudo python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO --hopping-interval 5.0 --bands 2.4
+sudo venv/bin/python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO
 ```
 
 Após detectar e obter informações do(s) AP(s) e do(s) dispositivo(s) de destino, configure a interface monitor para a mesma frequência ou canal que o AP (WPA2-Personal) e dispositivo alvo estão utilizando.
 
 ```bash
-sudo python framesniff.py set-frequency wlan0 2417
+sudo venv/bin/python framesniff.py set-frequency wlan0 2417
 ```
 Capture EAPOL frames (sniff):
 
 ```bash
-sudo python framesniff sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.mac_dst.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == '0x888e' and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
+sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.mac_dst.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == '0x888e' and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
 ```
 
 Gerar arquivo hashcat 22000:
@@ -99,7 +101,7 @@ Gerar arquivo hashcat 22000:
 ***Se você analisar os quadros EAPOL capturados e identificar a PMKID (geralmente no quadro EAPOL 1), poderá usá-la para realizar uma força bruta mais rapidamente. Para mais detalhes, consulte o help do generate-22000.***
 
 ```bash
-python framesniff.py generate-22000 --bitmask 2 --ssid MyNetwork --input eapol-frames-attack.json --output hashcat.22000
+venv/bin/python framesniff.py generate-22000 --bitmask 2 --ssid MyNetwork --input eapol-frames-attack.json --output hashcat.22000
 hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 ---
@@ -109,12 +111,12 @@ Outros modos de uso:
 Converter frames ou pacotes hexadacimais brutos em pcap:
 
 ```bash
-python framesniff.py hextopcap --dlt DLT_IEEE802_11_RADIO -i raw_packets.json -o output.pcap
+venv/bin/python framesniff.py hextopcap --dlt DLT_IEEE802_11_RADIO -i raw_packets.json -o output.pcap
 ```
 Send raw frames:
 
 ```bash
-sudo python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interval 0.5
+sudo venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interval 0.5
 ```
 ## JSON file structure — examples
 
@@ -175,25 +177,14 @@ Esta seção contém alguns insights que obtive durante o desenvolvimento, mas n
 
 ## O QUE ESTÁ FALTANDO? CORRIGIR/ADICIONAR
 
-* Analisar todos os parâmetros marcados (o máximo possível).
-* Análise completa das informações do país.
-* Análise completa dos recursos de RM.
-* Análise completa das informações de ERP e TIM.
-* Análise completa para recursos estendidos.
-* Formatar tabelas de AP e clientes em tabelas reais.
-* Analisar os recursos dos parâmetros corrigidos.
-* Corrigir as funções `set_frequency` e de salto de canal.
+* Análise completa das informações de tagged parameters, country code, ERP e TIM, RM e recursos extendidos.
 * Refatorar todos os analisadores para incluir TODOS os dados analisados, incluindo valores, tags, comprimentos, etc., tudo o que está no quadro ou pacote, não apenas as informações relevantes.
 * Revisar os analisadores e suas saídas.
 * Implementar módulo para geração/edição de quadros/pacotes.
 * Adicionar mais verificações para detecção de erros.
-* Tornar as mensagens de erro mais rastreáveis e fáceis de usar.
-* Usar mais registros para mensagens de operação.
-* Revisar todo o código.
-* Revisar a operação de todos os recursos e verificar se estão funcionando corretamente.
+* Tornar as mensagens de erro mais rastreáveis e amigáveis.
 * Desenvolver uma interface TUI para o sniff, que será semelhante ao tshark.
 * Desenvolver uma interface TUI para o createpkt.
-* Melhorar o argparse no quadro sniff.py, usando o tipo, etc.
-* Deixar verificações de segurança em pontos críticos do programa.
-* Adicionar vídeos e imagens na documentação.
-* Corrgir parser de mac header.
+* Deixar verificações de segurança, valores e tipos apenas em pontos críticos do programa (na entrada de dados do programa e função final que utilizara eles).
+* Adicionar vídeos e imagens na documentação, ou fazer vídeo explicando o uso.
+* Verificar as bandas suportadas pela interface de rede, antes de realizar o channel hopping.

@@ -13,7 +13,7 @@ from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
 
-class NetworkScannerTUI(App):
+class Tui(App):
     CSS = """
     Screen {
         background: $surface;
@@ -79,14 +79,15 @@ class NetworkScannerTUI(App):
         "body.tagged_parameters.vendor_specific"
     ]
     
-    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, timeout: float = None, logging = None, Operations: object = None):
+    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, timeout: float = None, logging = None, Operations: object = None):
 
         super().__init__()
         self.ifname = ifname
         self.dlt = dlt
         self.channel_hopping = channel_hopping
-        self.bands = [2.4, 5]
-        self.channel_hopping_config = Operations.generate_channel_hopping_config(bands=self.bands)
+        self.channel_hopping_interval = channel_hopping_interval
+        self.bands = [2.4]
+        self.channel_hopping_config = Operations.generate_channel_hopping_config(bands=self.bands, dwell=self.channel_hopping_interval)
         self.timeout = timeout
         self.logging = logging
         self.Operations = Operations
@@ -116,8 +117,6 @@ class NetworkScannerTUI(App):
                     DataTable(id="networks-table"),
                     Static("CLIENTS:", classes="section-title"), 
                     DataTable(id="clients-table"),
-                    Static("NOT ASSOCIATED:", classes="section-title"),
-                    DataTable(id="unassociated-table"),
                     classes="networks-container"
                 ),
             ),
@@ -131,9 +130,6 @@ class NetworkScannerTUI(App):
         clients_table = self.query_one("#clients-table", DataTable) 
         clients_table.add_columns("MAC", "VENDOR", "CH", "PWR", "FRAMES", "BSSID", "SSID")
 
-        unassociated_table = self.query_one("#unassociated-table", DataTable)
-        unassociated_table.add_columns("MAC", "VENDOR", "CH", "PWR", "FRAMES", "LAST SEEN (s)")
-        
         self.set_interval(0.1, self.process_queued_frames)
         self.set_interval(0.5, self.update_display)
         self.start_scanning()
@@ -182,7 +178,8 @@ class NetworkScannerTUI(App):
                 self.Operations.channel_hopper(
                     ifname=self.ifname,
                     channel_hopping_config=self.channel_hopping_config,
-                    callback=self.update_current_channel
+                    callback=self.update_current_channel,
+                    timeout=self.timeout
                 )
             except Exception as error:
                 self.logging.error(f"Channel hopper thread error: {error}")
@@ -198,60 +195,82 @@ class NetworkScannerTUI(App):
     def process_display_data(self, display_data):
         broadcast = "ff:ff:ff:ff:ff:ff"
         try:
-            signal = display_data.get('rt_hdr.dbm_antenna_signal')
+            signal = display_data.get('rt_hdr.dbm_antenna_signal') or -100
             frame_type = display_data.get('mac_hdr.fc.type')
             subtype = display_data.get('mac_hdr.fc.subtype')
-            bssid_mac = display_data.get('mac_hdr.bssid.mac')
+            bssid_mac = display_data.get('mac_hdr.bssid.mac') or "N/A"
             bssid_vendor = display_data.get('mac_hdr.bssid.vendor')
-            src_mac = display_data.get('mac_hdr.mac_src.mac')
+            src_mac = display_data.get('mac_hdr.mac_src.mac') or "N/A"
             src_vendor = display_data.get('mac_hdr.mac_src.vendor')
-            ssid = display_data.get('body.tagged_parameters.ssid', '[Hidden]')
-            channel_fallback= display_data.get('body.tagged_parameters.current_channel', self.current_channel)
-            channel = freq_to_channel(display_data.get('rt_hdr.channel_freq')) or channel_fallback
-            capabilities = display_data.get('body.fixed_parameters.capabilities_information', 0)
+            ssid = display_data.get('body.tagged_parameters.ssid') or 'N/A'
+            capabilities = display_data.get('body.fixed_parameters.capabilities_information') or 0
             rsn_info = display_data.get('body.tagged_parameters.rsn_information')
             vendor_specific = display_data.get('body.tagged_parameters.vendor_specific', {})
-            
-            if signal is None or frame_type is None:
+            freq = display_data.get('rt_hdr.channel_freq')
+            #tagged_channel = display_data.get('body.tagged_parameters.current_channel')
+
+            if freq:
+                channel = freq_to_channel(freq)
+            #elif tagged_channel:
+                #channel = tagged_channel
+            else:
+                channel = self.current_channel
+    
+            if frame_type is None:
                 return
-            
+    
             security_info = self.detect_security(capabilities, rsn_info, vendor_specific)
-            
-            if frame_type == 0 and subtype in [5, 8] and bssid_mac:
-                if bssid_mac != broadcast and bssid_mac not in self.clients:
-                    if bssid_mac not in self.networks:
-                        self.networks[bssid_mac] = {
-                            'ssid': ssid or "[Hidden]",
-                            'channel': channel,
-                            'signal': -100,
-                            'beacons': 0,
-                            'vendor': bssid_vendor,
-                            'last_seen': time.time(),
-                            'security': security_info
-                        }
-                    
+    
+            if frame_type == 0 and subtype in [5, 8] and bssid_mac and bssid_mac != broadcast:
+                if bssid_mac not in self.networks:
+                    self.networks[bssid_mac] = {
+                        'ssid': ssid,
+                        'channel': channel,
+                        'signal': signal,
+                        'beacons': 1,
+                        'vendor': bssid_vendor,
+                        'last_seen': time.time(),
+                        'security': security_info
+                    }
+                else:
                     net = self.networks[bssid_mac]
                     net['beacons'] += 1
-                    net['signal'] = max(net['signal'], signal or -100)
+                    net['signal'] = max(net['signal'], signal)
                     net['last_seen'] = time.time()
-                    net['ssid'] = ssid or "[Hidden]"
-            
-            if (src_mac and bssid_mac) != broadcast and src_mac not in self.networks and src_mac != bssid_mac:
+                    net['ssid'] = ssid
+                    net['channel'] = channel
+    
+            if src_mac and src_mac != broadcast and src_mac != bssid_mac:
+                if src_mac in self.networks:
+                    return
+    
+                associated_bssid = self.associations.get(src_mac)
+                if associated_bssid:
+                    channel = self.networks.get(associated_bssid, {}).get('channel', channel)
+    
                 if src_mac not in self.clients:
                     self.clients[src_mac] = {
                         'vendor': src_vendor,
                         'channel': channel,
-                        'signal': -100,
-                        'frames': 0,
+                        'signal': signal,
+                        'frames': 1,
                         'last_seen': time.time()
                     }
-                cli = self.clients[src_mac]
-                cli['frames'] += 1
-                cli['channel'] = channel
-                cli['signal'] = max(cli['signal'], signal or -100)
-                cli['last_seen'] = time.time()
-                self.associations[src_mac] = bssid_mac
+                else:
+                    cli = self.clients[src_mac]
+                    cli['frames'] += 1
+                    cli['channel'] = channel
+                    cli['signal'] = max(cli['signal'], signal)
+                    cli['last_seen'] = time.time()
+    
+                if frame_type == 2 and bssid_mac and bssid_mac != broadcast:
+                    self.associations[src_mac] = bssid_mac
+                else:
+                    if subtype in [10, 12]:  # disassociation / deauthentication
+                        self.associations.pop(src_mac, "N/A")
+    
             self.frames_processed += 1
+    
         except Exception as error:
             self.error_queue.put(f"Display data processing error: {error}")
             self.logging.exception("Display data processing error")
@@ -342,11 +361,11 @@ class NetworkScannerTUI(App):
             client_count = sum(1 for client, ap in self.associations.items() if ap == bssid)
             security = info['security']
             wps_status = "YES" if security.get('wps', False) else "NO"
-            channel = info['channel'] if info['channel'] is not None else '?'
-            signal = info['signal'] if info['signal'] is not None else -100
-            beacons = info['beacons'] if info['beacons'] is not None else 0
-            ssid = info['ssid'] if info['ssid'] is not None else '[Hidden]'
-            vendor = info['vendor'] if info['vendor'] is not None else 'Unknown'
+            channel = info['channel']
+            signal = info['signal']
+            beacons = info['beacons']
+            ssid = info['ssid']
+            vendor = info['vendor']
             
             networks_table.add_row(
                 bssid, ssid, vendor, str(channel), str(signal), 
@@ -356,43 +375,35 @@ class NetworkScannerTUI(App):
         clients_table = self.query_one("#clients-table", DataTable)
         clients_table.clear()
         for client_mac, info in sorted(self.clients.items(), key=lambda x: x[1]['signal'], reverse=True):
-            associated_bssid = self.associations.get(client_mac, '')
-            if associated_bssid:
-                network_info = self.networks.get(associated_bssid, {})
-                ssid = network_info.get('ssid', '(unknown)')
-                bssid_display = associated_bssid
-            else:
-                ssid = '(not associated)'
-                bssid_display = 'N/A'
-
-            channel = info['channel'] or self.current_channel
-            signal = info['signal'] if info['signal'] is not None else -100
-            frames = info['frames'] if info['frames'] is not None else 0
-            vendor = info['vendor'] if info['vendor'] is not None else 'Unknown'
+            associated_bssid = self.associations.get(client_mac)
             
-            clients_table.add_row(
-                client_mac, vendor, channel, str(signal), str(frames), bssid_display, ssid
-            )
-
-        unassociated_table = self.query_one("#unassociated-table", DataTable)
-        unassociated_table.clear()
-        for client_mac, info in sorted(self.clients.items(), key=lambda x: x[1]['signal'], reverse=True):
-            if client_mac not in self.associations:
-                channel = info['channel'] or self.current_channel
-                signal = info.get('signal', -100)
-                frames = info.get('frames', 0)
-                vendor = info.get('vendor', 'Unknown')
-                last_seen = time.time() - info.get('last_seen', time.time())
+            bssid_display = associated_bssid or "N/A"
+            ssid = "N/A"
+            
+            if associated_bssid and associated_bssid in self.networks:
+                network_info = self.networks[associated_bssid]
+                ssid = network_info.get('ssid', "N/A")
+            
+            channel = info.get('channel', "N/A")
+            signal = info.get('signal', -100)
+            frames = info.get('frames', 0)
+            vendor = info.get('vendor', "N/A")
         
-                unassociated_table.add_row(
-                    client_mac, vendor, str(channel), str(signal), str(frames), f"{last_seen:.1f}"
-                )
+            clients_table.add_row(
+                client_mac, 
+                vendor, 
+                str(channel), 
+                str(signal), 
+                str(frames), 
+                bssid_display, 
+                ssid
+            )
 
     def on_key(self, event):
         if event.key in ("q", "Q", "ctrl+c"):
             self.exit_application()
         if event.key in ("f12", "ctrl+s"):
-            export_tui_for_txt(self, self.output_filename)
+            export_tui_to_txt(self, self.output_filename)
 
     def exit_application(self):
         self.running = False
@@ -407,13 +418,12 @@ class NetworkScannerTUI(App):
         print(f"Network Monitor finished!\nSee the logs in {self.logging}")
         self.exit()
 
-
-def scan_monitor(ifname: str = None, dlt: str = None, channel_hopping: bool = True,
-                 timeout: float = None, logging = None, Operations: object = None):
-    app = NetworkScannerTUI(
+def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, logging, Operations):
+    app = Tui(
         ifname=ifname,
         dlt=dlt,
         channel_hopping=channel_hopping,
+        channel_hopping_interval=channel_hopping_interval,
         timeout=timeout,
         logging=logging,
         Operations=Operations
