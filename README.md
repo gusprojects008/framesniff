@@ -199,3 +199,5 @@ This section contains insights collected during development; none are guaranteed
 * Keep safety and type checks only in critical parts of the program (input validation and final usage).
 * Add videos and images to the documentation, or create a tutorial video.
 * Check interface-supported bands before performing channel hopping.
+* Improve code readability and revise it according to SOLID principles.
+* Correct potential racing conditions.

@@ -188,3 +188,5 @@ Esta seção contém alguns insights que obtive durante o desenvolvimento, mas n
 * Deixar verificações de segurança, valores e tipos apenas em pontos críticos do programa (na entrada de dados do programa e função final que utilizara eles).
 * Adicionar vídeos e imagens na documentação, ou fazer vídeo explicando o uso.
 * Verificar as bandas suportadas pela interface de rede, antes de realizar o channel hopping.
+* Melhorar legibilidade do código e revisa-lo de acordo com os principios SOLID.
+* Corrigir possíveis racing conditions.
