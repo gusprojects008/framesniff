@@ -1,14 +1,54 @@
 import sys
-import pathlib
+import logging
+from logging import FileHandler, Formatter
+from rich.logging import RichHandler
+from pathlib import Path
 import argparse
-
+from core.common.function_util import new_file_path
 from core.user_operations import Operations
 
 operations = Operations()
 
+def setup_logging(verbose: bool) -> Path | None:
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.handlers.clear()
+
+    log_file_path = None
+
+    console_handler = RichHandler(
+        rich_tracebacks=True,
+        show_time=False,
+        show_path=False
+    )
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(Formatter("%(message)s"))
+
+    logger.addHandler(console_handler)
+
+    if verbose:
+        log_file_path = str(new_file_path("framesniff", ".log"))
+
+        file_handler = FileHandler(log_file_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(
+            Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        )
+
+        logger.addHandler(file_handler)
+
+    return log_file_path
+
 def main():
     parser = argparse.ArgumentParser(
         description="A simple tool for exploring networks, their protocols and devices."
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose mode and save debug logs to file"
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -34,7 +74,7 @@ def main():
     set_frequency_parser.add_argument("--width", type=int, default=20, help="Channel width")
 
     sniff_parser = subparsers.add_parser("sniff", help="Sniff Wi-Fi, Bluetooth or Ethernet frames")
-    sniff_parser.add_argument("ifname", type=str, default=None, help="Network interface name")
+    sniff_parser.add_argument("ifname", type=str, help="Network interface name")
     sniff_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format that we will capture.")
     sniff_parser.add_argument("--store-filter", type=str, default=None, help="Filter to storage frames.")
     sniff_parser.add_argument("--display-filter", type=str, default=None, help="Filter to display frames (must comply with the storage filter).")
@@ -62,7 +102,7 @@ def main():
     send_raw_parser.add_argument("--timeout", type=float, default=None, help="Socket timeout in seconds (optional).")
 
     scan_monitor_parser = subparsers.add_parser("scan-monitor", help="scans nearby APs and devices.")
-    scan_monitor_parser.add_argument("ifname", type=str, default=None, help="Network interface name")
+    scan_monitor_parser.add_argument("ifname", type=str, help="Network interface name")
     scan_monitor_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format captured.")
     scan_monitor_parser.add_argument("--no-channel-hopping", dest="channel_hopping", action="store_false", help="Disable channel hopping (enabled by default).")
     scan_monitor_parser.add_argument("--dwell", type=float, default=4.0, help="Channel hopping interval (dwell time in channel), default 4 seconds.")
@@ -82,6 +122,11 @@ def main():
     channel_hopping_parser.add_argument("--timeout", type=float, default=None, help="Channels hopping timeout (seconds).")
 
     args = parser.parse_args()
+
+    log_file_path = str(setup_logging(args.verbose))
+
+    if log_file_path:
+        logging.getLogger(__name__).info(f"log file created at: {log_file_path}")
 
     if args.command == "list-interfaces":
        print(operations.list_network_interfaces())

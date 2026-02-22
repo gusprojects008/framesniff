@@ -5,31 +5,21 @@ import time
 import json
 import socket
 import threading
-import queue
-import traceback
-import asyncio
-import shlex
-import traceback
 import os
 import logging
 from typing import Optional, Tuple, List
 from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
-from core.common.useful_functions import (verify_supported_dlts, import_module, new_file_path, iter_packets_from_json, MacVendorResolver, check_root, finish_capture, check_interface_mode)
+from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
+from core.common.frames_utils import (iter_packets_from_json, MacVendorResolver)
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
-log_filename = str(new_file_path("framesniff", ".log"))
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[logging.FileHandler(log_filename)]
-)
+logger = logging.getLogger(__name__)
 
 class Operations:
     @staticmethod
     def list_network_interfaces() -> str:
-        print(" In development, see https://github.com/gusprojects008/wnlpy")
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         result = subprocess.run(
             ["iw", "dev"],
             stdout=subprocess.PIPE,
@@ -41,7 +31,7 @@ class Operations:
 
     @staticmethod
     def list_network_interface(ifname: str) -> str:
-        print(" In development, see https://github.com/gusprojects008/wnlpy")
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         result = subprocess.run(
             ["iw", "dev", ifname, "info"],
             stdout=subprocess.PIPE,
@@ -53,31 +43,31 @@ class Operations:
 
     @staticmethod
     def set_monitor(ifname: str):
-        print(" In development, see https://github.com/gusprojects008/wnlpy")
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         try:
             subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            print(f"{ifname} configured for monitor mode!")
+            logger.info(f"{ifname} configured for monitor mode!")
         except Exception as error:
-            print(f"error configure {ifname} to monitor mode: {error}")
+            logger.error(f"error configure {ifname} to monitor mode: {error}")
 
     @staticmethod
     def set_station(ifname: str):
-        print(" In development, see https://github.com/gusprojects008/wnlpy")
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         try:
             subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            print(f"{ifname} configured for station/management mode!")
+            logger.info(f"{ifname} configured for station/management mode!")
         except Exception as error:
-            print(f"error configure {ifname} to station mode: {error}")
+            logger.error(f"error configure {ifname} to station mode: {error}")
 
     @staticmethod
     def scan_station_mode(ifname: str = None, output_filename: str = None):
-        print(" In development, see https://github.com/gusprojects008/wnlpy\n")
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy\n")
     
-        print(f" Scanning WiFi networks on {ifname}...\n")
+        logger.info(f" Scanning WiFi networks on {ifname}...\n")
         
         try:
             result = subprocess.run(
@@ -88,10 +78,10 @@ class Operations:
                 check=True
             )
         except subprocess.CalledProcessError as error:
-            print(f"Error during scan: {error}")
+            logger.error(f"Error during scan: {error}")
             return
         except FileNotFoundError:
-            print("Error: 'iw' command not found. Please install wireless tools.")
+            logger.error("Error: 'iw' command not found. Please install wireless tools.")
             return
     
         def _extract_value(block: str, pattern: str) -> str:
@@ -178,7 +168,7 @@ class Operations:
                 network_count += 1
                 _print_network_summary(block, network_count)
             
-            print(f"\nTotal networks found: {network_count}")
+            logger.info(f"\nTotal networks found: {network_count}")
 
     @staticmethod
     def sniff(dlt: str = "DLT_IEEE802_11_RADIO", ifname: str = None,
@@ -199,22 +189,18 @@ class Operations:
             parser = IEEE802_11.frames_parser
     
         if parser is None:
-            raise ValueError("Unsupported sniff parameters")
+            raise ValueError(f"There is no parser available for DLT: {dlt}")
     
         sock = create_raw_socket(ifname)
 
         output_filename = new_file_path(filename=output_filename) if output_filename else new_file_path(base="framesniff-capture", ext=".json")
-
-  #     output_filename = new_file_path(filename=output_filename)
 
         captured_frames = []
         frame_counter = 0
         last_display_time = 0.0
     
         try:
-            #sock.settimeout(1.0)
-    
-            print(f'''
+            logger.info(f'''
     Starting capture on {ifname}... (Press Ctrl+C to stop)\n
     Store filter: {store_filter}"\n
     Display filter: {display_filter}\n
@@ -226,16 +212,20 @@ class Operations:
     
             while True:
                 if stop_event and stop_event.is_set():
-                    print("Stop event received, finishing capture...")
+                    logger.info("Stop event received, finishing capture...")
                     break
                 
                 if timeout and (time.time() - start_time) >= timeout:
-                    print(f"Capture timeout reached after {timeout} seconds")
+                    logger.info(f"Capture timeout reached after {timeout} seconds")
                     break
                 
                 try:
                     frame, _ = sock.recvfrom(65535)
-                    parsed_frame = parser(frame, mac_vendor_resolver)
+                    try:
+                        parsed_frame = parser(frame, mac_vendor_resolver)
+                    except Exception as e:
+                        logging.error(f"Failed to parse frame: {e}", exc_info=True)
+                        continue
     
                     if not parsed_frame:
                         continue
@@ -256,26 +246,24 @@ class Operations:
                         current_time = time.time()
                         if store_result and current_time - last_display_time >= display_interval:
                             try:
-                                print(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
+                                logger.info(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
                             except Exception:
-                                print(f"[{frame_counter}] {display_result}")
+                                logger.warning(f"[{frame_counter}] {display_result}")
                             last_display_time = current_time
                     if count is not None and frame_counter >= count:
                         break
                         
-                except socket.timeout:
-                    continue
                 except KeyboardInterrupt:
-                    print("Capture interrupted by user")
+                    logger.info("Capture interrupted by user")
                     break
-                except Exception as error:
-                    print(f"Error receiving frame: {error}")
+                except Exception as e:
+                    logger.error(f"Error receiving frame: {e}")
                     continue
                     
-        except Exception as error:
-            print(f"Unexpected error in sniff: {error}")
+        except Exception as e:
+            logger.critical(f"Unexpected error in sniff: {error}")
         finally:
-            print(f"Finishing capture, saving {len(captured_frames)} frames...")
+            logger.info(f"Finishing capture, saving {len(captured_frames)} frames...")
             finish_capture(sock, start_time, captured_frames, output_filename)
 
     @staticmethod
@@ -462,9 +450,9 @@ class Operations:
             for hexstr, b in iter_packets_from_json(input_filename):
                 writer.writepkt(b, ts=time.time())
                 count += 1
-                print(f"{count} packet writed: {b[:50]}...")
+                logger.info(f"{count} packet writed: {b[:50]}...")
             writer.close()
-            print(f"Output file: {output_filename}")
+            logger.info(f"Output file: {output_filename}")
 
     @staticmethod
     def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
@@ -476,14 +464,14 @@ class Operations:
                 for i in range(count):
                     try:
                         bytes_sent = sock.send(raw_bytes)
-                        print(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
+                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
                         if i < count - 1:
                             time.sleep(interval)
                     except socket.error as error:
-                        print(f"Failed to send frame: {error}")
+                        logger.error(f"Failed to send frame: {error}")
                         break
                     except Exception as error:
-                        print(f"Unexpected error: {error}")
+                        logger.critical(f"Unexpected error: {error}")
                         break
         finally:
             sock.close()
@@ -491,5 +479,5 @@ class Operations:
     @staticmethod
     def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
         from core.tui.scan_monitor import scan_monitor
-        print("press ctrl+s or <F12> to save tui information!")
+        logger.info("press ctrl+s or <F12> to save tui information!")
         scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, logging=logging, Operations=Operations)

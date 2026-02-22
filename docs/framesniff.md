@@ -21,6 +21,11 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
 
+* Corrigir prioridade e obrigatoriedade de argumentos do argparse
+* Separar logs, colorir logs no terminal, logs normais no arquivo de logs.
+* Melhorar path names, seprando com hifem o datetime.
+* Encerrar o programa com logs no terminal, caso haja um error fatal.
+* Adicionar instrução explicita explicando que o usuário deve executar o programa usando o python do venv.
 * Completar a análise dos parâmetros tagged, country code, ERP/TIM, RM e capacidades estendidas.
 * Refatorar todos os parsers para incluir **todos** os dados analisados, incluindo valores, tags, comprimentos etc.
 * Revisar os parsers e suas saídas.
@@ -34,3 +39,6 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Verificar as bandas suportadas pela interface antes de realizar o channel hopping.
 * Melhorar a legibilidade do código e revisá-lo de acordo com os princípios SOLID.
 * Corrigir possíveis condições de corrida.
+
+## Melhorias em:
+* Formato de paths de arquivos de log

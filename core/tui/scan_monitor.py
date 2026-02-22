@@ -103,6 +103,8 @@ class Tui(App):
         
         self.sniff_thread = None
         self.hopper_thread = None
+        self.sniff_stop_event = None
+        self.hopper_stop_event = None
 
         self.output_filename = "scan-monitor-tui-capture.txt"
 
@@ -207,12 +209,9 @@ class Tui(App):
             rsn_info = display_data.get('body.tagged_parameters.rsn_information')
             vendor_specific = display_data.get('body.tagged_parameters.vendor_specific', {})
             freq = display_data.get('rt_hdr.channel_freq')
-            #tagged_channel = display_data.get('body.tagged_parameters.current_channel')
 
             if freq:
                 channel = freq_to_channel(freq)
-            #elif tagged_channel:
-                #channel = tagged_channel
             else:
                 channel = self.current_channel
     
@@ -266,7 +265,7 @@ class Tui(App):
                 if frame_type == 2 and bssid_mac and bssid_mac != broadcast:
                     self.associations[src_mac] = bssid_mac
                 else:
-                    if subtype in [10, 12]:  # disassociation / deauthentication
+                    if subtype in [10, 12]:
                         self.associations.pop(src_mac, "N/A")
     
             self.frames_processed += 1
@@ -318,13 +317,19 @@ class Tui(App):
     def process_queued_frames(self):
         max_frames_per_cycle = 100
         processed_count = 0
-        while not self.display_queue.empty() and processed_count < max_frames_per_cycle:
+        
+        while processed_count < max_frames_per_cycle:
             try:
                 display_data = self.display_queue.get_nowait()
-                self.process_display_data(display_data)
-                processed_count += 1
+                try:
+                    self.process_display_data(display_data)
+                    processed_count += 1
+                except Exception as e:
+                    self.logging.error(f"Error processing display data: {e}", exc_info=True)
+                    self.error_queue.put(f"Frame processing error: {str(e)[:100]}")
             except queue.Empty:
                 break
+    
     
     def process_errors(self):
         try:
@@ -344,8 +349,14 @@ class Tui(App):
         queue_size = self.display_queue.qsize()
         
         hop_status = "ON" if self.channel_hopping else "OFF"
-        header_text = f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | Frames: {self.frames_processed} | Queue: {queue_size} | Networks: {self.networks_count} | Clients: {self.clients_count} | Time: {self.duration:.0f}s | Hop: {hop_status}"
-    
+        # header_text = f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | Frames: {self.frames_processed} | Queue: {queue_size} | Networks: {self.networks_count} | Clients: {self.clients_count} | Time: {self.duration:.0f}s | Hop: {hop_status}"
+        header_text = (
+            f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | "
+            f"Frames: {self.frames_processed} | Queue: {queue_size} | "
+            f"Networks: {self.networks_count} | Clients: {self.clients_count} | "
+            f"Hopping: {hop_status} | Duration: {int(self.duration)}s"
+        )
+
         self.query_one("#header", Static).update(header_text)
         
         error_panel = self.query_one("#error-panel", Static)
@@ -405,18 +416,29 @@ class Tui(App):
         if event.key in ("f12", "ctrl+s"):
             export_tui_to_txt(self, self.output_filename)
 
-    def exit_application(self):
-        self.running = False
-        if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
-            self.sniff_stop_event.set()
-            print("Stop event set for sniff thread")
-        if self.sniff_thread and self.sniff_thread.is_alive():
-            self.sniff_thread.join(timeout=2.0)
-            if self.sniff_thread.is_alive():
-                print("Sniff thread still alive after timeout")
-        self.logging.info(f"Network Monitor finished!")
-        print(f"Network Monitor finished!\nSee the logs in {self.logging}")
-        self.exit()
+   def exit_application(self):
+       self.running = False
+       
+       if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
+           self.sniff_stop_event.set()
+           self.logging.info("Sniff stop event set")
+       
+       if hasattr(self, 'hopper_stop_event') and self.hopper_stop_event:
+           self.hopper_stop_event.set()
+           self.logging.info("Hopper stop event set")
+       
+       for thread_name, thread in [
+           ("sniffer", self.sniff_thread),
+           ("channel_hopper", self.hopper_thread)
+       ]:
+           if thread and thread.is_alive():
+               self.logging.info(f"Waiting for {thread_name} thread to finish...")
+               thread.join(timeout=3.0)
+               if thread.is_alive():
+                   self.logging.warning(f"{thread_name} thread did not finish in time")
+       
+       self.logging.info("Network Monitor finished!")
+       self.exit()
 
 def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, logging, Operations):
     app = Tui(
