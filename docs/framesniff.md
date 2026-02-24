@@ -20,7 +20,8 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
-
+* Remover totalmente hardcodes.
+* Melhorar nomes de variáveis e strings
 * Corrigir prioridade e obrigatoriedade de argumentos do argparse
 * Separar logs, colorir logs no terminal, logs normais no arquivo de logs.
 * Melhorar path names, seprando com hifem o datetime.
@@ -41,5 +42,6 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Melhorar a legibilidade do código e revisá-lo de acordo com os princípios SOLID.
 * Corrigir possíveis condições de corrida.
 
-## Melhorias em:
+## Melhorias:
 * Formato de paths de arquivos de log
+* Estrutura de diretórios mais compativeis com o modelo OSI, e melhor escalabilidade.

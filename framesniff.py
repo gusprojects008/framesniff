@@ -4,7 +4,8 @@ from logging import FileHandler, Formatter
 from rich.logging import RichHandler
 from pathlib import Path
 import argparse
-from core.common.function_util import new_file_path
+from core.common.function_utils import new_file_path
+from core.common.contants.utils import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
 from core.user_operations import Operations
 
 operations = Operations()
@@ -84,7 +85,7 @@ def main():
     sniff_parser.add_argument("--output", "-o", type=str, default=None, help="Output JSON file")
 
     generate_22000_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from json file")
-    generate_22000_parser.add_argument("--bitmask", type=int, choices=[1, 2], default=2, required=True, help="Bitmask message pair (1 or 2)\nbitmask 1 format: {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\nbitmask 2 format: {'raw': ['eapol message 1', 'eapol message 2']}. e.g. {'raw': ['000038002f...', '000038002f...']}")
+    generate_22000_parser.add_argument("--bitmask", type=int, choices=[MESSAGE_PAIR_M1, MESSAGE_PAIR_M2], default=MESSAGE_PAIR_M2, required=True, help=f"Bitmask message pair ({MESSAGE_PAIR_M1} or {MESSAGE_PAIR_M2})\nbitmask {MESSAGE_PAIR_M1} format: {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\nbitmask {MESSAGE_PAIR_M2} format: {'raw': ['eapol message 1', 'eapol message 2']}. e.g. {'raw': ['000038002f...', '000038002f...']}")
     generate_22000_parser.add_argument("--ssid", type=str, required=True, help="SSID of the target network (e.g. MyNetwork)")
     generate_22000_parser.add_argument("--input", "-i", type=str, required=True, help="JSON file path")
     generate_22000_parser.add_argument("--output", "-o", type=str, default="hashcat.22000", help="Output file name")

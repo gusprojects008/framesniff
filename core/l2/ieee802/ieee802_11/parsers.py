@@ -3,33 +3,20 @@ import struct
 import binascii
 import re
 import socket
-from core.common.useful_functions import (safe_unpack, bytes_for_mac, bitmap_value_for_dict)
-from core.wifi.l2.ieee802_11 import ies_parsers
+from core.common.parser_utils import (unpack, bytes_for_mac, bitmap_value_for_dict)
+from core.l2.wifi.ieee802_11 import ies_parsers
+from core.common.constants.ieee802_11 import *
 
 def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict, int):
     def _get_frame_type_subtype_name(frame_type: int, subtype: int):
-        type_names = {0: "Management", 1: "Control", 2: "Data"}
-        subtype_names = {
-            0: {0: "Association Request", 1: "Association Response", 2: "Reassociation Request",
-                3: "Reassociation Response", 4: "Probe Request", 5: "Probe Response", 6: "Timing Advertisement",
-                8: "Beacon", 9: "ATIM", 10: "Disassociation", 11: "Authentication", 12: "Deauthentication",
-                13: "Action", 14: "Action No Ack"},
-            1: {8: "Block Ack Request", 9: "Block Ack", 10: "PS-Poll", 11: "RTS", 12: "CTS",
-                13: "ACK", 14: "CF-End", 15: "CF-End+CF-Ack"},
-            2: {i: name for i, name in enumerate([
-                "Data", "Data+CF-Ack", "Data+CF-Poll", "Data+CF-Ack+CF-Poll", "Null",
-                "CF-Ack", "CF-Poll", "CF-Ack+CF-Poll", "QoS Data", "QoS Data+CF-Ack",
-                "QoS Data+CF-Poll", "QoS Data+CF-Ack+CF-Poll", "QoS Null", "Reserved",
-                "QoS CF-Poll", "QoS CF-Ack+CF-Poll"])}
-        }
-        type_name = type_names.get(frame_type, f"Unknown ({frame_type})")
-        subtype_name = subtype_names.get(frame_type, {}).get(subtype, f"Unknown {type_name} ({subtype})")
+        type_name = FRAME_TYPES.get(frame_type, f"Unknown ({frame_type})")
+        subtype_name = FRAME_SUBTYPES.get(frame_type, {}).get(subtype, f"Unknown {type_name} ({subtype})")
         return type_name, subtype_name
 
     mac_data = {}
 
     try:
-        (frame_control,), offset = safe_unpack("<H", frame, offset)
+        (frame_control,), offset = unpack("<H", frame, offset)
         frame_type = (frame_control >> 2) & 0b11
         frame_subtype = (frame_control >> 4) & 0b1111
         frame_type_name, frame_subtype_name = _get_frame_type_subtype_name(frame_type, frame_subtype)
@@ -38,31 +25,31 @@ def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict,
 
         duration_id, addr1, addr2, addr3, sequence_number = None, None, None, None, None
 
-        if frame_type == 1:  # Control
-            if frame_subtype in (8, 9,10, 11, 14, 15):  # RTS, Block Ack Req, Block Ack, PS-Poll, CF-End, CF-End+CF-Ack
+        if frame_type == CTRL:
+            if frame_subtype in (CTRL_BLACK_ACK_REQUEST, CTRL_BLOCK_ACK, CTRL_PS_POLL, CTRL_RTS, CTRL_CF_END, CTRL_CF_END_ACK):
                 fmt = "<H6s6s"  # FC, Duration, RA, TA
-                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                unpacked, new_offset = unpack(fmt, frame, offset)
                 if unpacked is None:
                    return mac_data, offset
                 duration_id, addr1, addr2 = unpacked
                 offset = new_offset
-            elif frame_subtype in (12, 13):  # CTS, ACK
+            elif frame_subtype in (CTRL_CTS, CTRL_ACK):
                 fmt = "<H6s"  # FC, Duration, RA
-                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                unpacked, new_offset = unpack(fmt, frame, offset)
                 if unpacked is None:
                    return mac_data, offset
                 duration_id, addr1 = unpacked
                 offset = new_offset
             else:
                 fmt = "<H"  # fallback minimal
-                unpacked, new_offset = safe_unpack(fmt, frame, offset)
+                unpacked, new_offset = unpack(fmt, frame, offset)
                 if unpacked is None:
                    return mac_data, offset
                 duration_id = unpacked
                 offset = new_offset
         else: # Data and Management
             fmt = "<H6s6s6sH"
-            unpacked, new_offset = safe_unpack(fmt, frame, offset)
+            unpacked, new_offset = unpack(fmt, frame, offset)
             duration_id, addr1, addr2, addr3, sequence_number = unpacked
             if unpacked is None:
                return mac_data, offset
@@ -109,15 +96,15 @@ def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict,
             "mac_transmitter": mac_transmitter
         })
 
-        if frame_type in [0, 2]:
+        if frame_type in [MGMT, DATA]:
             mac_data.update({
                 "mac_src": mac_source,
                 "mac_dst": mac_destination,
                 "bssid": bssid,
                 "sequence_number": sequence_number
             })
-            if frame_type == 2 and frame_subtype >= 8:
-                unpacked, new_offset = safe_unpack("<H", frame, offset)
+            if frame_type == MGMT and frame_subtype >= MGMT_BEACON:
+                unpacked, new_offset = unpack("<H", frame, offset)
                 if unpacked is not None:
                     mac_data["qos_control"] = unpacked[0]
                     offset = new_offset
@@ -129,7 +116,7 @@ def mac_header(frame: bytes, offset: int, mac_vendor_resolver: object) -> (dict,
 
 def fixed_parameters(frame: bytes, offset: int) -> (dict, int):
     fixed_parameters = {}
-    result, offset = safe_unpack("<QHH", frame, offset)
+    result, offset = unpack("<QHH", frame, offset)
     if result is None:
         return fixed_parameters, offset
     timestamp, beacon_interval, capabilities_information = result
@@ -144,7 +131,7 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
     }
     try:
         while offset < len(frame):
-            result, offset = safe_unpack("<BB", frame, offset)
+            result, offset = unpack("<BB", frame, offset)
             if result is None:
                 break
             tag_number, tag_length = result
@@ -154,32 +141,47 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
             data = frame[offset:offset + tag_length]
             offset += tag_length
 
-            if tag_number == 0:
+            if tag_number == TAG_SSID:
                 tagged_parameters['ssid'] = data.decode(errors='ignore')
-            elif tag_number == 1:
+            
+            elif tag_number == TAG_SUPPORTED_RATES:
                 tagged_parameters['supported_rates'] = ies_parsers.rates(data, tag_length)
-            elif tag_number == 3:
+            
+            elif tag_number == TAG_CURRENT_CHANNEL:
                 if tag_length >= 1:
                     tagged_parameters['current_channel'] = data[0]
-            elif tag_number == 7:
+            
+            elif tag_number == TAG_COUNTRY_INFO:
                 tagged_parameters['country_info'] = ies_parsers.country_code(data, tag_length)
-            elif tag_number == 32 and tag_length >= 1:
+            
+            elif tag_number == TAG_POWER_CONSTRAINT and tag_length >= 1:
                 tagged_parameters['power_constraint'] = data[0]
-            elif tag_number == 35 and tag_length >= 2:
-                tagged_parameters['tpc_report'] = {'tx_power': data[0], 'reserved': data[1]}
-            elif tag_number == 42:
+            
+            elif tag_number == TAG_TPC_REPORT and tag_length >= 2:
+                tagged_parameters['tpc_report'] = {
+                    'tx_power': data[0],
+                    'reserved': data[1]
+                }
+            
+            elif tag_number == TAG_ERP_INFO:
                 tagged_parameters['erp_info'] = ies_parsers.erp_info(data, tag_length)
-            elif tag_number == 45:
+            
+            elif tag_number == TAG_HT_CAPABILITIES:
                 tagged_parameters['ht_capabilities'] = ies_parsers.ht_capabilities(data, tag_length)
-            elif tag_number == 70:
+            
+            elif tag_number == TAG_RM_ENABLED_CAPABILITIES:
                 tagged_parameters['rm_enabled_capabilities'] = ies_parsers.rm_enable_capabilities(data, tag_length)
-            elif tag_number == 48 and tag_length >= 2:
-                 tagged_parameters['rsn_information'] = ies_parsers.rsn_information(data, tag_length)
-            elif tag_number == 50:
+            
+            elif tag_number == TAG_RSN_INFORMATION and tag_length >= 2:
+                tagged_parameters['rsn_information'] = ies_parsers.rsn_information(data, tag_length)
+            
+            elif tag_number == TAG_EXTENDED_SUPPORTED_RATES:
                 tagged_parameters['extended_supported_rates'] = ies_parsers.rates(data, tag_length)
-            elif tag_number == 127:
+            
+            elif tag_number == TAG_EXTENDED_CAPABILITIES:
                 tagged_parameters['extended_capabilities'] = ies_parsers.extended_capabilities(data, tag_length)
-            elif tag_number == 221:
+            
+            elif tag_number == TAG_VENDOR_SPECIFIC:
                 if "vendor_specific" not in tagged_parameters:
                     tagged_parameters["vendor_specific"] = {}
                 vendor_entry = ies_parsers.vendor_specific_ie(data)
@@ -196,7 +198,7 @@ def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
 def llc(frame, offset):
     result = {}
     try:
-        unpacked, new_offset = safe_unpack("!BBB3sH", frame, offset)
+        unpacked, new_offset = unpack("!BBB3sH", frame, offset)
         if unpacked is None:
             return result, offset
         dsap, ssap, control, org_code, llc_type = unpacked
@@ -226,16 +228,16 @@ def eapol(frame, offset):
             if pos + elem_len > len(key_data):
                 break
             elem_data = key_data[pos:pos + elem_len]
-            if elem_id == 221:  # Vendor Specific IE
+            if elem_id == TAG_VENDOR_SPECIFIC:
                 vendor_result = ies_parsers.vendor_specific_ie(elem_data)
                 result.update(vendor_result)
-            elif elem_id == 48:  # RSN IE
+            elif elem_id == TAG_RSN_INFORMATION:
                 result["rsn_information"] = ies_parsers.rsn_information(elem_data, elem_len)
             pos += elem_len
         return result
     try:
         result = {}
-        unpacked, new_offset = safe_unpack("!BBH", frame, offset)
+        unpacked, new_offset = unpack("!BBH", frame, offset)
         if unpacked is None:
             return result, offset
         auth_ver, eapol_type, length = unpacked
@@ -245,7 +247,7 @@ def eapol(frame, offset):
             "type": eapol_type,
             "header_length": length
         })
-        unpacked, new_offset = safe_unpack("!BHH", frame, offset)
+        unpacked, new_offset = unpack("!BHH", frame, offset)
         if unpacked is None:
             return result, offset
         desc_type, key_info, key_len = unpacked
@@ -299,7 +301,7 @@ def eapol(frame, offset):
 
         offset = new_offset
 
-        unpacked, new_offset = safe_unpack("!Q32s16s8s8s16sH", frame, offset)
+        unpacked, new_offset = unpack("!Q32s16s8s8s16sH", frame, offset)
         if unpacked is None:
             return result, offset
         replay, nonce, iv, rsc, key_id, mic, data_len = unpacked

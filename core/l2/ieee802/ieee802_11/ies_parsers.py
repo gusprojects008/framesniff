@@ -2,102 +2,18 @@
 from uuid import UUID
 import binascii
 import struct
-from core.common.useful_functions import (safe_unpack, bytes_for_mac)
+from logging import getLogger
+logger = getLogger(__name__)
+from core.common.constants.ieee802_11 import (WPS_ATTRIBUTE_IDS, WPS_CONFIGURATION_STATES, WPS_MESSAGE_TYPES, WPS_RESPONSE_TYPES, WPS_RF_BANDS, WPS_CONFIG_METHODS, WPS_DEVICE_PASSWORD_IDS, WPS_DEVICE_CATEGORIES)
+from core.common.parser_utils import (unpack, bytes_for_mac)
 
 def vendor_specific_ie(data: bytes):
     def _wps_vendor_ie(vendor_data: bytes):
-        attr_map = {
-            "version": 0x104a,
-            "device_name": 0x1012,
-            "device_password_id": 0x1011,
-            "config_methods": 0x1008,
-            "manufacturer": 0x1021,
-            "model_name": 0x1023,
-            "model_number": 0x1024,
-            "wps_state": 0x1044,
-            "uuid_e": 0x1047,
-            "rf_bands": 0x103c,
-            "vendor_extension": 0x1049,
-            "primary_device_type": 0x1054,
-            "selected_registrar": 0x1057,
-            "selected_registrar_config_methods": 0x1053,
-            "public_key": 0x100d,
-            "network_key": 0x1042,
-            "network_key_index": 0x1041,
-            "ap_setup_locked": 0x1057,
-            "message_type": 0x101a,
-            "mac_address": 0x1020,
-            "response_type": 0x1032,
-            "registrar_config_methods": 0x103e,
-            "version2": 0x1010,
-            "ssid": 0x1045,
-            "serial_number": 0x102d,
-            "os_version": 0x103b,
-            "association_state": 0x1033,
-        }
-        wps_states = {
-            "not_configured": 0x01,
-            "configured": 0x02,
-        }
-        message_types = {
-            "m4_message": 0x04,
-            "m5_message": 0x05,
-            "m6_message": 0x06,
-            "m7_message": 0x07,
-            "m8_message": 0x08,
-            "wsc_ack": 0x0b,
-            "wsc_nack": 0x0c,
-            "wsc_done": 0x0d,
-        }
-        response_types = {
-            "enrollee_info": 0x00,
-            "enrollee": 0x01,
-            "registrar": 0x02,
-            "ap": 0x03,
-        }
-        rf_bands = {
-            "2.4ghz": 0x01,
-            "5ghz": 0x02,
-            "2.4ghz_and_5ghz": 0x03,
-        }
-        config_methods = {
-            "usb": 0x0001,
-            "ethernet": 0x0002,
-            "label": 0x0004,
-            "display": 0x0008,
-            "external_nfc_token": 0x0010,
-            "integrated_nfc_token": 0x0020,
-            "nfc_interface": 0x0040,
-            "push_button": 0x0080,
-            "keypad": 0x0100,
-        }
-        device_password_ids = {
-            "default": 0x0000,
-            "user_specified": 0x0001,
-            "machine_specified": 0x0002,
-            "rekey": 0x0003,
-            "push_button": 0x0004,
-            "registrar_specified": 0x0005,
-        }
-        device_categories = {
-            "computer": 0x0001,
-            "input_device": 0x0002,
-            "print_scan_fax_copy": 0x0003,
-            "camera": 0x0004,
-            "storage": 0x0005,
-            "network_infrastructure": 0x0006,
-            "display": 0x0007,
-            "multimedia": 0x0008,
-            "gaming": 0x0009,
-            "telephone": 0x000a,
-            "audio": 0x000b,
-            "other": 0x000f,
-        }
-    
         result = {}
         pos = 0
+
         while pos + 4 <= len(vendor_data):
-            (res, _offset) = safe_unpack(">HH", vendor_data, pos)
+            (res, _offset) = unpack(">HH", vendor_data, pos)
             if res is None:
                 break
             attr_type, attr_len = res
@@ -107,78 +23,78 @@ def vendor_specific_ie(data: bytes):
             attr_data = vendor_data[pos:pos+attr_len]
             pos += attr_len
     
-            if attr_type == attr_map["version"]:
-                (ver_res, _) = safe_unpack("B", attr_data, 0)
+            if attr_type == WPS_ATTRIBUTE_IDS["version"]:
+                (ver_res, _) = unpack("B", attr_data)
                 if ver_res is not None:
                     (version_byte,) = ver_res
                     version_major = version_byte >> 4
                     version_minor = version_byte & 0x0F
                     result["version"] = f"{version_major}.{version_minor}"
-            elif attr_type == attr_map["wps_state"]:
-                (state_res, _) = safe_unpack("B", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["wps_state"]:
+                (state_res, _) = unpack("B", attr_data)
                 if state_res is not None:
                     (state_hex,) = state_res
-                    state_desc = next((k for k, v in wps_states.items() if v == state_hex), f"unknown_{state_hex:02x}")
+                    state_desc = next((k for k, v in WPS_CONFIGURATION_STATES.items() if v == state_hex), f"unknown_{state_hex:02x}")
                     result["wps_state"] = state_desc
                     result["wps_state_value"] = state_hex
-            elif attr_type == attr_map["ap_setup_locked"]:
-                (locked_res, _) = safe_unpack("B", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["ap_setup_locked"]:
+                (locked_res, _) = unpack("B", attr_data)
                 if locked_res is not None:
                     (locked_byte,) = locked_res
                     result["ap_setup_locked"] = locked_byte
-            elif attr_type == attr_map["response_type"]:
-                (resp_res, _) = safe_unpack("B", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["response_type"]:
+                (resp_res, _) = unpack("B", attr_data)
                 if resp_res is not None:
                     (resp_type,) = resp_res
-                    resp_desc = next((k for k, v in response_types.items() if v == resp_type), f"unknown_{resp_type:02x}")
+                    resp_desc = next((k for k, v in WPS_RESPONSE_TYPES.items() if v == resp_type), f"unknown_{resp_type:02x}")
                     result["response_type"] = resp_desc
                     result["response_type_value"] = resp_type
-            elif attr_type == attr_map["uuid_e"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["uuid_e"]:
                 if len(attr_data) == 16:
                     result["uuid"] = str(UUID(bytes=attr_data))
                 else:
                     result["uuid"] = attr_data.hex()
-            elif attr_type == attr_map["manufacturer"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["manufacturer"]:
                 result["manufacturer"] = attr_data.decode(errors="ignore").strip()
-            elif attr_type == attr_map["model_name"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["model_name"]:
                 result["model"] = attr_data.decode(errors="ignore").strip()
-            elif attr_type == attr_map["model_number"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["model_number"]:
                 result["model_number"] = attr_data.decode(errors="ignore").strip()
-            elif attr_type == attr_map["serial_number"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["serial_number"]:
                 result["serial_number"] = attr_data.decode(errors="ignore").strip()
-            elif attr_type == attr_map["device_name"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["device_name"]:
                 result["device_name"] = attr_data.decode(errors="ignore").strip()
-            elif attr_type == attr_map["primary_device_type"]:
-                (cat_res, _) = safe_unpack(">H", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["primary_device_type"]:
+                (cat_res, _) = unpack(">H", attr_data)
                 if cat_res is not None:
                     (category,) = cat_res
                     oui = attr_data[2:6].hex()
-                    (subtype_res, _) = safe_unpack(">H", attr_data, 6)
+                    (subtype_res, _) = unpack(">H", attr_data, 6)
                     subtype = subtype_res[0] if subtype_res else None
                     result["primary_device_type"] = f"{category}-{oui}-{subtype}"
-                    category_desc = next((k for k, v in device_categories.items() if v == category), f"unknown_{category:04x}")
+                    category_desc = next((k for k, v in WPS_DEVICE_CATEGORIES.items() if v == category), f"unknown_{category:04x}")
                     result["primary_device_type_category"] = category_desc
                     result["primary_device_type_subcategory"] = subtype
-            elif attr_type == attr_map["config_methods"]:
-                (cfg_res, _) = safe_unpack(">H", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["config_methods"]:
+                (cfg_res, _) = unpack(">H", attr_data)
                 if cfg_res is not None:
                     (config_mask,) = cfg_res
-                    methods = [k.replace('_', ' ').title() for k, bit in config_methods.items() if config_mask & bit]
+                    methods = [k.replace('_', ' ').title() for k, bit in WPS_CONFIG_METHODS.items() if config_mask & bit]
                     result["config_methods"] = ", ".join(methods)
                     result["config_methods_value"] = config_mask
-            elif attr_type == attr_map["rf_bands"]:
-                (band_res, _) = safe_unpack("B", attr_data, 0)
+            elif attr_type == WPS_ATTRIBUTE_IDS["rf_bands"]:
+                (band_res, _) = unpack("B", attr_data)
                 if band_res is not None:
                     (band_hex,) = band_res
-                    band_desc = next((k for k, v in rf_bands.items() if v == band_hex), f"unknown_{band_hex:02x}")
+                    band_desc = next((k for k, v in WPS_RF_BANDS.items() if v == band_hex), f"unknown_{band_hex:02x}")
                     result["rf_bands"] = band_desc
                     result["rf_bands_value"] = band_hex
-            elif attr_type == attr_map["vendor_extension"]:
+            elif attr_type == WPS_ATTRIBUTE_IDS["vendor_extension"]:
                 vendor_id = int.from_bytes(attr_data[:3], "big")
                 wfa_extension = attr_data[3:]
                 _pos = 0
                 while _pos + 2 <= len(wfa_extension):
-                    wfa_ext_subelement_id, wfa_ext_subelement_len = struct.unpack_from(">BB", wfa_extension, _pos)
+                    wfa_ext_subelement_id, wfa_ext_subelement_len = unpack(">BB", wfa_extension, _pos)
                     _pos += 2
                     if _pos + wfa_ext_subelement_len > len(wfa_extension):
                         break
@@ -199,18 +115,19 @@ def vendor_specific_ie(data: bytes):
         "type": vendor_type,
     }
     
-    if oui == "00:50:f2" and vendor_type == 0x04:
-        vendor_entry["description"] = "Microsoft Corporation WPS"
+    vendor_map = VENDOR_DESCRIPTION.get(oui, {})
+    description = vendor_map.get(vendor_type, "Generic Vendor Specific")
+    vendor_entry["description"] = description
+
+    if oui == OUI_MICROSOFT and vendor_type == MS_VENDOR_WMM_P2P:
         vendor_entry["data"] = _wps_vendor_ie(vendor_data)
     
-    elif oui == "00:0f:ac" and vendor_type in [1, 2]:
-        vendor_entry["description"] = "RSN Information"
+    elif oui == OUI_IEEE_80211 and vendor_type in [RSN_CIPHER_WEP40, RSN_CIPHER_TKIP]:
         vendor_entry["data"] = rsn_capabilities(vendor_data)
     
-    elif oui == "00:0f:ac" and vendor_type == 4:
+    elif oui == OUI_IEEE_80211 and vendor_type == RSN_VENDOR_PMKID:
         if len(vendor_data) >= 16:
             vendor_entry["value"] = vendor_data[:16].hex()
-            vendor_entry["description"] = "PMKID"
         else:
             vendor_entry["data"] = vendor_data.hex()
     
@@ -225,7 +142,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
     if tag_length < 2:
         return result
 
-    result['version'] = struct.unpack_from('<H', data, 0)[0]
+    result['version'] = unpack('<H', data)[0]
     pos = 2
 
     if pos + 4 <= tag_length:
@@ -236,7 +153,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
         pos += 4
 
     if pos + 2 <= tag_length:
-        pairwise_count = struct.unpack_from('<H', data, pos)[0]
+        pairwise_count = unpack('<H', data, pos)[0]
         result['pairwise_cipher_count'] = pairwise_count
         pos += 2
 
@@ -252,7 +169,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
             result['pairwise_ciphers'] = pairwise_dict
 
     if pos + 2 <= tag_length:
-        akm_count = struct.unpack_from('<H', data, pos)[0]
+        akm_count = unpack('<H', data, pos)[0]
         result['akm_suite_count'] = akm_count
         pos += 2
 
@@ -268,7 +185,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
             result['akm_suites'] = akm_dict
 
     if pos + 2 <= tag_length:
-        rsn_caps = struct.unpack_from('<H', data, pos)[0]
+        rsn_caps = unpack('<H', data, pos)[0]
         result['capabilities'] = {
             'pre_auth': bool(rsn_caps & 0x0001),
             'no_pairwise': bool(rsn_caps & 0x0002),
@@ -282,7 +199,7 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
         pos += 2
 
     if pos + 2 <= tag_length:
-        pmkid_count = struct.unpack_from('<H', data, pos)[0]
+        pmkid_count = unpack('<H', data, pos)[0]
         result['pmkid_count'] = pmkid_count
         pos += 2
 
@@ -349,7 +266,7 @@ def erp_info(data: bytes, tag_length: int):
 def ht_capabilities(data: bytes, tag_length: int) -> dict:
     ht_caps = {}
     if tag_length >= 2:
-        ht_caps_info = struct.unpack_from('<H', data)[0]
+        ht_caps_info = unpack('<H', data)[0]
         ht_caps['ldpc_coding_capable'] = bool(ht_caps_info & 0x0001)
         ht_caps['supported_channel_width'] = bool(ht_caps_info & 0x0002)
         ht_caps['sm_power_save'] = (ht_caps_info >> 2) & 0x03
@@ -370,18 +287,18 @@ def ht_capabilities(data: bytes, tag_length: int) -> dict:
         mcs_set = data[3:19]
         ht_caps['rx_mcs_set'] = mcs_set.hex()
         if len(mcs_set) >= 10:
-            ht_caps['highest_supported_rate'] = struct.unpack_from('<H', mcs_set, 8)[0]
+            ht_caps['highest_supported_rate'] = unpack('<H', mcs_set, 8)[0]
             ht_caps['tx_mcs_set_defined'] = bool(mcs_set[10] & 0x01)
             ht_caps['tx_rx_mcs_set_equal'] = bool(mcs_set[10] & 0x02)
             ht_caps['max_tx_spatial_streams'] = (mcs_set[10] >> 2) & 0x03
             ht_caps['unequal_modulation'] = bool(mcs_set[10] & 0x10)
     if  tag_length >= 21:
-        ht_ext_caps = struct.unpack_from('<H', data, 19)[0]
+        ht_ext_caps = unpack('<H', data, 19)[0]
         ht_caps['pco_support'] = bool(ht_ext_caps & 0x0001)
         ht_caps['transition_time'] = (ht_ext_caps >> 1) & 0x03
         ht_caps['mcs_feedback'] = (ht_ext_caps >> 4) & 0x03
     if  tag_length >= 25:
-        txbf_caps = struct.unpack_from('<I', data, 21)[0]
+        txbf_caps = unpack('<I', data, 21)[0]
         ht_caps['transmit_beamforming'] = bool(txbf_caps & 0x00000001)
         ht_caps['receive_staggered_sounding'] = bool(txbf_caps & 0x00000002)
         ht_caps['transmit_staggered_sounding'] = bool(txbf_caps & 0x00000004)

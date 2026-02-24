@@ -1,31 +1,66 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+RED_BOLD='\033[1;31m'
+RESET='\033[0m'
 
-echo ">>> Checking required system packages..."
+set -euo pipefail
+
+PROJECT_NAME="framesniff"
+VENV_DIR=".venv"
+VENV_PYTHON="$VENV_DIR/bin/python"
+
+print_step() {
+    echo
+    echo "==> $1"
+}
+
+print_ok() {
+    echo "✔ $1"
+}
+
+print_error() {
+    echo "✖ $1"
+    exit 1
+}
+
+print_step "Checking required system dependencies..."
 
 for pkg in python iw; do
     if ! command -v "$pkg" >/dev/null 2>&1; then
-        echo "Error: '$pkg' is not installed. Please install it before running this setup."
-        exit 1
+        print_error "Missing dependency: $pkg"
     fi
 done
 
-echo ">>> All required system packages are present."
-echo
+print_ok "All required system dependencies are available."
 
-echo ">>> Python environment setup instructions:"
+print_step "Setting up virtual environment..."
+
+if [ ! -d "$VENV_DIR" ]; then
+    python3 -m venv "$VENV_DIR"
+    print_ok "Virtual environment created."
+else
+    print_ok "Virtual environment already exists."
+fi
+
+source "$VENV_DIR/bin/activate"
+
+print_step "Upgrading pip..."
+python -m pip install --upgrade pip >/dev/null
+
+print_step "Installing dependencies..."
+
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
+    print_ok "Dependencies installed."
+else
+    print_error "requirements.txt not found."
+fi
+
+print_step "Setup completed successfully!"
+
 echo
-echo "1. Create a virtual environment:"
-echo "     python -m venv venv"
+echo -e "${RED_BOLD}Use the Python interpreter that is inside \$VENV_PYTHON${RESET}"
+echo "To run normally:"
+echo "  source $VENV_DIR/bin/activate"
+echo "  sudo $VENV_PYTHON framesniff.py --help"
 echo
-echo "2. Activate the virtual environment:"
-echo "     source venv/bin/activate"
-echo
-echo "3. Install dependencies from requirements.txt:"
-echo "     pip install -r requirements.txt"
-echo
-echo ">>> After that, you can run the tool normally:"
-echo "     venv/bin/python framesniff.py --help"
-echo
-echo ">>> Setup instructions completed."

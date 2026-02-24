@@ -1,7 +1,10 @@
+import socket
+from core.common.parser_utils import (unpack)
+
 def ip(frame: bytes, offset: int):
     result = {}
     try:
-        unpacked, new_offset = safe_unpack("!BBHHHBBH4s4s", frame, offset)
+        unpacked, new_offset = unpack("!BBHHHBBH4s4s", frame, offset)
         if unpacked is None:
             return result, offset
         version_ihl, tos, total_length, identification, flags_frag, ttl, protocol, header_checksum, src, dst = unpacked
@@ -34,7 +37,7 @@ def ip(frame: bytes, offset: int):
 def arp(frame: bytes, offset: int):
     result = {}
     try:
-        unpacked, new_offset = safe_unpack("!HHBBH6s4s6s4s", frame, offset)
+        unpacked, new_offset = unpack("!HHBBH6s4s6s4s", frame, offset)
         if unpacked is None:
             return result, offset
         hw_type, proto_type, hw_size, proto_size, opcode, src_mac, src_ip, dst_mac, dst_ip = unpacked
@@ -58,7 +61,7 @@ def arp(frame: bytes, offset: int):
 def ipv6(frame: bytes, offset: int):
     result = {}
     try:
-        unpacked, new_offset = safe_unpack("!IHBB16s16s", frame, offset)
+        unpacked, new_offset = unpack("!IHBB16s16s", frame, offset)
         if unpacked is None:
             return result, offset
         ver_tc_fl, payload_len, next_header, hop_limit, src, dst = unpacked

@@ -8,7 +8,7 @@ import threading
 import os
 import logging
 from typing import Optional, Tuple, List
-from core.wifi.l2.ieee802_11.ieee802_11 import IEEE802_11
+from core.l2.wifi.ieee802_11.frame import IEEE80211Frame
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
 from core.common.frames_utils import (iter_packets_from_json, MacVendorResolver)
 from core.common.filter_engine import apply_filters
@@ -186,7 +186,7 @@ class Operations:
         parser = None
     
         if dlt == "DLT_IEEE802_11_RADIO":
-            parser = IEEE802_11.frames_parser
+            parser = IEEE80211Frame.frames_parser
     
         if parser is None:
             raise ValueError(f"There is no parser available for DLT: {dlt}")
@@ -431,7 +431,7 @@ class Operations:
 
     @staticmethod
     def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000") -> str:
-        IEEE802_11.generate_22000(bitmask_message_pair, ssid, input_filename, output_filename)
+        IEEE80211Frame.generate_22000(bitmask_message_pair, ssid, input_filename, output_filename)
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
@@ -439,7 +439,7 @@ class Operations:
         import_module("dpkt")
         import dpkt
         linktypes = {
-            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
+            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE80211Frame_RADIO,
             "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
             "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
         }

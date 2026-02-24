@@ -57,17 +57,11 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
         result[name] = bool(bitmap_value & (1 << i))
     return result
 
-def safe_unpack(fmt: str, frame: bytes, offset: int):
+def unpack(fmt: str, frame: bytes, offset: int = 0):
     size = struct.calcsize(fmt)
     if offset + size > len(frame):
         return None, offset
     return struct.unpack_from(fmt, frame, offset), offset + size
-
-def unpack(fmt, frame, off):
-    res, new_off = safe_unpack(fmt, frame, off)
-    if res is None:
-        return None, off
-    return res[0], new_off
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')

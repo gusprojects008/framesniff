@@ -1,5 +1,6 @@
+#from ...common.useful_functions import (bitmap_dict_to_hex, bitmap_value_for_dict, safe_unpack)
 import struct
-from ...common.useful_functions import (bitmap_dict_to_hex, bitmap_value_for_dict, safe_unpack)
+from core.common.parser_utils import (bitmap_dict_to_hex, bitmap_value_for_dict, safe_unpack)
 
 class RadiotapHeader:
     @staticmethod

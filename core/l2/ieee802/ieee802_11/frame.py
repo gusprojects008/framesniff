@@ -1,14 +1,18 @@
 import struct
 import time
 import json
-from core.common.useful_functions import (random_mac, safe_unpack, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string, iter_packets_from_json, MacVendorResolver)
-from core.wifi.l2.radiotap_header import RadiotapHeader
-from core.wifi.l2.ieee802_11 import parsers as l2_parsers
-from core.wifi.l2.ieee802_11 import ies_parsers
-from core.wifi.l2.ieee802_11 import builders
-from core.wifi.l3 import parsers as l3_parsers
+from logging import getLogger
+logger = getLogger(__name__)
+from core.common.parser_utils import (random_mac, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string, iter_packets_from_json, MacVendorResolver)
+from core.l2.wifi.radiotap_header import RadiotapHeader
+from core.l2.wifi.ieee802_11 import parsers as l2_parsers
+from core.l2.wifi.ieee802_11 import ies_parsers
+from core.l2.wifi.ieee802_11 import builders
+from core.l3 import parsers as l3_parsers
+from core.common.constants.ieee802_11 import *
+from core.common.constants.utils import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
 
-class IEEE802_11:
+class IEEE80211Frame:
     class Management:
         class build:
             @staticmethod
@@ -85,56 +89,65 @@ class IEEE802_11:
         def parse(frame: bytes, offset: int, subtype: int, protected: bool):
             body = {}
             flen = len(frame)
-
+        
             if protected:
                 body["payload"] = frame[offset:flen].hex()
                 return body
         
-            if subtype == 0:
+            if subtype == MGMT_ASSOCIATION_REQUEST:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 1:
+        
+            elif subtype == MGMT_ASSOCIATION_RESPONSE:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 2:
+        
+            elif subtype == MGMT_REASSOCIATION_REQUEST:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 3:
+        
+            elif subtype == MGMT_REASSOCIATION_RESPONSE:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 4:
+        
+            elif subtype == MGMT_PROBE_REQUEST:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 5:
+        
+            elif subtype == MGMT_PROBE_RESPONSE:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 8:
+        
+            elif subtype == MGMT_BEACON:
                 fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
                 body["fixed_parameters"] = fixed_parameters
                 tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
                 body["tagged_parameters"] = tagged_parameters
-            elif subtype == 9:
+        
+            elif subtype == MGMT_ATIM:
                 remaining = flen - offset
                 if remaining >= 2:
                     aid_raw, offset = unpack("<H", frame, offset)
                     body["aid"] = aid_raw & 0x3FFF
                 else:
                     body["aid"] = None
-            elif subtype == 10:
+        
+            elif subtype == MGMT_DISASSOCIATION:
                 body["reason_code"], offset = unpack("<H", frame, offset)
-            elif subtype == 11:
+        
+            elif subtype == MGMT_AUTHENTICATION:
                 body["auth_algorithm"], offset = unpack("<H", frame, offset)
                 body["auth_sequence"], offset = unpack("<H", frame, offset)
                 body["status_code"], offset = unpack("<H", frame, offset)
@@ -146,9 +159,11 @@ class IEEE802_11:
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
                         body["extra"] = frame[offset:flen].hex()
-            elif subtype == 12:
+        
+            elif subtype == MGMT_DEAUTHENTICATION:
                 body["reason_code"], offset = unpack("<H", frame, offset)
-            elif subtype == 13:
+        
+            elif subtype == MGMT_ACTION:
                 if offset < flen:
                     body["category"], offset = unpack("B", frame, offset)
                 else:
@@ -165,6 +180,7 @@ class IEEE802_11:
                         body["tagged_parameters"] = tagged_parameters
                     except Exception:
                         body["payload"] = frame[offset:flen].hex()
+        
             else:
                 body["payload"] = frame[offset:flen]
         
@@ -180,43 +196,48 @@ class IEEE802_11:
         def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
             body = {}
             flen = len(frame)
+        
             if protected:
                 body["payload"] = frame[offset:flen].hex()
                 return body
-
+        
             try:
-                if subtype == 4: # Beamforming report poll
-                   beamforming_report_poll, offset = unpack("<B", frame, offset)
-                   body.update({
-                       "beamforming_report_poll": beamforming_report_poll,
-                   })
-                #if subtype == 5: # VHT/HE NDP Announcement
-                #if subtype == 6: # Control frame extension
-                #if subtype == 7: # Control wrapper
-                if subtype == 8:  # Block Ack Request (BAR)
+                if subtype == CTRL_BLOCK_ACK_REQUEST:
                     block_ack_control, offset = unpack("<H", frame, offset)
                     block_ack_start_seq, offset = unpack("<H", frame, offset)
                     body.update({
                         "block_ack_control": block_ack_control,
                         "block_ack_start_seq": block_ack_start_seq
                     })
-                elif subtype == 9:  # Block Ack (BA)
+        
+                elif subtype == CTRL_BLOCK_ACK:
                     block_ack_bitmap, offset = unpack("<Q", frame, offset)
-                    body.update({"block_ack_bitmap": block_ack_bitmap})
-                elif subtype == 10:  # PS-Poll
+                    body.update({
+                        "block_ack_bitmap": block_ack_bitmap
+                    })
+        
+                elif subtype == CTRL_PS_POLL:
                     aid, offset = unpack("<H", frame, offset)
-                    body.update({"aid": aid & 0x3FFF})
-                elif subtype == 13:  # ACK
+                    body.update({
+                        "aid": aid & 0x3FFF
+                    })
+        
+                elif subtype == CTRL_ACK:
                     return body
-                elif subtype == 14:  # CF-End
+        
+                elif subtype == CTRL_CF_END:
                     return body
-                elif subtype == 15:  # CF-End + CF-Ack
+        
+                elif subtype == CTRL_CF_END_CF_ACK:
                     return body
+        
                 else:
                     body["payload"] = frame[offset:flen].hex()
+        
             except Exception as error:
                 body["parser_error"] = str(error)
                 body["payload"] = frame[offset:flen].hex()
+        
             return body
     
     class Data:
@@ -239,36 +260,31 @@ class IEEE802_11:
         
             llc_type = llc.get("type", "")
         
-            if llc_type == "0x888e":
+            if llc_type == LLC_EAPOL:
                 eapol, eapol_offset = l2_parsers.eapol(frame, llc_offset)
                 body["eapol"] = eapol
-            elif llc_type == "0x0800":
+        
+            elif llc_type == LLC_IPV4:
                 ip, ip_offset = l3_parsers.ip(frame, llc_offset)
                 body["ip"] = ip
-            elif llc_type == "0x0806":
+        
+            elif llc_type == LLC_ARP:
                 arp, arp_offset = l3_parsers.arp(frame, llc_offset)
                 body["arp"] = arp
-            elif llc_type == "0x86dd":
+        
+            elif llc_type == LLC_IPV6:
                 ipv6, ipv6_offset = l3_parsers.ipv6(frame, llc_offset)
                 body["ipv6"] = ipv6
-            elif llc_type in ["0x888f", "0x890d", "0x88b4", "0x88b5", "0x88b6", "0x8902", "0x88c0", "0x8903"]:
-                body_name = {
-                    "0x888f": "mesh_ctrl",
-                    "0x890d": "tdls",
-                    "0x88b4": "wapi",
-                    "0x88b5": "fast_bss_transition",
-                    "0x88b6": "dls",
-                    "0x8902": "robust_av_streaming",
-                    "0x88c0": "wmm",
-                    "0x8903": "qos_null"
-                }[llc_type]
+        
+            elif llc_type in LLC_BODY_NAME:
+                body_name = LLC_BODY_NAME[llc_type]
                 body[body_name] = frame[llc_offset:flen].hex()
+        
             else:
                 body["payload"] = frame[llc_offset:flen].hex()
         
             return body
-
-    @staticmethod
+        
     def frames_parser(frame: bytes, mac_vendor_resolver: object) -> dict:
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(frame)
@@ -298,7 +314,7 @@ class IEEE802_11:
         return parsed_frame
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000"):
+    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000"):
         if not input_filename:
             raise ValueError("Input file must be provided.")
     
@@ -309,16 +325,16 @@ class IEEE802_11:
         with open(input_filename, "r") as f:
             data = json.load(f)
 
-        if bitmask_message_pair == 1:
+        if bitmask_message_pair == MESSAGE_PAIR_M1:
             pmkid = clean_hex_string(data.get("pmkid"))
             ap_mac = clean_hex_string(data.get("ap_mac"))
             sta_mac = clean_hex_string(data.get("sta_mac"))
             if not all([ssid, pmkid, ap_mac, sta_mac]):
                 raise ValueError("Missing one or more required keys: pmkid, ap_mac, sta_mac")
             line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
-            print(line)
+            logger.info(line)
     
-        elif bitmask_message_pair == 2:
+        elif bitmask_message_pair == MESSAGE_PAIR_M2:
             eapol_msg1_hex = None
             eapol_msg2_hex = None
             seen = 0
@@ -381,6 +397,6 @@ class IEEE802_11:
             with open(output_filename, "w", newline="\n") as f:
                 f.write(line)
 
-            print(line)
+            logger.info(line)
         else:
-            raise ValueError("Unsupported bitmask_message_pair. Must be 1 or 2.")
+            raise ValueError("Unsupported bitmask_message_pair!")
