@@ -26,6 +26,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Melhorar path names, seprando com hifem o datetime.
 * Encerrar o programa com logs no terminal, caso haja um error fatal.
 * Adicionar instrução explicita explicando que o usuário deve executar o programa usando o python do venv.
+* Criar módulo de constantes, para evitar número mágicos hardcoded.
 * Completar a análise dos parâmetros tagged, country code, ERP/TIM, RM e capacidades estendidas.
 * Refatorar todos os parsers para incluir **todos** os dados analisados, incluindo valores, tags, comprimentos etc.
 * Revisar os parsers e suas saídas.
