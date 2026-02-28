@@ -1,6 +1,5 @@
-#from ...common.useful_functions import (bitmap_dict_to_hex, bitmap_value_for_dict, safe_unpack)
 import struct
-from core.common.parser_utils import (bitmap_dict_to_hex, bitmap_value_for_dict, safe_unpack)
+from core.common.parser_utils import (bitmap_dict_to_hex, bitmap_value_for_dict, unpack)
 
 class RadiotapHeader:
     @staticmethod
@@ -44,17 +43,17 @@ class RadiotapHeader:
     @classmethod
     def parse(cls, frame: bytes) -> (dict, int):
         def _parse_simple(name, value):
-            return {name: value[0]}
+            return {name: value}
         def _parse_signed(name, value):
-            return {name: value[0]}
+            return {name: value}
         def _parse_flags(name, value):
             FLAGS_FIELDS = [
                 'cfp', 'preamble', 'wep', 'fragmentation',
                 'fcs_at_end', 'data_pad', 'bad_fcs', 'short_gi'
             ]
-            return {'flags': bitmap_value_for_dict(value[0], FLAGS_FIELDS)}
+            return {'flags': bitmap_value_for_dict(value, FLAGS_FIELDS)}
         def _parse_rate(name, value):
-            return {'rate_mbps': value[0] * 0.5}
+            return {'rate_mbps': value * 0.5}
         def _parse_channel(name, value):
             freq, flags_val = value
             FLAGS_FIELDS = [
@@ -78,7 +77,7 @@ class RadiotapHeader:
                 'vht_txop_ps_not_allowed',
                 'vht_sgi_nsym_da'
             ]
-            return {'rx_flags': bitmap_value_for_dict(value[0], FLAGS_FIELDS)}
+            return {'rx_flags': bitmap_value_for_dict(value, FLAGS_FIELDS)}
         def _parse_mcs(name, value):
             known, flags_val, mcs_index = value
             KNOWN_FIELDS = [
@@ -107,8 +106,10 @@ class RadiotapHeader:
                     'reserved': reserved
                 }
             }
+
         def _parse_vht(name, value):
             known, flags_val, bandwidth, mcs_nss1, mcs_nss2, mcs_nss3, mcs_nss4, coding, group_id, partial_aid = value
+            
             KNOWN_FIELDS = [
                 'stbc', 'txop_ps_not_allowed', 'guard_interval', 'sgi_nsym_da',
                 'ldpc_extra_symbol', 'beamformed', 'bandwidth', 'group_id', 'partial_aid'
@@ -147,7 +148,7 @@ class RadiotapHeader:
             (17, "data_retries", "<B", 1, _parse_simple),
             (19, "mcs", "<BBB", 1, _parse_mcs),
             (20, "ampdu_status", "<IHBB", 4, _parse_ampdu_status),
-            (21, "vht", "<HBBBBBBHH", 2, _parse_vht)
+            (21, "vht", "<HBBBBBBBBH", 2, _parse_vht)
         ]
 
         radiotap_info = {}
@@ -155,9 +156,7 @@ class RadiotapHeader:
         rth_length = 0
 
         try:
-            unpacked, offset = safe_unpack("<BBH", frame, offset)
-            if unpacked is None:
-                return {"error": "Frame too short for Radiotap header"}, 0
+            unpacked, offset = unpack("<BBH", frame, offset)
             rth_version, rth_pad, rth_length = unpacked
 
             radiotap_info.update({"version": rth_version, "pad": rth_pad, "length": rth_length})
@@ -169,11 +168,11 @@ class RadiotapHeader:
             combined_present = 0
             i = 0
             while True:
-                unpacked, offset = safe_unpack("<I", frame, offset)
+                unpacked, offset = unpack("<I", frame, offset)
                 if unpacked is None:
                     return {"error": "Frame truncated before presence bitmap"}, rth_length
                 
-                present = unpacked[0]
+                present = unpacked
                 present_flags_all[i] = hex(present)
                 combined_present |= (present << (32 * i))
                 i += 1
@@ -190,11 +189,8 @@ class RadiotapHeader:
                 align_diff = (alignment - (offset % alignment)) % alignment
                 offset += align_diff
                 
-                unpacked, new_offset = safe_unpack(fmt, frame, offset)
-                if unpacked is None:
-                    radiotap_info.setdefault("error", []).append(f"Not enough bytes for field '{name}'")
-                    break
-                
+                unpacked, new_offset = unpack(fmt, frame, offset)
+
                 parsed_data = parser_func(name, unpacked)
                 radiotap_info.update(parsed_data)
                 offset = new_offset

@@ -12,6 +12,9 @@ from textual.widgets import Header, Footer, Static, Label, DataTable
 from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 class Tui(App):
     CSS = """
@@ -79,7 +82,7 @@ class Tui(App):
         "body.tagged_parameters.vendor_specific"
     ]
     
-    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, timeout: float = None, logging = None, Operations: object = None):
+    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, timeout: float = None, Operations: object = None):
 
         super().__init__()
         self.ifname = ifname
@@ -89,7 +92,6 @@ class Tui(App):
         self.bands = [2.4]
         self.channel_hopping_config = Operations.generate_channel_hopping_config(bands=self.bands, dwell=self.channel_hopping_interval)
         self.timeout = timeout
-        self.logging = logging
         self.Operations = Operations
         
         self.display_queue = queue.Queue()
@@ -150,9 +152,9 @@ class Tui(App):
                         self.display_queue.put(display_data)
                     except Exception:
                         self.error_queue.put("Display callback error")
-                        self.logging.exception("Display callback error")
+                        logger.error("Display callback error")
                 display_filter_str = ', '.join(self.DISPLAY_FIELDS)
-                self.logging.info(display_filter_str)
+                logger.info(display_filter_str)
                 self.Operations.sniff(
                     ifname=self.ifname,
                     dlt=self.dlt,
@@ -168,14 +170,14 @@ class Tui(App):
             except Exception:
                 error_msg = "Sniff thread error"
                 self.error_queue.put(error_msg)
-                self.logging.exception("Sniff thread error")
+                logger.error("Sniff thread error")
         self.sniff_thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
         self.sniff_thread.start()
-        self.logging.info(f"Sniff thread started: {self.sniff_thread.name}")
+        logger.info(f"Sniff thread started: {self.sniff_thread.name}")
 
     def start_channel_hopper_thread(self) -> None:
         def hopper_thread():
-            self.logging.info("Channel hopper thread starting...")
+            logger.info("Channel hopper thread starting...")
             try:
                 self.Operations.channel_hopper(
                     ifname=self.ifname,
@@ -184,11 +186,11 @@ class Tui(App):
                     timeout=self.timeout
                 )
             except Exception as error:
-                self.logging.error(f"Channel hopper thread error: {error}")
+                logger.error(f"Channel hopper thread error: {error}")
         
         self.hopper_thread = threading.Thread(target=hopper_thread, daemon=True, name="channel_hopper")
         self.hopper_thread.start()
-        self.logging.info(f"Channel hopper thread started: {self.hopper_thread.name}")
+        logger.info(f"Channel hopper thread started: {self.hopper_thread.name}")
 
     def update_current_channel(self, channel: int, band: str) -> None:
         self.current_channel = channel
@@ -272,7 +274,7 @@ class Tui(App):
     
         except Exception as error:
             self.error_queue.put(f"Display data processing error: {error}")
-            self.logging.exception("Display data processing error")
+            logger.error("Display data processing error")
 
     def detect_security(self, capabilities, rsn_info, vendor_specific):
         try:
@@ -311,7 +313,7 @@ class Tui(App):
             return {'enc': 'OPEN', 'cipher': '', 'auth': '', 'wps': wps_detected}
             
         except Exception as error:
-            self.logging.error(f"Security detection error: {error}")
+            logger.error(f"Security detection error: {error}")
             return {'enc': 'UNKN', 'cipher': '', 'auth': '', 'wps': False}
 
     def process_queued_frames(self):
@@ -325,7 +327,7 @@ class Tui(App):
                     self.process_display_data(display_data)
                     processed_count += 1
                 except Exception as e:
-                    self.logging.error(f"Error processing display data: {e}", exc_info=True)
+                    logger.error(f"Error processing display data: {e}", exc_info=True)
                     self.error_queue.put(f"Frame processing error: {str(e)[:100]}")
             except queue.Empty:
                 break
@@ -336,9 +338,9 @@ class Tui(App):
             while not self.error_queue.empty():
                 error_msg = self.error_queue.get_nowait()
                 self.error_message = f"{error_msg}\nMore details in framesniff.log"
-                self.logging.error(error_msg)
+                logger.error(error_msg)
         except Exception:
-            self.logging.exception("Error processing errors")
+            logger.error("Error processing errors")
 
     def update_display(self):
         self.process_errors()
@@ -421,33 +423,32 @@ class Tui(App):
        
        if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
            self.sniff_stop_event.set()
-           self.logging.info("Sniff stop event set")
+           logger.info("Sniff stop event set")
        
        if hasattr(self, 'hopper_stop_event') and self.hopper_stop_event:
            self.hopper_stop_event.set()
-           self.logging.info("Hopper stop event set")
+           logger.info("Hopper stop event set")
        
        for thread_name, thread in [
            ("sniffer", self.sniff_thread),
            ("channel_hopper", self.hopper_thread)
        ]:
            if thread and thread.is_alive():
-               self.logging.info(f"Waiting for {thread_name} thread to finish...")
+               logger.info(f"Waiting for {thread_name} thread to finish...")
                thread.join(timeout=3.0)
                if thread.is_alive():
-                   self.logging.warning(f"{thread_name} thread did not finish in time")
+                   logger.warning(f"{thread_name} thread did not finish in time")
        
-       self.logging.info("Network Monitor finished!")
+       logger.info("Network Monitor finished!")
        self.exit()
 
-def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, logging, Operations):
+def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, Operations):
     app = Tui(
         ifname=ifname,
         dlt=dlt,
         channel_hopping=channel_hopping,
         channel_hopping_interval=channel_hopping_interval,
         timeout=timeout,
-        logging=logging,
         Operations=Operations
     )
     app.run()

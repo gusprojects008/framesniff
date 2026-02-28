@@ -1,3 +1,6 @@
+import struct
+from core.common.parser_utils import (mac_for_bytes, calc_rates)
+
 def mac_header(frame_control: int = 0x0000, receiver_address: str = "ff:ff:ff:ff:ff:ff",
           transmitter_address: str = "ff:ff:ff:ff:ff:ff", bssid: str = None,
           duration: int = 0, sequence: int = 0):

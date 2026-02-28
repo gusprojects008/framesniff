@@ -1,6 +1,10 @@
 import json
 import re
 import binascii
+from logging import getLogger
+import struct
+
+logger = getLogger(__name__)
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
@@ -57,11 +61,16 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
         result[name] = bool(bitmap_value & (1 << i))
     return result
 
-def unpack(fmt: str, frame: bytes, offset: int = 0):
+def unpack(fmt: str, blob: bytes, offset: int = 0):
     size = struct.calcsize(fmt)
-    if offset + size > len(frame):
-        return None, offset
-    return struct.unpack_from(fmt, frame, offset), offset + size
+    if offset + size > len(blob):
+        logger.debug(f"unpack function ERROR: (offset + size) {offset + size} > {len(blob)} (len(blob))\n{fmt, blob, offset} (fmt, blob and offset)", exc_info=True)
+        raise ValueError("Trucated blob")
+    values = struct.unpack_from(fmt, blob, offset)
+    offset += size
+    if len(values) == 1:
+        return values[0], offset
+    return (values), offset
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
@@ -132,16 +141,16 @@ class MacVendorResolver:
     _vendor_map = None
     def __init__(self, filepath: str = "./core/common/mac-vendors-export.json"):
         if MacVendorResolver._vendor_map is None:
-            print(f"INFO: Loading MAC vendors file {filepath} ...")
+            logger.debug(f"Loading MAC vendors file {filepath} ...")
             try:
                 with open(filepath, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     MacVendorResolver._vendor_map = {
                         item['macPrefix']: item['vendorName'] for item in data
                     }
-                print("INFO: MAC vendors loaded successfully.")
+                logger.debug("MAC vendors loaded successfully.")
             except (FileNotFoundError, json.JSONDecodeError) as e:
-                print(f"ERROR: Could not load or parse MAC vendors file: {e}")
+                logger.error(f"Could not load or parse MAC vendors file: {e}")
                 MacVendorResolver._vendor_map = {}
 
     def mac_resolver(self, mac_bytes: bytes):
@@ -162,4 +171,4 @@ def freq_to_channel(freq_mhz) -> int:
         return 14
     if 5000 <= freq_mhz <= 5895:
         return (freq_mhz - 5000) // 5
-    return "Unknown"f
+    return "Unknown"

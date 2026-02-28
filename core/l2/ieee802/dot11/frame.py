@@ -2,17 +2,20 @@ import struct
 import time
 import json
 from logging import getLogger
-logger = getLogger(__name__)
-from core.common.parser_utils import (random_mac, unpack, extract_fcs_from_frame, new_file_path, clean_hex_string, iter_packets_from_json, MacVendorResolver)
-from core.l2.wifi.radiotap_header import RadiotapHeader
-from core.l2.wifi.ieee802_11 import parsers as l2_parsers
-from core.l2.wifi.ieee802_11 import ies_parsers
-from core.l2.wifi.ieee802_11 import builders
+from core.common.parser_utils import (random_mac, unpack, extract_fcs_from_frame, clean_hex_string, iter_packets_from_json, MacVendorResolver)
+from core.common.function_utils import (new_file_path)
+from core.l2.ieee802.dot11.radiotap_header import RadiotapHeader
+from core.l2.ieee802.llc import llc as llc_parser
+import core.l2.ieee802.dot11.parsers as dot11_parsers 
+from core.l2.ieee802.dot11 import builders
 from core.l3 import parsers as l3_parsers
 from core.common.constants.ieee802_11 import *
-from core.common.constants.utils import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
+from core.common.constants.l2 import *
+from core.common.constants.hashcat import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
 
-class IEEE80211Frame:
+logger = getLogger(__name__)
+
+class Frame:
     class Management:
         class build:
             @staticmethod
@@ -86,103 +89,60 @@ class IEEE80211Frame:
                 return frame_bytes.hex()
 
         @staticmethod
-        def parse(frame: bytes, offset: int, subtype: int, protected: bool):
+        def parse(frame: bytes, subtype: int, protected: bool, offset: int = 0):
             body = {}
             flen = len(frame)
         
             if protected:
                 body["payload"] = frame[offset:flen].hex()
                 return body
+
+            try:
+                if subtype in (MGMT_BEACON, MGMT_PROBE_RESPONSE):
+                    fixed_parameters, offset = dot11_parsers.fixed_parameters(frame, offset)
+                    body["fixed_parameters"] = fixed_parameters
+                    tagged_parameters, offset = dot11_parsers.tagged_parameters(frame, offset)
+                    body["tagged_parameters"] = tagged_parameters
+
+                elif subtype == MGMT_ATIM:
+                    remaining = flen - offset
+                    if remaining >= 2:
+                        aid_raw, offset = unpack("<H", frame, offset)
+                        body["aid"] = aid_raw & 0x3FFF
+                    else:
+                        body["aid"] = None
         
-            if subtype == MGMT_ASSOCIATION_REQUEST:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
+                elif subtype in (MGMT_DISASSOCIATION, MGMT_DEAUTHENTICATION):
+                    body["reason_code"], offset = unpack("<H", frame, offset)
         
-            elif subtype == MGMT_ASSOCIATION_RESPONSE:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_REASSOCIATION_REQUEST:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_REASSOCIATION_RESPONSE:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_PROBE_REQUEST:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_PROBE_RESPONSE:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_BEACON:
-                fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
-                body["fixed_parameters"] = fixed_parameters
-                tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
-                body["tagged_parameters"] = tagged_parameters
-        
-            elif subtype == MGMT_ATIM:
-                remaining = flen - offset
-                if remaining >= 2:
-                    aid_raw, offset = unpack("<H", frame, offset)
-                    body["aid"] = aid_raw & 0x3FFF
-                else:
-                    body["aid"] = None
-        
-            elif subtype == MGMT_DISASSOCIATION:
-                body["reason_code"], offset = unpack("<H", frame, offset)
-        
-            elif subtype == MGMT_AUTHENTICATION:
-                body["auth_algorithm"], offset = unpack("<H", frame, offset)
-                body["auth_sequence"], offset = unpack("<H", frame, offset)
-                body["status_code"], offset = unpack("<H", frame, offset)
-                if offset < flen:
-                    try:
-                        fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
+                elif subtype == MGMT_AUTHENTICATION:
+                    body["auth_algorithm"], offset = unpack("<H", frame, offset)
+                    body["auth_sequence"], offset = unpack("<H", frame, offset)
+                    body["status_code"], offset = unpack("<H", frame, offset)
+                    if offset < flen:
+                        fixed_parameters, offset = dot11_parsers.fixed_parameters(frame, offset)
                         body["fixed_parameters"] = fixed_parameters
-                        tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
+                        tagged_parameters, offset = dot11_parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
-                    except Exception:
-                        body["extra"] = frame[offset:flen].hex()
         
-            elif subtype == MGMT_DEAUTHENTICATION:
-                body["reason_code"], offset = unpack("<H", frame, offset)
-        
-            elif subtype == MGMT_ACTION:
-                if offset < flen:
-                    body["category"], offset = unpack("B", frame, offset)
-                else:
-                    body["category"] = None
-                if offset < flen:
-                    body["action"], offset = unpack("B", frame, offset)
-                else:
-                    body["action"] = None
-                if offset < flen:
-                    try:
-                        fixed_parameters, offset = l2_parsers.fixed_parameters(frame, offset)
+                elif subtype == MGMT_ACTION:
+                    if offset < flen:
+                        body["category"], offset = unpack("B", frame, offset)
+                    else:
+                        body["category"] = None
+                    if offset < flen:
+                        body["action"], offset = unpack("B", frame, offset)
+                    else:
+                        body["action"] = None
+                    if offset < flen:
+                        fixed_parameters, offset = dot11_parsers.fixed_parameters(frame, offset)
                         body["fixed_parameters"] = fixed_parameters
-                        tagged_parameters, offset = l2_parsers.tagged_parameters(frame, offset)
+                        tagged_parameters, offset = dot11_parsers.tagged_parameters(frame, offset)
                         body["tagged_parameters"] = tagged_parameters
-                    except Exception:
-                        body["payload"] = frame[offset:flen].hex()
         
-            else:
-                body["payload"] = frame[offset:flen]
+            except Exception as e:
+                logger.debug(f"MGMT Parser error: {e}")
+                body["payload"] = frame[offset:flen].hex()
         
             return body
         
@@ -193,7 +153,7 @@ class IEEE80211Frame:
                 pass
 
         @staticmethod
-        def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
+        def parse(frame: bytes, subtype: int, protected: bool, offset: int = 0) -> dict:
             body = {}
             flen = len(frame)
         
@@ -228,14 +188,14 @@ class IEEE80211Frame:
                 elif subtype == CTRL_CF_END:
                     return body
         
-                elif subtype == CTRL_CF_END_CF_ACK:
+                elif subtype == CTRL_CF_END_ACK:
                     return body
         
                 else:
                     body["payload"] = frame[offset:flen].hex()
         
-            except Exception as error:
-                body["parser_error"] = str(error)
+            except Exception as e:
+                logger.debug(f"CTRL Parser error: {e}")
                 body["payload"] = frame[offset:flen].hex()
         
             return body
@@ -247,70 +207,83 @@ class IEEE80211Frame:
                 pass
 
         @staticmethod
-        def parse(frame: bytes, offset: int, subtype: int, protected: bool) -> dict:
+        def parse(frame: bytes, subtype: int, protected: bool, offset: int = 0) -> dict:
             body = {}
             flen = len(frame)
         
-            llc, llc_offset = l2_parsers.llc(frame, offset)
-            body["llc"] = llc
-        
             if protected:
-                body["payload"] = frame[llc_offset:flen].hex()
+                body["payload"] = frame[offset:flen].hex()
                 return body
-        
-            llc_type = llc.get("type", "")
-        
-            if llc_type == LLC_EAPOL:
-                eapol, eapol_offset = l2_parsers.eapol(frame, llc_offset)
-                body["eapol"] = eapol
-        
-            elif llc_type == LLC_IPV4:
-                ip, ip_offset = l3_parsers.ip(frame, llc_offset)
-                body["ip"] = ip
-        
-            elif llc_type == LLC_ARP:
-                arp, arp_offset = l3_parsers.arp(frame, llc_offset)
-                body["arp"] = arp
-        
-            elif llc_type == LLC_IPV6:
-                ipv6, ipv6_offset = l3_parsers.ipv6(frame, llc_offset)
-                body["ipv6"] = ipv6
-        
-            elif llc_type in LLC_BODY_NAME:
-                body_name = LLC_BODY_NAME[llc_type]
-                body[body_name] = frame[llc_offset:flen].hex()
-        
-            else:
-                body["payload"] = frame[llc_offset:flen].hex()
+
+            if subtype in {DATA_NULL, DATA_CF_ACK, DATA_CF_POLL, DATA_CF_ACK_CF_POLL, 
+                           DATA_QOS_NULL, DATA_QOS_CF_POLL, DATA_QOS_CF_ACK_CF_POLL, 
+                           DATA_RESERVED}:
+                return body
+
+            try:
+                llc, llc_offset = llc_parser(frame, offset)
+                body["llc"] = llc
+                
+                llc_type = llc.get("type", "")
+            
+                if llc_type == LLC_EAPOL:
+                    eapol, eapol_offset = dot11_parsers.eapol(frame, llc_offset)
+                    body["eapol"] = eapol
+            
+                elif llc_type == LLC_IPV4:
+                    ip, ip_offset = l3_parsers.ip(frame, llc_offset)
+                    body["ip"] = ip
+            
+                elif llc_type == LLC_ARP:
+                    arp, arp_offset = l3_parsers.arp(frame, llc_offset)
+                    body["arp"] = arp
+            
+                elif llc_type == LLC_IPV6:
+                    ipv6, ipv6_offset = l3_parsers.ipv6(frame, llc_offset)
+                    body["ipv6"] = ipv6
+            
+                elif llc_type in LLC_BODY_NAME:
+                    body_name = LLC_BODY_NAME[llc_type]
+                    body[body_name] = frame[llc_offset:flen].hex()
+            
+                else:
+                    body["payload"] = frame[llc_offset:flen].hex()
+                    
+            except Exception as e:
+                logger.debug(f"LLC Parser error: {e}")
+                body["payload"] = frame[offset:flen].hex()
         
             return body
         
-    def frames_parser(frame: bytes, mac_vendor_resolver: object) -> dict:
+    def frames_parser(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> dict:
+        logger.debug("function frames_parser:")
         parsed_frame = {}
         rt_hdr, rt_hdr_len = RadiotapHeader.parse(frame)
-        fcs_bytes, frame_no_fcs = extract_fcs_from_frame(frame, rt_hdr_len)
-        frame = frame_no_fcs
-        mac_hdr, mac_hdr_offset = l2_parsers.mac_header(frame, 0, mac_vendor_resolver)
+        fcs_bytes, frame_no_rth_and_fcs = extract_fcs_from_frame(frame, rt_hdr_len)
+        if len(frame_no_rth_and_fcs) < 2:
+            logger.warning("Empty 802.11 frame after radiotap, skipping")
+            return {'rt_hdr': rt_hdr, "mac_hdr": None, 'fcs': fcs_bytes.hex() if fcs_bytes else None}
+        frame = frame_no_rth_and_fcs
+        mac_hdr, mac_hdr_offset = dot11_parsers.mac_header(frame, mac_vendor_resolver)
         parsed_frame = {'rt_hdr': rt_hdr, 'mac_hdr': mac_hdr, "fcs": fcs_bytes.hex() if fcs_bytes else None}
-        if not mac_hdr:
-            return parsed_frame
         try:
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
             protected = mac_hdr.get("protected", False)
-            if frame_type == 0:
-                body = IEEE802_11.Management.parse(frame, mac_hdr_offset, subtype, protected)
+            logger.debug(f"Parsing frame: type: {frame_type} subtype: {subtype} ...")
+            if frame_type == MGMT:
+                body = Frame.Management.parse(frame, subtype, protected, mac_hdr_offset)
                 parsed_frame["body"] = body
-            elif frame_type == 1:
-                body = IEEE802_11.Control.parse(frame, mac_hdr_offset, subtype, protected)
+            elif frame_type == CTRL:
+                body = Frame.Control.parse(frame, subtype, protected, mac_hdr_offset)
                 parsed_frame["body"] = body
-            elif frame_type == 2:
-                body = IEEE802_11.Data.parse(frame, mac_hdr_offset, subtype, protected)
+            elif frame_type == DATA:
+                body = Frame.Data.parse(frame, subtype, protected, mac_hdr_offset)
                 parsed_frame["body"] = body
             else:
                 parsed_frame["body"] = {"error": f"Unknown frame type {frame_type}"}
-        except Exception as error:
-            parsed_frame["body"] = {"parser_error": str(error)}
+        except Exception as e:
+            logger.debug(f"Frames parser error: {e}")
         return parsed_frame
 
     @staticmethod
@@ -358,14 +331,14 @@ class IEEE80211Frame:
             mac_vendor_resolver = MacVendorResolver()
 
             _, rth_len1 = RadiotapHeader.parse(msg1)
-            mac_hdr1, mac_offset1 = l2_parsers.mac_header(msg1, rth_len1, mac_vendor_resolver)
+            mac_hdr1, mac_offset1 = dot11_parsers.mac_header(msg1, mac_vendor_resolver, rth_len1)
             subtype, protected = (mac_hdr1.get("fc").get("subtype"), mac_hdr1.get("protected", False))
-            body1 = IEEE802_11.Data.parse(msg1, mac_offset1, subtype, protected)
+            body1 = Frame.Data.parse(msg1, subtype, protected, mac_offset1)
     
             _, rth_len2 = RadiotapHeader.parse(msg2)
-            mac_hdr2, mac_offset2 = l2_parsers.mac_header(msg2, rth_len2, mac_vendor_resolver)
+            mac_hdr2, mac_offset2 = dot11_parsers.mac_header(msg2, mac_vendor_resolver, rth_len2)
             subtype, protected = (mac_hdr2.get("fc").get("subtype"), mac_hdr2.get("protected", False))
-            body2 = IEEE802_11.Data.parse(msg2, mac_offset2, subtype, protected)
+            body2 = Frame.Data.parse(msg2, subtype, protected, mac_offset2)
     
             ap_mac = clean_hex_string(mac_hdr2.get("bssid").get("mac") or mac_hdr2.get("mac_dst").get("mac"))
             sta_mac = clean_hex_string(mac_hdr2.get("mac_src").get("mac") or mac_hdr2.get("mac_transmitter").get("mac"))
@@ -382,8 +355,8 @@ class IEEE80211Frame:
             if len(anonce) != 64:
                 raise ValueError(f"Invalid ANonce length: {len(anonce)}")
     
-            llc, llc_offset = l2_parsers.llc(msg2, mac_offset2)
-            eapol_frame, eapol_frame_offset = l2_parsers.eapol(msg2, llc_offset)
+            llc, llc_offset = llc_parser(msg2, mac_offset2)
+            eapol_frame, eapol_frame_offset = dot11_parsers.eapol(msg2, llc_offset)
             eapol_frame = msg2[llc_offset:eapol_frame_offset]
     
             mic_offset = struct.calcsize("!BBHBHHQ32s16s8s8s")

@@ -1,7 +1,12 @@
 import os
 import subprocess
 import re
-import logging
+from logging import getLogger
+import time
+from pathlib import Path
+import json
+
+logger = getLogger(__name__)
 
 def check_root():
     if os.geteuid() != 0:
@@ -37,20 +42,24 @@ def verify_supported_dlts(dlt: str = None):
         raise ValueError(f"Unsupported DLT: {dlt}\nSupported DLTs:\n{', '.join(linktypes)}")
 
 def finish_capture(sock, start_time: int, captured_frames: list, output_file_path: str):
+    def _bytes_encoder(obj):
+        if isinstance(obj, bytes):
+            return obj.hex()
+        raise TypeError(f"Type {type(obj)} not serializable")
     sock.close()
     capture_duration = time.time() - start_time
-    print(f"DEBUG: Finish capture called with {len(captured_frames)} frames")  # DEBUG
-    print(f"DEBUG: Output path: {output_file_path}")  # DEBUG
+    logger.info(f"Finish capture called with {len(captured_frames)} frames")
+    logger.info(f"Output path: {output_file_path}")
     if captured_frames:
         try:
             with open(output_file_path, "w") as file:
-                json.dump(captured_frames, file, indent=2)
-            print(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
-            print(f"Saved to: {output_file_path}")
+                json.dump(captured_frames, file, indent=2, default=_bytes_encoder)
+            logger.info(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
+            logger.info(f"Saved to: {output_file_path}")
         except Exception as e:
-            print(f"Error saving file: {e}")
+            logger.error(f"Error saving file: {e}")
     else:
-        print("No frames captured")
+        logger.info("No frames captured")
 
 def import_module(module_name):
     try:

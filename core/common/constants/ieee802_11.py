@@ -30,7 +30,7 @@ CTRL_RTS = 11
 CTRL_CTS = 12
 CTRL_ACK = 13
 CTRL_CF_END = 14
-CTRL_CF_END_CF_ACK = 15
+CTRL_CF_END_ACK = 15
 
 DATA_DATA = 0
 DATA_DATA_CF_ACK = 1
@@ -74,7 +74,7 @@ FRAME_SUBTYPES = {
         CTRL_CTS: "CTS",
         CTRL_ACK: "ACK",
         CTRL_CF_END: "CF-End",
-        CTRL_CF_END_CF_ACK: "CF-End+CF-Ack",
+        CTRL_CF_END_ACK: "CF-End+CF-Ack",
     },
     DATA: {
         DATA_DATA: "Data",
@@ -99,13 +99,19 @@ FRAME_SUBTYPES = {
 TAG_SSID = 0
 TAG_SUPPORTED_RATES = 1
 TAG_CURRENT_CHANNEL = 3
-TAG_COUNTRY_INFO = 7
+TAG_TIM = 5
+TAG_COUNTRY = 7
+TAG_QBSS_LOAD = 11
 TAG_POWER_CONSTRAINT = 32
 TAG_TPC_REPORT = 35
-TAG_ERP_INFO = 42
+TAG_ERP = 42
 TAG_HT_CAPABILITIES = 45
 TAG_RM_ENABLED_CAPABILITIES = 70
 TAG_RSN_INFORMATION = 48
+TAG_EXTENDED_SUPPORTED_RATES = 50
+TAG_EXTENDED_CAPABILITIES = 127
+TAG_VENDOR_SPECIFIC = 221
+
 RSN_CIPHER_WEP40 = 1
 RSN_CIPHER_TKIP = 2
 RSN_CIPHER_CCMP = 4
@@ -116,19 +122,63 @@ RSN_AKM_PSK = 2
 RSN_AKM_FT_8021X = 3
 RSN_AKM_FT_PSK = 4
 RSN_AKM_SAE = 8
-TAG_EXTENDED_SUPPORTED_RATES = 50
-TAG_EXTENDED_CAPABILITIES = 127
-TAG_VENDOR_SPECIFIC = 221
+
+EAPOL_REPLAY_COUNTER_LENGTH = 8
+EAPOL_NONCE_LENGTH = 32
+EAPOL_KEY_IV_LENGTH = 16
+EAPOL_KEY_RSC_LENGTH = 8
+EAPOL_KEY_ID_LENGTH = 8
+EAPOL_MIC_LENGTH = 16
+EAPOL_KEY_DATA_LENGTH_FIELD = 2
+EAPOL_PMKID_LENGTH = 16
 
 OUI_MICROSOFT = "00:50:f2"
 MS_VENDOR_WPA = 1
-MS_VENDOR_WMM = 2
+MS_VENDOR_WPS = 4
+MS_VENDOR_WMM_WME = 2
 MS_VENDOR_WMM_PARAM = 2
 MS_VENDOR_WMM_INFO = 2
 MS_VENDOR_WMM_P2P = 4
 
+OUI_IEEE_80211 = "00:0f:ac"
+RSN_VENDOR_RSN_IE = 1
+RSN_VENDOR_RSN_IE_ALT = 2
+RSN_VENDOR_PMKID = 4
+
+OUI_WFA = "50:6f:9a"
+WFA_VENDOR_WPS = 4
+WFA_VENDOR_P2P = 9
+WFA_VENDOR_HS20 = 16
+WFA_VENDOR_OSEN = 18
+
+OUI_MEDIATEK = "00:0c:43"
+OUI_BROADCOM = "00:10:18"
+OUI_ATHEROS = "00:03:7f"
+
+VENDOR_DESCRIPTION = {
+    OUI_MICROSOFT: {
+        MS_VENDOR_WPS: "Wi-Fi Alliance WPS",
+        MS_VENDOR_WPA: "Microsoft WPA",
+        MS_VENDOR_WMM_WME: "Microsoft WMM",
+    },
+    OUI_IEEE_80211: {
+        RSN_VENDOR_RSN_IE: "RSN Information",
+        RSN_VENDOR_RSN_IE_ALT: "RSN Information",
+        RSN_VENDOR_PMKID: "PMKID",
+    },
+    OUI_WFA: {
+        WFA_VENDOR_WPS: "Wi-Fi Alliance WPS",
+        WFA_VENDOR_P2P: "Wi-Fi Alliance P2P",
+        WFA_VENDOR_HS20: "Wi-Fi Alliance Hotspot 2.0",
+        WFA_VENDOR_OSEN: "Wi-Fi Alliance OSEN",
+    },
+    OUI_MEDIATEK: "MediaTek Inc",
+    OUI_BROADCOM: "Broadcom",
+    OUI_ATHEROS: "Atheros"
+}
+
 WPS_ATTRIBUTE_IDS = {
-    "version": 0x104a,
+    "version": 0x104A,
     "device_name": 0x1012,
     "device_password_id": 0x1011,
     "config_methods": 0x1008,
@@ -137,7 +187,7 @@ WPS_ATTRIBUTE_IDS = {
     "model_number": 0x1024,
     "wps_state": 0x1044,
     "uuid_e": 0x1047,
-    "rf_bands": 0x103c,
+    "rf_bands": 0x103C,
     "vendor_extension": 0x1049,
     "primary_device_type": 0x1054,
     "selected_registrar": 0x1057,
@@ -148,11 +198,11 @@ WPS_ATTRIBUTE_IDS = {
     "ap_setup_locked": 0x1057,
     "message_type": 0x101a,
     "mac_address": 0x1020,
-    "response_type": 0x1032,
+    "response_type": 0x103B,
     "registrar_config_methods": 0x103e,
     "version2": 0x1010,
     "ssid": 0x1045,
-    "serial_number": 0x102d,
+    "serial_number": 0x1022,
     "os_version": 0x103b,
     "association_state": 0x1033,
 }
@@ -220,36 +270,4 @@ WPS_DEVICE_CATEGORIES = {
     "telephone": 0x000a,
     "audio": 0x000b,
     "other": 0x000f,
-}
-
-OUI_IEEE_80211 = "00:0f:ac"
-RSN_VENDOR_RSN_IE = 1
-RSN_VENDOR_RSN_IE_ALT = 2
-RSN_VENDOR_PMKID = 4
-
-OUI_WFA = "50:6f:9a"
-WFA_VENDOR_WPS = 4
-WFA_VENDOR_P2P = 9
-WFA_VENDOR_HS20 = 16
-WFA_VENDOR_OSEN = 18
-
-OUI_BROADCOM = "00:10:18"
-OUI_ATHEROS = "00:03:7f"
-
-VENDOR_DESCRIPTION = {
-    OUI_MICROSOFT: {
-        MS_VENDOR_WPA: "Microsoft WPA",
-        MS_VENDOR_WMM: "Microsoft WMM",
-    },
-    OUI_IEEE_80211: {
-        RSN_VENDOR_RSN_IE: "RSN Information",
-        RSN_VENDOR_RSN_IE_ALT: "RSN Information",
-        RSN_VENDOR_PMKID: "PMKID",
-    },
-    OUI_WFA: {
-        WFA_VENDOR_WPS: "Wi-Fi Alliance WPS",
-        WFA_VENDOR_P2P: "Wi-Fi Alliance P2P",
-        WFA_VENDOR_HS20: "Wi-Fi Alliance Hotspot 2.0",
-        WFA_VENDOR_OSEN: "Wi-Fi Alliance OSEN",
-    },
 }

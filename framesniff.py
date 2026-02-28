@@ -5,7 +5,7 @@ from rich.logging import RichHandler
 from pathlib import Path
 import argparse
 from core.common.function_utils import new_file_path
-from core.common.contants.utils import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
+from core.common.constants.hashcat import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
 from core.user_operations import Operations
 
 operations = Operations()
@@ -23,7 +23,7 @@ def setup_logging(verbose: bool) -> Path | None:
         show_path=False
     )
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(Formatter("%(message)s"))
+    console_handler.setFormatter(Formatter("%(asctime)s %(message)s"))
 
     logger.addHandler(console_handler)
 
@@ -85,7 +85,14 @@ def main():
     sniff_parser.add_argument("--output", "-o", type=str, default=None, help="Output JSON file")
 
     generate_22000_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from json file")
-    generate_22000_parser.add_argument("--bitmask", type=int, choices=[MESSAGE_PAIR_M1, MESSAGE_PAIR_M2], default=MESSAGE_PAIR_M2, required=True, help=f"Bitmask message pair ({MESSAGE_PAIR_M1} or {MESSAGE_PAIR_M2})\nbitmask {MESSAGE_PAIR_M1} format: {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\nbitmask {MESSAGE_PAIR_M2} format: {'raw': ['eapol message 1', 'eapol message 2']}. e.g. {'raw': ['000038002f...', '000038002f...']}")
+    generate_22000_parser.add_argument("--bitmask", type=int, choices=[MESSAGE_PAIR_M1, MESSAGE_PAIR_M2], default=MESSAGE_PAIR_M2, required=True, help=(
+        f"Bitmask message pair ({MESSAGE_PAIR_M1} or {MESSAGE_PAIR_M2})\n"
+        f"bitmask {MESSAGE_PAIR_M1} format:\n"
+        "  {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\n"
+        f"bitmask {MESSAGE_PAIR_M2} format:\n"
+        "  {'raw': ['eapol message 1', 'eapol message 2']}\n"
+        "  e.g. {'raw': ['000038002f...', '000038002f...']}"
+    ))
     generate_22000_parser.add_argument("--ssid", type=str, required=True, help="SSID of the target network (e.g. MyNetwork)")
     generate_22000_parser.add_argument("--input", "-i", type=str, required=True, help="JSON file path")
     generate_22000_parser.add_argument("--output", "-o", type=str, default="hashcat.22000", help="Output file name")
@@ -125,14 +132,15 @@ def main():
     args = parser.parse_args()
 
     log_file_path = str(setup_logging(args.verbose))
+    logger = logging.getLogger(__name__)
 
-    if log_file_path:
-        logging.getLogger(__name__).info(f"log file created at: {log_file_path}")
+    if log_file_path is None:
+        logger.info(f"log file created at: {log_file_path} {type(log_file_path)}")
 
     if args.command == "list-interfaces":
-       print(operations.list_network_interfaces())
+       logger.info(operations.list_network_interfaces())
     elif args.command == "list-interface":
-       print(operations.list_network_interface(args.ifname))
+       logger.info(operations.list_network_interface(args.ifname))
     elif args.command == "set-monitor":
        operations.set_monitor(args.ifname)
     elif args.command == "set-station":

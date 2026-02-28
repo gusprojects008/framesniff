@@ -59,8 +59,9 @@ fi
 print_step "Setup completed successfully!"
 
 echo
-echo -e "${RED_BOLD}Use the Python interpreter that is inside \$VENV_PYTHON${RESET}"
-echo "To run normally:"
+echo -e "${RED_BOLD}Use the Python interpreter that is inside $VENV_PYTHON ${RESET}"
+echo
+echo "Run normally:"
 echo "  source $VENV_DIR/bin/activate"
 echo "  sudo $VENV_PYTHON framesniff.py --help"
 echo

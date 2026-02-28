@@ -20,6 +20,21 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Utilizar função que recebe um arquivo json com vários frames brutos em hexadecimal, e realiza o parse deles, escrevendo o resultado em um arquivo json. Isso para fazer um teste automatizado dos parsers, contra frames truncados, quebrados etc... 
+* revisar os chaves que defini para campos importantes, como rt_hdr, mac_hdr etc...
+* adicionar parser de: HT Operations, Overlapping BSS Scan Parameters
+* corrgir parse de bitmap ht capabilities, tim, country code. 
+* Corrigir setup.sh e README para instruir o usuário a utiliza diretamente o python dentro do .venv criado por setup.sh.
+* Adicionar uma seção de todos os artigos e manuais que explicam e definem os padrões dos frames, incluindo seus campos valores etc...
+* É muita coisa meu Deus, falta fazer parsing de muita coisa e olha lá, realmente estou chagando a conclusão que será muito difícil manter o projeto, são muitos parsers, muitos parsers próprietários também. Fato é que obviamente eu não sei o que significa cada campo ou seção do frame, mas estou disposto a saber, e isso é o mais importante.
+* Falta revisão e melhoramente de parsing de vendors specific, rsn capabilities, ht capabilities.
+* Fazer com que todos ou se não a maioria dos campos de valores, sejam acompanhados com o número identificador e o tamanho.
+* Parsear frame null function (no data)
+* remover todas chamadas .hex() para uma string dentro de um dicionário
+* Adicionar parser para vendors specifics: MICROSOFT WPA, Mediatek, MICROSOFT WMM/WME 
+* Melhorar filtro, permitir com que o usuário possa passar diretamente o nome de um tipo de frame, e assim obter o filtro que corresponde a ele.
+* Melhorar desempenho e ordem das operações.
+* parseador de frames, o usuário poderá gerar um arquivo json com todos os frames parseados, com base em um arquivo json com vários frame brutos.
 * Remover totalmente hardcodes.
 * Melhorar nomes de variáveis e strings
 * Corrigir prioridade e obrigatoriedade de argumentos do argparse
@@ -43,5 +58,13 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Corrigir possíveis condições de corrida.
 
 ## Melhorias:
+* Aplicando boas práticas clean code, eficiência em memória e processamente, removendo boa parte de números mágicos, removendo vários IFs por mecanismo de dispatcher.
 * Formato de paths de arquivos de log
 * Estrutura de diretórios mais compativeis com o modelo OSI, e melhor escalabilidade.
+* A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso 
+
+## Explicações e esclarecimentos
+* Todo esse projeto tenta replicar ao máximo o modelo OSI, para deixar o mais didático possível.
+* A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso o IEEE decidir mudar o tamanho de algum campo, então se eu poder eu venho aqui e corrijo removendo o hardcode. Em protocolos de padrões, muitas vezes não dá para fugir de formatos e números arbitrários.
+* Para mensagens de debug, usar "error" para erros relacionados a funções.
+* Um dos maiores desafios desse projeto, é o planejamento e padronização.

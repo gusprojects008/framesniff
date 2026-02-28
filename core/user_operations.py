@@ -6,15 +6,15 @@ import json
 import socket
 import threading
 import os
-import logging
+from logging import getLogger
 from typing import Optional, Tuple, List
-from core.l2.wifi.ieee802_11.frame import IEEE80211Frame
+from core.l2.ieee802.dot11.frame import Frame
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
-from core.common.frames_utils import (iter_packets_from_json, MacVendorResolver)
+from core.common.parser_utils import (iter_packets_from_json, MacVendorResolver)
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 class Operations:
     @staticmethod
@@ -49,8 +49,8 @@ class Operations:
             subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             logger.info(f"{ifname} configured for monitor mode!")
-        except Exception as error:
-            logger.error(f"error configure {ifname} to monitor mode: {error}")
+        except Exception as e:
+            logger.error(f"error configure {ifname} to monitor mode: {e}")
 
     @staticmethod
     def set_station(ifname: str):
@@ -60,8 +60,8 @@ class Operations:
             subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             logger.info(f"{ifname} configured for station/management mode!")
-        except Exception as error:
-            logger.error(f"error configure {ifname} to station mode: {error}")
+        except Exception as e:
+            logger.error(f"error configure {ifname} to station mode: {e}")
 
     @staticmethod
     def scan_station_mode(ifname: str = None, output_filename: str = None):
@@ -77,8 +77,8 @@ class Operations:
                 text=True,
                 check=True
             )
-        except subprocess.CalledProcessError as error:
-            logger.error(f"Error during scan: {error}")
+        except subprocess.CalledProcessError as e:
+            logger.critical(f"Error during scan: {e}")
             return
         except FileNotFoundError:
             logger.error("Error: 'iw' command not found. Please install wireless tools.")
@@ -186,7 +186,7 @@ class Operations:
         parser = None
     
         if dlt == "DLT_IEEE802_11_RADIO":
-            parser = IEEE80211Frame.frames_parser
+            parser = Frame.frames_parser
     
         if parser is None:
             raise ValueError(f"There is no parser available for DLT: {dlt}")
@@ -221,18 +221,21 @@ class Operations:
                 
                 try:
                     frame, _ = sock.recvfrom(65535)
+                    hex_frame = frame.hex()
+
                     try:
+                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}") # exc_info=None: None None !?
                         parsed_frame = parser(frame, mac_vendor_resolver)
                     except Exception as e:
-                        logging.error(f"Failed to parse frame: {e}", exc_info=True)
+                        logger.debug(f"Sniff: parser frame error: {e} ===>\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
                         continue
     
                     if not parsed_frame:
                         continue
                     
                     parsed_frame["counter"] = frame_counter
-                    parsed_frame["raw"] = frame.hex()
-                    
+                    parsed_frame["raw"] = hex_frame
+
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
                     
                     if store_result:
@@ -259,11 +262,14 @@ class Operations:
                 except Exception as e:
                     logger.error(f"Error receiving frame: {e}")
                     continue
-                    
+
         except Exception as e:
-            logger.critical(f"Unexpected error in sniff: {error}")
+            logger.critical(f"Unexpected error in sniff: {e}")
+
         finally:
             logger.info(f"Finishing capture, saving {len(captured_frames)} frames...")
+            if stop_event:
+                stop_event.set()
             finish_capture(sock, start_time, captured_frames, output_filename)
 
     @staticmethod
@@ -275,8 +281,8 @@ class Operations:
         if channel:
             try:
                 attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", str(channel)])
-            except Exception as error:
-                logging.error(f"Invalid channel value: {channel} ({error})")
+            except Exception as e:
+                logger.error(f"Invalid channel value: {channel} ({e})")
                 return False
         last_err = None
         for cmd in attempts:
@@ -284,12 +290,12 @@ class Operations:
                 proc = subprocess.run(cmd, capture_output=True, text=True)
                 if proc.returncode != 0:
                     last_err = f"{' '.join(cmd)} -> returncode {proc.returncode} stderr:{proc.stderr.strip()}"
-                    logging.error(last_err)
+                    logger.error(last_err)
                     continue
                 return True
-            except Exception as error:
-                last_err = f"Unexpected error running {' '.join(cmd)}: {error}"
-                logging.error(last_err)
+            except Exception as e:
+                last_err = f"Unexpected error running {' '.join(cmd)}: {e}"
+                logger.error(last_err)
         return False
 
     @staticmethod
@@ -301,8 +307,8 @@ class Operations:
                 if b > 1000:
                     b = round(b / 1000, 1)
                 normalized_bands.append(b)
-            except Exception as error:
-                logging.warning(f"Ignoring invalid band value {b}: {error}")
+            except Exception as e:
+                logger.warning(f"Ignoring invalid band value {b}: {e}")
         if 2.4 in normalized_bands:
             channel_map[2.4] = [(ch, 2407 + ch * 5) for ch in range(1, 14)]
         if 5 in normalized_bands:
@@ -327,7 +333,7 @@ class Operations:
         output_filename: str = None
     ) -> dict:
         try:
-            logging.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}s)...")
+            logger.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}s)...")
             channel_map = Operations.get_channels(bands)
             config = {}
             for band, entries in channel_map.items():
@@ -342,11 +348,11 @@ class Operations:
                 output_filename = str(new_file_path(filename=output_filename))
                 with open(output_filename, "w", encoding="utf-8") as file:
                     json.dump(config, file, indent=4)
-                logging.info(f"Config file saved to: {output_filename}")
+                logger.info(f"Config file saved to: {output_filename}")
             else:
                 return config
-        except Exception as error:
-            logging.error(f"Failed to generate channel hopping config: {error}")
+        except Exception as e:
+            logger.error(f"Failed to generate channel hopping config: {e}")
             return {}
 
     @staticmethod
@@ -365,20 +371,20 @@ class Operations:
             try:
                 with open(channel_hopping_config_path, "r", encoding="utf-8") as f:
                     config = json.load(f)
-            except Exception as error:
-                logging.error(f"Failed to load channel hopping config: {error}")
+            except Exception as e:
+                logger.error(f"Failed to load channel hopping config: {e}")
                 return
         elif channel_hopping_config:
             config = channel_hopping_config
         else:
-            logging.error("Either 'channel_hopping_config_path' or 'channel_hopping_config' must be provided.")
+            logger.error("Either 'channel_hopping_config_path' or 'channel_hopping_config' must be provided.")
             return
         channels_to_scan: list[tuple[int, int, float, int, int]] = []
         for band_str, channels in config.items():
             try:
                 band = float(band_str)
-            except Exception as error:
-                logging.warning(f"Ignoring invalid band key '{band_str}': {error}")
+            except Exception as e:
+                logger.warning(f"Ignoring invalid band key '{band_str}': {e}")
                 continue
             for ch_str, params in channels.items():
                 try:
@@ -391,47 +397,47 @@ class Operations:
                     if disallowed and ch in disallowed:
                         continue
                     channels_to_scan.append((ch, freq, band, dwell, width))
-                except Exception as error:
-                    logging.warning(f"Skipping invalid channel entry '{ch_str}': {error}")
+                except Exception as e:
+                    logger.warning(f"Skipping invalid channel entry '{ch_str}': {e}")
         if not channels_to_scan:
-            logging.warning("No valid channels to scan.")
+            logger.warning("No valid channels to scan.")
             return
         idx = 0
         start_time = time.time()
         try:
             while True:
                 if timeout is not None and (time.time() - start_time) >= timeout:
-                    logging.info(f"Channel hopping timed out after {timeout} seconds.")
+                    logger.info(f"Channel hopping timed out after {timeout} seconds.")
                     break
                 if stop_event and stop_event.is_set():
-                    logging.info("Stop event detected, stopping channel hopper.")
+                    logger.info("Stop event detected, stopping channel hopper.")
                     break
                 ch, freq, band, dwell, width = channels_to_scan[idx]
                 success = Operations.set_frequency(ifname, freq, channel=ch, channel_width=width)
                 if success:
-                    logging.info(
+                    logger.info(
                         f"Channel set -> ch={ch} freq={freq}MHz band={band}GHz width={width} dwell={dwell}s"
                     )
                 else:
-                    logging.error(f"Failed to set channel {ch} ({freq}MHz)")
+                    logger.error(f"Failed to set channel {ch} ({freq}MHz)")
                 if callback:
                     try:
                         callback(channel=ch, band=band)
-                    except Exception as error:
-                        logging.error(f"Channel hopper callback error: {error}")
+                    except Exception as e:
+                        logger.error(f"Channel hopper callback error: {e}")
                 idx = (idx + 1) % len(channels_to_scan)
                 time.sleep(dwell)
         except KeyboardInterrupt:
-            logging.info("Channel hopping interrupted by user.")
-        except Exception as error:
-            logging.error(f"Unexpected error in channel hopper: {error}")
-            logging.error(traceback.format_exc())
+            logger.info("Channel hopping interrupted by user.")
+        except Exception as e:
+            logger.error(f"Unexpected error in channel hopper: {e}")
+            logger.error(traceback.format_exc())
         finally:
-            logging.info("Channel hopper finished.")
+            logger.info("Channel hopper finished.")
 
     @staticmethod
     def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000") -> str:
-        IEEE80211Frame.generate_22000(bitmask_message_pair, ssid, input_filename, output_filename)
+        Frame.generate_22000(bitmask_message_pair, ssid, input_filename, output_filename)
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
@@ -439,7 +445,7 @@ class Operations:
         import_module("dpkt")
         import dpkt
         linktypes = {
-            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE80211Frame_RADIO,
+            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
             "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
             "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
         }
@@ -467,11 +473,11 @@ class Operations:
                         logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
                         if i < count - 1:
                             time.sleep(interval)
-                    except socket.error as error:
-                        logger.error(f"Failed to send frame: {error}")
+                    except socket.error as e:
+                        logger.error(f"Failed to send frame: {e}")
                         break
-                    except Exception as error:
-                        logger.critical(f"Unexpected error: {error}")
+                    except Exception as e:
+                        logger.critical(f"Unexpected error: {e}")
                         break
         finally:
             sock.close()
@@ -480,4 +486,4 @@ class Operations:
     def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
         from core.tui.scan_monitor import scan_monitor
         logger.info("press ctrl+s or <F12> to save tui information!")
-        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, logging=logging, Operations=Operations)
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
