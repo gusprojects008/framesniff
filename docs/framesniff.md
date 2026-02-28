@@ -20,6 +20,9 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* realizar padronização de nomes de todos os campos do resultado do parsers. Criar seção ou arquivo de guia para instruir o usuário a fazer o filtro de frames.
+* Corrigir tui da funcionalidade scan-monitor
+* Corrigir funcionalidade generate 2200
 * Utilizar função que recebe um arquivo json com vários frames brutos em hexadecimal, e realiza o parse deles, escrevendo o resultado em um arquivo json. Isso para fazer um teste automatizado dos parsers, contra frames truncados, quebrados etc... 
 * revisar os chaves que defini para campos importantes, como rt_hdr, mac_hdr etc...
 * adicionar parser de: HT Operations, Overlapping BSS Scan Parameters
@@ -68,3 +71,4 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso o IEEE decidir mudar o tamanho de algum campo, então se eu poder eu venho aqui e corrijo removendo o hardcode. Em protocolos de padrões, muitas vezes não dá para fugir de formatos e números arbitrários.
 * Para mensagens de debug, usar "error" para erros relacionados a funções.
 * Um dos maiores desafios desse projeto, é o planejamento e padronização.
+* Aplicação mais amigável e colorida.
