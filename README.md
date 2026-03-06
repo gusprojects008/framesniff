@@ -53,16 +53,19 @@ Run `setup.sh`, enter the Python virtual environment, and explore the program’
 
 ```bash
 ./setup.sh
-source venv/bin/activate
-sudo venv/bin/python framesniff.py --help
+sudo .venv/bin/python framesniff.py --help
 ```
+> [!IMPORTANT]
+> It is recommended to run the program using the Python binary from the .venv file.
+> It is important to use: ```bash.venv/bin/python```
 
 2. Example of an offline brute-force attack on EAPOL frame MICs from WPA2-Personal networks.
 
 ## Legal Notice
 
-***Please use these techniques and the knowledge provided only in controlled environments where you have explicit authorization, whether for study, exploration, development, or simply to satisfy curiosity. I am not responsible for any misuse of this tool. It is being developed strictly for educational and professional purposes.
-And seriously, it is FAR easier to just ask the network owner for the password, or work (preferably honestly) and pay for your own ISP, than to spend hours studying and burning computational resources only to obtain the network password (PSK) with no further purpose.***
+> [!CAUTION] 
+> Please use these techniques and the knowledge provided only in controlled environments where you have explicit authorization, whether for study, exploration, development, or simply to satisfy curiosity. I am not responsible for any misuse of this tool. It is being developed strictly for educational and professional purposes.
+> And seriously, it is FAR easier to just ask the network owner for the password, or work (preferably honestly) and pay for your own ISP, than to spend hours studying and burning computational resources only to obtain the network password (PSK) with no further purpose.
 
 * ### 🧠 Check out my blog explaining how Wi-Fi networks work and my mind map of common Wi-Fi attack techniques:
 
@@ -101,15 +104,15 @@ sudo venv/bin/python framesniff.py set-frequency wlan0 2417
 Capture EAPOL frames:
 
 ```bash
-sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.mac_dst.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == '0x888e' and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
+sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == 0x888e and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
 ```
 
 Generate hashcat 22000 file:
 
-***If the captured EAPOL frames include a PMKID (usually in message 1), you can perform a faster brute-force attack. See the `generate-22000` help for details.***
+***If the captured EAPOL frames include a PMKID (usually in message 1), you can perform a faster brute-force attack. See the `generate-hashcat help for details.***
 
 ```bash
-venv/bin/python framesniff.py generate-22000 --bitmask 2 --ssid MyNetwork --input eapol-frames-attack.json --output hashcat.22000
+venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input eapol-frames-attack-msg1-msg2.json --output hashcat.22000
 hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 
@@ -129,30 +132,23 @@ Send raw frames:
 sudo venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interval 0.5
 ```
 
-## JSON file structure — examples
+## JSON file structure — input format examples
 
-### `send-raw` / `hextopcap` — input format
+### `send-raw` / `hextopcap`
 
 ```json
 {
   "raw": [
     "00112233445566aabbccddeeff...",
-    "dead beef..."
+    "00112233445566aabbccddeeff...",
+    ...
   ]
 }
 ```
 
-### `generate-22000` — bitmask 1 (PMKID)
-
-```json
-{
-  "ap_mac": "aa:bb:cc:dd:ee:ff",
-  "sta_mac": "11:22:33:44:55:66",
-  "pmkid": "e4f3... (32 hex chars)"
-}
-```
-
-### `generate-22000` — bitmask 2 (raw EAPOL messages)
+### `generate-hashcat`
+#### format 22000:
+##### bitmask 0 (raw EAPOL messages (Message pair 1 and 2))
 
 ```json
 {
@@ -160,5 +156,15 @@ sudo venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 10
     "0103005f02030a...",
     "0103005f02030a..."
   ]
+}
+```
+
+##### bitmask 1 (PMKID) (faster)
+
+```json
+{
+  "ap_mac": "aa:bb:cc:dd:ee:ff",
+  "sta_mac": "11:22:33:44:55:66",
+  "pmkid": "e4f3... (32 hex chars)"
 }
 ```

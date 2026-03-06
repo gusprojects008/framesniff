@@ -3,7 +3,10 @@ import threading
 import queue
 import time
 import os
-from core.common.useful_functions import (export_tui_to_txt, freq_to_channel, import_module)
+from core.common.tui_utils import export_tui_to_txt
+from core.common.parser_utils import freq_to_channel
+from core.common.constants.ieee802_11 import *
+from core.common.function_utils import import_module
 import_module("textual")
 from textual import on
 from textual.app import App, ComposeResult
@@ -15,6 +18,11 @@ from textual import work
 from logging import getLogger
 
 logger = getLogger(__name__)
+log_filepath = None
+
+for handler in logger.handlers:
+    if isinstance(handler, logging.FileHandler):
+        log_filepath = handler.baseFilename
 
 class Tui(App):
     CSS = """
@@ -73,8 +81,8 @@ class Tui(App):
         "mac_hdr.fc.subtype",
         "mac_hdr.bssid.mac",
         "mac_hdr.bssid.vendor", 
-        "mac_hdr.mac_src.mac",
-        "mac_hdr.mac_src.vendor",
+        "mac_hdr.sa.mac",
+        "mac_hdr.sa.vendor",
         "body.tagged_parameters.ssid",
         "body.tagged_parameters.current_channel",
         "body.fixed_parameters.capabilities_information",
@@ -158,7 +166,7 @@ class Tui(App):
                 self.Operations.sniff(
                     ifname=self.ifname,
                     dlt=self.dlt,
-                    store_filter="(mac_hdr.fc.type == 0 and mac_hdr.fc.subtype in (5, 8)) or mac_hdr.fc.type == 2",
+                    store_filter=f"(mac_hdr.fc.type == {MGMT} and mac_hdr.fc.subtype in ({MGMT_PROBE_RESPONSE}, {MGMT_BEACON})) or mac_hdr.fc.type == {DATA}",
                     display_filter=display_filter_str,
                     display_interval=1.0,
                     timeout=self.timeout,
@@ -167,10 +175,10 @@ class Tui(App):
                     stop_event=self.sniff_stop_event,
                     output_filename="scan-monitor.json"
                 )
-            except Exception:
+            except Exception as e:
                 error_msg = "Sniff thread error"
                 self.error_queue.put(error_msg)
-                logger.error("Sniff thread error")
+                logger.debug(f"Sniff thread error: {e}")
         self.sniff_thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
         self.sniff_thread.start()
         logger.info(f"Sniff thread started: {self.sniff_thread.name}")
@@ -204,8 +212,8 @@ class Tui(App):
             subtype = display_data.get('mac_hdr.fc.subtype')
             bssid_mac = display_data.get('mac_hdr.bssid.mac') or "N/A"
             bssid_vendor = display_data.get('mac_hdr.bssid.vendor')
-            src_mac = display_data.get('mac_hdr.mac_src.mac') or "N/A"
-            src_vendor = display_data.get('mac_hdr.mac_src.vendor')
+            src_mac = display_data.get('mac_hdr.sa.mac') or "N/A"
+            src_vendor = display_data.get('mac_hdr.sa.vendor')
             ssid = display_data.get('body.tagged_parameters.ssid') or 'N/A'
             capabilities = display_data.get('body.fixed_parameters.capabilities_information') or 0
             rsn_info = display_data.get('body.tagged_parameters.rsn_information')
@@ -222,7 +230,7 @@ class Tui(App):
     
             security_info = self.detect_security(capabilities, rsn_info, vendor_specific)
     
-            if frame_type == 0 and subtype in [5, 8] and bssid_mac and bssid_mac != broadcast:
+            if frame_type == MGMT and subtype in [MGMT_PROBE_RESPONSE, MGMT_BEACON] and bssid_mac and bssid_mac != broadcast:
                 if bssid_mac not in self.networks:
                     self.networks[bssid_mac] = {
                         'ssid': ssid,
@@ -282,22 +290,68 @@ class Tui(App):
             
             if vendor_specific:
                 for oui, vendor_data in vendor_specific.items():
-                    if oui == '00:50:f2':
+                    if oui == OUI_MICROSOFT:
                         for entry_id, entry_data in vendor_data.items():
-                            if entry_data.get('description') == 'Microsoft Corporation WPS':
+                            if "WPS" in entry_data.get('description'):
                                 wps_detected = True
                                 break
             if rsn_info:
                 akm_suites = rsn_info.get('akm_suites', {})
                 auth = "PSK"
+            
                 for suite_id, suite_data in akm_suites.items():
                     akm_type = suite_data.get('akm_type')
-                    if akm_type in [1, 3, 5, 12]:
+            
+                    # WPA3 Personal (SAE / FT-SAE)
+                    if akm_type in (RSN_AKM_SAE, RSN_AKM_FT_SAE):
+                        return {
+                            'enc': 'WPA3',
+                            'cipher': 'GCMP',
+                            'auth': 'SAE',
+                            'wps': wps_detected
+                        }
+            
+                    # WPA3 Enhanced Open
+                    if akm_type == RSN_AKM_OWE:
+                        return {
+                            'enc': 'WPA3',
+                            'cipher': 'CCMP',
+                            'auth': 'OWE',
+                            'wps': wps_detected
+                        }
+            
+                    # WPA3 Enterprise (Suite-B)
+                    if akm_type in (RSN_AKM_SUITE_B_8021X, RSN_AKM_SUITE_B_192_8021X):
+                        return {
+                            'enc': 'WPA3',
+                            'cipher': 'GCMP',
+                            'auth': 'MGT',
+                            'wps': wps_detected
+                        }
+            
+                    # WPA2 Enterprise
+                    if akm_type in (
+                        RSN_AKM_8021X,
+                        RSN_AKM_FT_8021X,
+                        RSN_AKM_8021X_SHA256
+                    ):
                         auth = "MGT"
-                    elif akm_type in [8, 9, 18]:
-                        return {'enc': 'WPA3', 'cipher': 'GCMP', 'auth': 'SAE', 'wps': wps_detected}
-                
-                return {'enc': 'WPA2', 'cipher': 'CCMP', 'auth': auth, 'wps': wps_detected}
+            
+                    # WPA2 Personal
+                    if akm_type in (
+                        RSN_AKM_PSK,
+                        RSN_AKM_FT_PSK,
+                        RSN_AKM_PSK_SHA256
+                    ):
+                        auth = "PSK"
+            
+                return {
+                    'enc': 'WPA2',
+                    'cipher': 'CCMP',
+                    'auth': auth,
+                    'wps': wps_detected
+                }
+
             
             if vendor_specific:
                 for oui, vendor_data in vendor_specific.items():
@@ -337,7 +391,7 @@ class Tui(App):
         try:
             while not self.error_queue.empty():
                 error_msg = self.error_queue.get_nowait()
-                self.error_message = f"{error_msg}\nMore details in framesniff.log"
+                self.error_message = f"{error_msg}\nMore details in {log_filepath}"
                 logger.error(error_msg)
         except Exception:
             logger.error("Error processing errors")
@@ -351,7 +405,6 @@ class Tui(App):
         queue_size = self.display_queue.qsize()
         
         hop_status = "ON" if self.channel_hopping else "OFF"
-        # header_text = f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | Frames: {self.frames_processed} | Queue: {queue_size} | Networks: {self.networks_count} | Clients: {self.clients_count} | Time: {self.duration:.0f}s | Hop: {hop_status}"
         header_text = (
             f"Network Scanner | Chan: {self.current_channel}({self.current_band}GHz) | "
             f"Frames: {self.frames_processed} | Queue: {queue_size} | "
@@ -418,29 +471,29 @@ class Tui(App):
         if event.key in ("f12", "ctrl+s"):
             export_tui_to_txt(self, self.output_filename)
 
-   def exit_application(self):
-       self.running = False
-       
-       if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
-           self.sniff_stop_event.set()
-           logger.info("Sniff stop event set")
-       
-       if hasattr(self, 'hopper_stop_event') and self.hopper_stop_event:
-           self.hopper_stop_event.set()
-           logger.info("Hopper stop event set")
-       
-       for thread_name, thread in [
-           ("sniffer", self.sniff_thread),
-           ("channel_hopper", self.hopper_thread)
-       ]:
-           if thread and thread.is_alive():
-               logger.info(f"Waiting for {thread_name} thread to finish...")
-               thread.join(timeout=3.0)
-               if thread.is_alive():
-                   logger.warning(f"{thread_name} thread did not finish in time")
-       
-       logger.info("Network Monitor finished!")
-       self.exit()
+    def exit_application(self):
+        self.running = False
+        
+        if hasattr(self, 'sniff_stop_event') and self.sniff_stop_event:
+            self.sniff_stop_event.set()
+            logger.info("Sniff stop event set")
+        
+        if hasattr(self, 'hopper_stop_event') and self.hopper_stop_event:
+            self.hopper_stop_event.set()
+            logger.info("Hopper stop event set")
+        
+        for thread_name, thread in [
+            ("sniffer", self.sniff_thread),
+            ("channel_hopper", self.hopper_thread)
+        ]:
+            if thread and thread.is_alive():
+                logger.info(f"Waiting for {thread_name} thread to finish...")
+                thread.join(timeout=3.0)
+                if thread.is_alive():
+                    logger.warning(f"{thread_name} thread did not finish in time")
+        
+        logger.info("Network Monitor finished!")
+        self.exit()
 
 def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, Operations):
     app = Tui(

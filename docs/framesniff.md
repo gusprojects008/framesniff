@@ -20,7 +20,17 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
-* realizar padronização de nomes de todos os campos do resultado do parsers. Criar seção ou arquivo de guia para instruir o usuário a fazer o filtro de frames.
+* e se houvesse um dispatcher geral para todo o projeto? de acordo como o padrão específico? iria expor uma classe, e o módulo central do padrão iria instanciar apenas o dispatcher do seu padrão.
+Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start_offset, end_offset, e outros que futuramente vou precisar adicionar, para poder implementar interfaces como a do wireshark, e permitir o usuário visualizar e navegar por cada byte ou conjunto de bytes correspondente a um campo do pacote. Ou também, fornecer itnerface para o usuário editar o frame como um json, e gerar o frame bruto personalizado pronto para ser salvo em um arquivo json, ou enviado diretamente através de uma interface específica.
+* Criar função que recebe um type, utiliza tabela de dispatch e retorna diretamente o conteúdo parseado
+* Adicionar função de channel hopper como função independente no argparser
+* Revisar módulo radiotap_header.py.
+* Pensar na possibilidade de criar um módulo apenas para parse de frames (parse.py), e um módulo apenas de classes para cada tipo de frame, e expõe apenas as tabelas de dispatch de parsers para eles. Ou criar um módulo para cada tipo de frame, e assim, expor uma tabela de dispatch em cada um.
+* Adicionar suporte hashcat 22000 padrão (bitmask 0), recebendo frame eapol 1 e 2.
+* Corrigir função 
+* Testar todas as funcionalidades.
+* Melhorar nomes de funções no framesniff.py
+* Transferir funções para os módulos corretos, como: generate_22000 -> user_operations, mudar nome de generate_22000 para generate_hashcar_22000
 * Corrigir tui da funcionalidade scan-monitor
 * Corrigir funcionalidade generate 2200
 * Utilizar função que recebe um arquivo json com vários frames brutos em hexadecimal, e realiza o parse deles, escrevendo o resultado em um arquivo json. Isso para fazer um teste automatizado dos parsers, contra frames truncados, quebrados etc... 
@@ -72,3 +82,13 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Para mensagens de debug, usar "error" para erros relacionados a funções.
 * Um dos maiores desafios desse projeto, é o planejamento e padronização.
 * Aplicação mais amigável e colorida.
+
+## Padrões a serem seguidos
+* Realizar conversões hexadecimais dentro de variáveis
+* Adicionar o conteúdo bruto do campo e valor ("raw"), junto com o offset inicial ("start_offset") e offset final ("end_offset")
+
+## Referências
+[Hashcat](https://hashcat.net/wiki/doku.php?id=cracking_wpawpa2)
+### Parsers, padrões e protocolos:
+https://learn.microsoft.com/en-us/windows-hardware/drivers/mobilebroadband/network-cost-information-element
+

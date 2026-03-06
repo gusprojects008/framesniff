@@ -122,20 +122,30 @@ def iter_packets_from_json(path: str):
     except json.JSONDecodeError as error:
         raise ValueError(f"Error trying to load json file: {error}")
 
-def extract_fcs_from_frame(frame: bytes, radiotap_len: int) -> Tuple[Optional[bytes], bytes]:
-    if radiotap_len is None or radiotap_len < 0 or radiotap_len >= len(frame):
-        return None, frame[radiotap_len:]
-    payload_11 = frame[radiotap_len:]
-    if len(payload_11) < 4:
-        return None, payload_11
-    candidate_fcs_bytes = payload_11[-4:]
-    candidate_fcs = int.from_bytes(candidate_fcs_bytes, byteorder='little')
-    data_for_crc = payload_11[:-4]
+def detect_fcs(frame: bytes, offset: int) -> tuple[bytes | None, int]:
+    flen = len(frame)
+
+    if offset is None or offset < 0 or offset >= flen:
+        return None, flen
+
+    payload_len = flen - offset
+
+    if payload_len < IEEE80211_FCS_LEN:
+        return None, flen
+
+    fcs_start = flen - IEEE80211_FCS_LEN
+    fcs_bytes = frame[fcs_start:flen]
+
+    candidate_fcs = int.from_bytes(fcs_bytes, "little")
+
+    data_for_crc = frame[offset:fcs_start]
+
     calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+
     if calc_crc == candidate_fcs:
-        return candidate_fcs_bytes, data_for_crc
+        return fcs_bytes, fcs_start
     else:
-        return None, payload_11
+        return None, flen
 
 class MacVendorResolver:
     _vendor_map = None

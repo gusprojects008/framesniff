@@ -261,7 +261,6 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
     if offset + 2 <= tag_length:
         rsn_caps, offset = unpack("<H", data, offset)
         result['capabilities'] = {
-            'raw': rsn_caps,
             'pre_auth': bool(rsn_caps & 0x0001),
             'no_pairwise': bool(rsn_caps & 0x0002),
             'ptksa_replay_counter': (rsn_caps >> 2) & 0x03,

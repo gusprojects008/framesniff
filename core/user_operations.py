@@ -16,6 +16,98 @@ from core.common.sockets import create_raw_socket
 
 logger = getLogger(__name__)
 
+class Hashcat:
+    GENERATORS = {
+        WPA_PBKDF2_PMKID_EAPOL: "_generate_22000"
+    }
+
+    @classmethod
+    def generate(cls, hformat: int, **kwargs):
+        generator_name = cls.GENERATORS.get(hformat)
+
+        if not generator_name:
+            raise ValueError(f"Unsupported hashcat format: {hformat}")
+
+        generator = getattr(cls, generator_name)
+        return generator(**kwargs)
+
+    @staticmethod
+    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M1_M2, ssid: str = None, input_filename: str = None):
+        if not input_filename:
+            raise ValueError("Input file must be provided.")
+    
+        output_filename = str(new_file_path("hashcat", ".22000", output_filename))
+        essid = ssid.encode("utf-8", errors="ignore").hex()
+        message_pair = 0
+        line = None
+    
+        with open(input_filename, "r") as f:
+            data = json.load(f)
+
+        if bitmask_message_pair == MESSAGE_PAIR_M1_M4:
+            pmkid = clean_hex_string(data.get("pmkid"))
+            ap_mac = clean_hex_string(data.get("ap_mac"))
+            sta_mac = clean_hex_string(data.get("sta_mac"))
+            if not all([ssid, pmkid, ap_mac, sta_mac]):
+                raise ValueError("Missing one or more required keys: pmkid, ap_mac, sta_mac")
+            line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
+            logger.info(line)
+    
+        elif bitmask_message_pair == MESSAGE_PAIR_M2:
+            eapol_msg1_hex = None
+            eapol_msg2_hex = None
+            seen = 0
+    
+            for hexstr, _ in iter_packets_from_json(input_filename):
+                if seen == 0:
+                    eapol_msg1_hex = hexstr
+                elif seen == 1:
+                    eapol_msg2_hex = hexstr
+                    break
+                seen += 1
+    
+            if eapol_msg1_hex is None:
+                raise ValueError("No frames found in input file")
+            if eapol_msg2_hex is None:
+                raise ValueError("Only one frame found in input file; need two EAPOL frames")
+
+            mac_vendor_resolver = MacVendorResolver()
+            parser = Frame.parser
+
+            msg1 = parser(bytes.fromhex(eapol_msg1_hex), mac_vendor_resolver) 
+            msg2 = parser(bytes.fromhex(eapol_msg2_hex), mac_vendor_resolver)
+    
+            msg2_mac_hdr = msg2.get("mac_hdr")
+
+            ap_mac = msg2_mac_hdr.get("bssid").get("mac") or msg2_mac_hdr.get("da").get("mac"))
+            sta_mac = msg2_mac_hdr.get("sa").get("mac") or msg2_mac_hdr.get("ta").get("mac"))
+    
+            msg1_eapol = msg1.get("eapol")
+            msg2_eapol = msg2.get("eapol")
+    
+            anonce = msg1_eapol.get("key_nonce", "")
+            mic = msg2_eapol.get("key_mic", "")
+            if not all([ap_mac, sta_mac, anonce, mic]):
+                raise ValueError("Missing essential EAPOL data")
+            if len(mic) != EAPOL_MIC_LENGTH:
+                raise ValueError(f"Invalid MIC length: {len(mic)}")
+            if len(anonce) != EAPOL_NONCE_LENGTH:
+                raise ValueError(f"Invalid ANonce length: {len(anonce)}")
+    
+            mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_REPLAY_COUNTER_LENGTH}s{EAPOL_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
+
+            mic_bytes = msg2[mic_offset:mic_offset + struct.calcsize(f"{EAPOL_MIC_LENGTH}s")]
+            zero_mic = b"\x00" * len(mic_bytes)
+    
+            eapol_zero_mic = (msg2[:mic_offset] + zero_mic + msg2[mic_offset + len(mic_bytes):]).hex()
+    
+            line = f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair:02x}"
+    
+        else:
+            raise ValueError("Unsupported bitmask_message_pair!")
+
+        return line
+
 class Operations:
     @staticmethod
     def list_network_interfaces() -> str:
@@ -186,7 +278,7 @@ class Operations:
         parser = None
     
         if dlt == "DLT_IEEE802_11_RADIO":
-            parser = Frame.frames_parser
+            parser = Frame.parser
     
         if parser is None:
             raise ValueError(f"There is no parser available for DLT: {dlt}")
@@ -434,10 +526,6 @@ class Operations:
             logger.error(traceback.format_exc())
         finally:
             logger.info("Channel hopper finished.")
-
-    @staticmethod
-    def generate_22000(bitmask_message_pair: int = 2, ssid: str = None, input_filename: str = None, output_filename: str = "hashcat.22000") -> str:
-        Frame.generate_22000(bitmask_message_pair, ssid, input_filename, output_filename)
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):

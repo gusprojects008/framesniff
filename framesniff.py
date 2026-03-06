@@ -70,8 +70,9 @@ def main():
     scan_parser.add_argument("--output", "-o", type=str, default=None, help="Output filename")
 
     set_frequency_parser = subparsers.add_parser("set-frequency", help="Set frequency on a given phy or ifname")
-    set_frequency_parser.add_argument("ifname", type=str, default=None, help="Network Interface Name")
-    set_frequency_parser.add_argument("frequency_mhz", type=str, default="2437", help="Frequency in MHz")
+    set_frequency_parser.add_argument("ifname", type=str, help="Network Interface Name")
+    set_frequency_parser.add_argument("--frequency", "-f", type=str, default="2437", help="Frequency in MHz")
+    set_frequency_parser.add_argument("--channel", "-c", type=str, default="1", help="Channel")
     set_frequency_parser.add_argument("--width", type=int, default=20, help="Channel width")
 
     sniff_parser = subparsers.add_parser("sniff", help="Sniff Wi-Fi, Bluetooth or Ethernet frames")
@@ -84,18 +85,47 @@ def main():
     sniff_parser.add_argument("--display-interval", type=float, default=0.0, help="Interval for displaying frames")
     sniff_parser.add_argument("--output", "-o", type=str, default=None, help="Output JSON file")
 
-    generate_22000_parser = subparsers.add_parser("generate-22000", help="Generate hashcat 22000 file from json file")
-    generate_22000_parser.add_argument("--bitmask", type=int, choices=[MESSAGE_PAIR_M1, MESSAGE_PAIR_M2], default=MESSAGE_PAIR_M2, required=True, help=(
-        f"Bitmask message pair ({MESSAGE_PAIR_M1} or {MESSAGE_PAIR_M2})\n"
-        f"bitmask {MESSAGE_PAIR_M1} format:\n"
-        "  {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\n"
-        f"bitmask {MESSAGE_PAIR_M2} format:\n"
-        "  {'raw': ['eapol message 1', 'eapol message 2']}\n"
-        "  e.g. {'raw': ['000038002f...', '000038002f...']}"
-    ))
-    generate_22000_parser.add_argument("--ssid", type=str, required=True, help="SSID of the target network (e.g. MyNetwork)")
-    generate_22000_parser.add_argument("--input", "-i", type=str, required=True, help="JSON file path")
-    generate_22000_parser.add_argument("--output", "-o", type=str, default="hashcat.22000", help="Output file name")
+    generate_hashcat_parser = subparsers.add_parser(
+        "generate-hashcat",
+        help="Generate hashcat file from json file"
+    )
+    
+    generate_hashcat_parser.add_argument("format", type=int, choices=[WPA_PBKDF2_PMKID_EAPOL], help="Hashcat output format")
+    
+    generate_hashcat_parser.add_argument(
+        "--bitmask",
+        type=int,
+        choices=[MESSAGE_PAIR_M1_M2, MESSAGE_PAIR_M1_M4]
+        help=(
+            f"Bitmask message pair ({MESSAGE_PAIR_M1_M2} or {MESSAGE_PAIR_M1_M4})\n"
+            f"bitmask {MESSAGE_PAIR_M1_M2} format:\n"
+            "  {'raw': ['eapol message 1', 'eapol message 2']}\n"
+            "  e.g. {'raw': ['000038002f...', '000038002f...']}"
+            f"bitmask {MESSAGE_PAIR_M1_M4} format:\n"
+            "  {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\n"
+        )
+    )
+    
+    generate_hashcat_parser.add_argument(
+        "--ssid",
+        type=str,
+        help="SSID of the target network"
+    )
+    
+    generate_hashcat_parser.add_argument(
+        "--input",
+        "-i",
+        type=str,
+        required=True,
+        help="JSON file path"
+    )
+    
+    generate_hashcat_parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        help="Output file name"
+    )
 
     hextopcap_parser = subparsers.add_parser("hextopcap", help="Generates a pcap file from a json file with the raw contents of the packet.")
     hextopcap_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format captured.")
@@ -164,19 +194,21 @@ def main():
            display_interval=args.display_interval,
            output_filename=args.output
        )
-    elif args.command == "generate-22000":
-       operations.generate_22000(
-          bitmask_message_pair=args.bitmask,
-          ssid=args.ssid,
-          input_filename=args.input,
-          output_filename=args.output
-       )
+    elif args.command == "generate-hashcat":
+        line = operations.Hashcat.generate(
+            hformat=args.format,
+            bitmask=args.bitmask,
+            ssid=args.ssid,
+            input_filename=args.input
+        )
+        with open(args.output, "w") as f:
+            f.write(line)
     elif args.command == "hextopcap":
-       operations.write_pcap_from_json(args.dlt, args.input, args.output)
+        operations.write_pcap_from_json(args.dlt, args.input, args.output)
     elif args.command == "send-raw":
-       operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
+        operations.send_raw(args.ifname, args.input, args.count, args.interval, args.timeout)
     elif args.command == "scan-monitor":
-       operations.scan_monitor(ifname=args.ifname, dlt=args.dlt, channel_hopping=args.channel_hopping, channel_hopping_interval=args.dwell, timeout=args.timeout)
+        operations.scan_monitor(ifname=args.ifname, dlt=args.dlt, channel_hopping=args.channel_hopping, channel_hopping_interval=args.dwell, timeout=args.timeout)
 
 if __name__ == "__main__":
     main()

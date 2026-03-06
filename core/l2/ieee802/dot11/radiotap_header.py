@@ -41,7 +41,11 @@ class RadiotapHeader:
         return rth_version + rth_pad + rth_length + rth_btm_present_int + radiotap_data
 
     @classmethod
-    def parse(cls, frame: bytes) -> (dict, int):
+    def parse(cls, frame: bytes, offset: int = 0) -> (dict, int):
+        start_offset = offset
+        radiotap_info = {}
+        rth_length = 0
+
         def _parse_simple(name, value):
             return {name: value}
         def _parse_signed(name, value):
@@ -151,10 +155,6 @@ class RadiotapHeader:
             (21, "vht", "<HBBBBBBBBH", 2, _parse_vht)
         ]
 
-        radiotap_info = {}
-        offset = 0
-        rth_length = 0
-
         try:
             unpacked, offset = unpack("<BBH", frame, offset)
             rth_version, rth_pad, rth_length = unpacked
@@ -195,7 +195,11 @@ class RadiotapHeader:
                 radiotap_info.update(parsed_data)
                 offset = new_offset
 
-        except struct.error as e:
-            radiotap_info.setdefault("error", []).append(f"Radiotap header struct error: {e}")
+        except Exception as e:
+            logger.debug(f"Parser radiotap header error: {e}")
+        
+        radiotap_info["raw"] = frame[start_offset:rth_length].hex()
+        radiotap_info["start_offset"] = start_offset
+        radiotap_info["end_offset"] = offset
 
         return radiotap_info, rth_length
