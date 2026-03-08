@@ -3,6 +3,7 @@ import re
 import binascii
 from logging import getLogger
 import struct
+from functools import lru_cache
 
 logger = getLogger(__name__)
 
@@ -61,16 +62,76 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
         result[name] = bool(bitmap_value & (1 << i))
     return result
 
-def unpack(fmt: str, blob: bytes, offset: int = 0):
-    size = struct.calcsize(fmt)
-    if offset + size > len(blob):
-        logger.debug(f"unpack function ERROR: (offset + size) {offset + size} > {len(blob)} (len(blob))\n{fmt, blob, offset} (fmt, blob and offset)", exc_info=True)
-        raise ValueError("Trucated blob")
-    values = struct.unpack_from(fmt, blob, offset)
-    offset += size
-    if len(values) == 1:
-        return values[0], offset
-    return (values), offset
+@lru_cache(maxsize=256)
+def parse_fmt_tokens(fmt: str):
+    fmt = fmt.replace(' ', '')
+
+    prefix = ''
+    if fmt and fmt[0] in '<>!=@':
+        prefix = fmt[0]
+        fmt = fmt[1:]
+
+    if not prefix:
+       prefix = '<'
+
+    tokens = []
+    count_buf = ''
+
+    for ch in fmt:
+        if ch.isdigit():
+            count_buf += ch
+        else:
+            count = int(count_buf) if count_buf else 1
+            
+            if ch in ('s', 'p'): 
+                tokens.append(f"{prefix}{count}{ch}")
+            else:
+                tokens.extend([prefix + ch] * count)
+            count_buf = ''
+
+    sizes = [struct.calcsize(t) for t in tokens]
+
+    return sizes, tokens
+
+def field(fmt: str, blob: bytes, start_offset: int, end_offset: int):
+    sizes, tokens = parse_fmt_tokens(fmt)
+
+    length = end_offset - start_start
+
+    raw = blob[start_offset:end_offset].hex()
+
+    return {
+        "raw": raw,
+        "start_offset": start_offset,
+        "end_offset": end_offset,
+        "length": length,
+        "sizes": sizes,
+        "tokens": tokens
+    }
+
+def unpack(fmt: str, blob: bytes, offset: int = 0, metadata: bool = True):
+    if metadata:
+        start = offset
+
+    lblob = len(blob)
+    size = struct.calcsize(fmt)
+
+    if offset + size > lblob:
+        logger.debug(f"Unpack error: (offset + size) {offset + size} > {lblob}\n{fmt, blob, offset}")
+        raise ValueError("Truncated blob")
+
+    values = struct.unpack_from(fmt, blob, offset)
+    offset += size
+
+    if len(values) == 1:
+        values = values[0]
+
+    if not metadata:
+        return values, offset
+
+    meta = field(fmt, blob, start, offset)
+
+    return values, offset, meta
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')

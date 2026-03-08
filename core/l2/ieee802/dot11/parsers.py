@@ -11,13 +11,12 @@ from core.l3 import parsers as l3_parsers
 
 logger = getLogger(__name__)
 
-def mac_header(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> (dict, int):
+def mac_header(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> tuple(dict, int):
     logger.debug("function mac_header parser:")
 
-    start_offset = offset
     mac_data = {}
 
-    def _get_frame_type_subtype_name(frame_type: int, subtype: int):
+    def _get_frame_type_subtype_name(frame_type: int, subtype: int) -> tuple(str, str):
         type_name = FRAME_TYPES.get(frame_type, f"Unknown ({frame_type})")
         subtype_name = FRAME_SUBTYPES.get(frame_type, {}).get(subtype, f"Unknown {type_name} ({subtype})")
         return type_name, subtype_name
@@ -48,26 +47,24 @@ def mac_header(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> (d
 
         fmt = ""
 
-        duration_id, addr1, addr2, addr3, sequence_number = None, None, None, None, None
+        duration_id, offset = unpack("<H", frame, offset)
+
+        addr1, addr2, addr3, addr4, sequence_number = None, None, None, None, None, None
 
         if frame_type == CTRL:
             if frame_subtype in (CTRL_BLOCK_ACK_REQUEST, CTRL_BLOCK_ACK, CTRL_PS_POLL, CTRL_RTS, CTRL_CF_END, CTRL_CF_END_ACK):
-                fmt = f"<H{EUI48_LENGTH}s{EUI48_LENGTH}s"  # FC, Duration, RA, TA
+                fmt = f"<{EUI48_LENGTH}s{EUI48_LENGTH}s"  # FC, Duration, RA, TA
                 unpacked, offset = unpack(fmt, frame, offset)
-                duration_id, addr1, addr2 = unpacked
+                addr1, addr2 = unpacked
             elif frame_subtype in (CTRL_CTS, CTRL_ACK):
-                fmt = f"<H{EUI48_LENGTH}s"  # FC, Duration, RA
+                fmt = f"<{EUI48_LENGTH}s"  # FC, Duration, RA
                 unpacked, offset = unpack(fmt, frame, offset)
-                duration_id, addr1 = unpacked
-            else:
-                fmt = "<H"  # fallback minimal
-                duration_id, offset = unpack(fmt, frame, offset)
+                addr1 = unpacked
         else: # Data and Management
-            fmt = f"<H{EUI48_LENGTH}s{EUI48_LENGTH}s{EUI48_LENGTH}sH"
+            fmt = f"<{EUI48_LENGTH}s{EUI48_LENGTH}s{EUI48_LENGTH}sH"
             unpacked, offset = unpack(fmt, frame, offset)
-            duration_id, addr1, addr2, addr3, sequence_number = unpacked
+            addr1, addr2, addr3, sequence_number = unpacked
 
-        addr4 = None
         if to_ds and from_ds and offset + EUI48_LENGTH <= len(frame):
             addr4 = frame[offset:offset+EUI48_LENGTH]
 
@@ -108,13 +105,9 @@ def mac_header(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> (d
     except Exception as e:
         logger.debug(f"MAC Header parser error: {e}")
 
-    mac_data["raw"] = frame[start_offset:offset].hex()
-    mac_data["start_offset"] = start_offset
-    mac_data["end_offset"] = offset
-
     return mac_data, offset
 
-def fixed_parameters(frame: bytes, offset: int) -> (dict, int):
+def fixed_parameters(frame: bytes, offset: int) -> tuple(dict, int):
     logger.debug(f"Parsing fixed parameters: frame: {frame} offset {offset}")
     fixed_parameters = {}
     unpacked, offset = unpack("<QHH", frame, offset)
@@ -125,7 +118,7 @@ def fixed_parameters(frame: bytes, offset: int) -> (dict, int):
     fixed_parameters['capabilities_information'] = bitmap_value_for_dict(capabilities_information, capabilities_information_list)
     return fixed_parameters, offset
 
-def tagged_parameters(frame: bytes, offset: int) -> (dict, int):
+def tagged_parameters(frame: bytes, offset: int) -> tuple(dict, int):
     logger.debug(f"Parsing tagged parameters: offset={offset}")
     tagged_parameters = {}
     ie_min_len = 2
@@ -193,30 +186,30 @@ def mgmt_beacon(frame: bytes, offset: int):
     return body, offset
 
 
-def mgmt_probe_response(frame: bytes, offset: int):
+def mgmt_probe_response(frame: bytes, offset: int) -> tuple(dict, int):
     return mgmt_beacon(frame, offset)
 
 
-def mgmt_atim(frame: bytes, offset: int):
+def mgmt_atim(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
     aid_raw, offset = unpack("<H", frame, offset)
     body["aid"] = aid_raw & 0x3FFF
     return body, offset
 
 
-def mgmt_disassociation(frame: bytes, offset: int):
+def mgmt_disassociation(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
     body["reason_code"], offset = unpack("<H", frame, offset)
     return body, offset
 
 
-def mgmt_deauthentication(frame: bytes, offset: int):
+def mgmt_deauthentication(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
     body["reason_code"], offset = unpack("<H", frame, offset)
     return body, offset
 
 
-def mgmt_authentication(frame: bytes, offset: int):
+def mgmt_authentication(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
 
     body["auth_algorithm"], offset = unpack("<H", frame, offset)
@@ -232,7 +225,7 @@ def mgmt_authentication(frame: bytes, offset: int):
     return body, offset
 
 
-def mgmt_action(frame: bytes, offset: int):
+def mgmt_action(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
 
     body["category"], offset = unpack("B", frame, offset)
@@ -244,30 +237,18 @@ def mgmt_action(frame: bytes, offset: int):
 
     return body, offset
 
-def eapol(frame: bytes, offset: int) -> dict:
-    def _parse_key_data(key_data: bytes):
-        result = {}
-        _offset = 0
-        key_data_len = len(key_data)
-        while _offset < key_data_len:
-            (elem_id, elem_len), _offset = unpack("BB", key_data, _offset)
-            if _offset + elem_len > key_data_len:
-                break
-            elem_data, _offset = unpack(f"{offset + elem_len}s", key_data, _offset)
-            if elem_id == TAG_VENDOR_SPECIFIC:
-                vendor_result = ies_parsers.vendor_specific_ie(elem_data)
-                result.update(vendor_result)
-            elif elem_id == TAG_RSN_INFORMATION:
-                result["rsn_information"] = ies_parsers.rsn_information(elem_data, elem_len)
-        return result
+def eapol(frame: bytes, offset: int) -> tuple(dict, int):
+    def _parse_key_data(key_data: bytes, offset: int) -> dict:
+        result = tagged_parameters(key_data, offset)
+        return result, offset
+    result = {}
     try:
-        result = {}
         (auth_ver, eapol_type, length), offset = unpack("!BBH", frame, offset)
 
         result.update({
             "authentication_version": auth_ver,
             "type": eapol_type,
-            "header_length": length
+            "header_length": length,
         })
 
         (desc_type, key_info, key_len), offset = unpack("!BHH", frame, offset)
@@ -276,7 +257,7 @@ def eapol(frame: bytes, offset: int) -> dict:
         key_type_bit = (key_info >> 3) & 0x01
         key_index = (key_info >> 4) & 0x03
         install_bit = (key_info >> 6) & 0x01
-        ack_bit = (key_info >> 7) & 0x01
+        wack_bit = (key_info >> 7) & 0x01
         mic_bit = (key_info >> 8) & 0x01
         secure_bit = (key_info >> 9) & 0x01
         error_bit = (key_info >> 10) & 0x01
@@ -316,32 +297,37 @@ def eapol(frame: bytes, offset: int) -> dict:
                 "encrypted_key_data": bool(encrypted_key_data),
                 "smk_message": bool(smk_message),
             },
-            "key_length": key_len
+            "key_length": key_len,
         })
 
         unpacked, offset = unpack(f"!{EAPOL_REPLAY_COUNTER_LENGTH}s{EAPOL_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s{EAPOL_KEY_MIC_LENGTH}s{EAPOL_KEY_DATA_LENGTH_FIELD}", frame, offset)
         replay, nonce, iv, rsc, key_id, mic, data_len = unpacked
 
+        nonce_hex = nonce.hex()
+        iv_hex = iv.hex()
+        rsc_hex = rsc.hex()
+        key_id_hex = key_id.hex()
+        mic_hex = mic.hex()
+
         result.update({
             "replay_counter": replay,
-            "key_nonce": nonce.hex(),
-            "key_iv": iv.hex(),
-            "key_rsc": rsc.hex(),
-            "key_id": key_id.hex(),
-            "key_mic": mic.hex(),
+            "key_nonce": nonce_hex,
+            "key_iv": iv_hex,
+            "key_rsc": rsc_hex,
+            "key_id": key_id_hex,
+            "key_mic": mic,
             "key_data_length": data_len
         })
 
         if data_len > 0 and offset + data_len <= len(frame):
-            key_data = frame[offset:offset + data_len]
-            result["key_data"] = {"data": key_data.hex(), "parsed": _parse_key_data(key_data)}
-            offset += data_len
-
-        return result, offset
+            key_data_parsed, offset = _parse_key_data(key_data, offset)
+            key_data_hex = key_data.hex()
+            result["key_data"] = key_data_parsed
 
     except Exception as e:
-        logger.debug(f"EAPOL Parser error: {e}", exc_info=True)
-        return result, offset
+        logger.debug(f"EAPOL Parser error: {e}")
+
+    return result, offset
 
 def ctrl_block_ack_request(frame: bytes, offset: int):
     body = {}
@@ -377,72 +363,95 @@ def ctrl_cf_end(frame: bytes, offset: int):
 def ctrl_cf_end_ack(frame: bytes, offset: int):
     return {}, offset
 
-MGMT_SUBTYPE_DISPATCH = {
-
-    MGMT_BEACON: {
-        "name": "beacon",
-        "parser": mgmt_beacon
+FRAME_DISPATCH = {
+    MGMT: {
+        MGMT_BEACON: {
+            "name": "beacon",
+            "parser": mgmt_beacon
+        },
+        MGMT_PROBE_RESPONSE: {
+            "name": "probe_response",
+            "parser": mgmt_probe_response
+        },
+        MGMT_ATIM: {
+            "name": "atim",
+            "parser": mgmt_atim
+        },
+        MGMT_DISASSOCIATION: {
+            "name": "disassociation",
+            "parser": mgmt_disassociation
+        },
+        MGMT_DEAUTHENTICATION: {
+            "name": "deauthentication",
+            "parser": mgmt_deauthentication
+        },
+        MGMT_AUTHENTICATION: {
+            "name": "authentication",
+            "parser": mgmt_authentication
+        },
+        MGMT_ACTION: {
+            "name": "action",
+            "parser": mgmt_action
+        }
     },
 
-    MGMT_PROBE_RESPONSE: {
-        "name": "probe_response",
-        "parser": mgmt_probe_response
-    },
-
-    MGMT_ATIM: {
-        "name": "atim",
-        "parser": mgmt_atim
-    },
-
-    MGMT_DISASSOCIATION: {
-        "name": "disassociation",
-        "parser": mgmt_disassociation
-    },
-
-    MGMT_DEAUTHENTICATION: {
-        "name": "deauthentication",
-        "parser": mgmt_deauthentication
-    },
-
-    MGMT_AUTHENTICATION: {
-        "name": "authentication",
-        "parser": mgmt_authentication
-    },
-
-    MGMT_ACTION: {
-        "name": "action",
-        "parser": mgmt_action
-    }
-
-}
-
-CTRL_SUBTYPE_DISPATCH = {
-    CTRL_BLOCK_ACK_REQUEST: {
-        "name": "block_ack_request",
-        "parser": ctrl_block_ack_request
-    },
-    CTRL_BLOCK_ACK: {
-        "name": "block_ack",
-        "parser": ctrl_block_ack
-    },
-    CTRL_PS_POLL: {
-        "name": "ps_poll",
-        "parser": ctrl_ps_poll
-    },
-    CTRL_ACK: {
-        "name": "ack",
-        "parser": ctrl_ack
-    },
-    CTRL_CF_END: {
-        "name": "cf_end",
-        "parser": ctrl_cf_end
-    },
-    CTRL_CF_END_ACK: {
-        "name": "cf_end_ack",
-        "parser": ctrl_cf_end_ack
+    CTRL: {
+        CTRL_BLOCK_ACK_REQUEST: {
+            "name": "block_ack_request",
+            "parser": ctrl_block_ack_request
+        },
+        CTRL_BLOCK_ACK: {
+            "name": "block_ack",
+            "parser": ctrl_block_ack
+        },
+        CTRL_PS_POLL: {
+            "name": "ps_poll",
+            "parser": ctrl_ps_poll
+        },
+        CTRL_ACK: {
+            "name": "ack",
+            "parser": ctrl_ack
+        },
+        CTRL_CF_END: {
+            "name": "cf_end",
+            "parser": ctrl_cf_end
+        },
+        CTRL_CF_END_ACK: {
+            "name": "cf_end_ack",
+            "parser": ctrl_cf_end_ack
+        }
     }
 }
-FRAME_DISPATCH = {}
 
-def dispatch():
-    
+def dispatch(frame: bytes, type: int, subtype: int, protected: bool, offset: int = 0) -> dict:
+    body = {}
+    flen = len(frame)
+
+    payload = frame[offset:flen].hex()
+
+    if protected:
+        body["payload"] = payload
+        return body
+
+    try:
+
+        type_table = FRAME_DISPATCH.get(type)
+
+        if not type_table:
+            body["payload"] = payload
+            return body
+
+        handler = type_table.get(subtype)
+
+        if not handler:
+            body["payload"] = payload
+            return body
+
+        parsed, offset = run_dispatch(frame, offset, payload, handler)
+        body.update(parsed)
+
+    except Exception as e:
+        logger.debug(f"Dispatch parser error: {e}")
+        body["payload"] = payload
+
+    return body

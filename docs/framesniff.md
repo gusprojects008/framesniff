@@ -20,6 +20,9 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Acho que encontrei uma forma de resolver o problema da geração de arvore de parse com os dados necessários para desenvolver uma interface gŕafica que permita edição/navegação/inspeção de frames e pacotes. Cada função de principal de parse de frame de uma DLT de um padrão específico, irá criar o seu próprio contexto de parse, dessa forma, possívelmente, a própria função unpack irá lidar com a criação de metadados necessários com as informações do campo (offsetr inicio/final, length, parent, children etc...).
+* Possívelmente irei ter que criar um módulo chamado dissector ou dispatch, para fornecer uma interface única para módulos como "user_operations" obterem o parse de frames de uma DLT de um padrão específico.
+* trocar nome dispacther para apenas dispatch
 * e se houvesse um dispatcher geral para todo o projeto? de acordo como o padrão específico? iria expor uma classe, e o módulo central do padrão iria instanciar apenas o dispatcher do seu padrão.
 Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start_offset, end_offset, e outros que futuramente vou precisar adicionar, para poder implementar interfaces como a do wireshark, e permitir o usuário visualizar e navegar por cada byte ou conjunto de bytes correspondente a um campo do pacote. Ou também, fornecer itnerface para o usuário editar o frame como um json, e gerar o frame bruto personalizado pronto para ser salvo em um arquivo json, ou enviado diretamente através de uma interface específica.
 * Criar função que recebe um type, utiliza tabela de dispatch e retorna diretamente o conteúdo parseado
@@ -85,7 +88,8 @@ Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start
 
 ## Padrões a serem seguidos
 * Realizar conversões hexadecimais dentro de variáveis
-* Adicionar o conteúdo bruto do campo e valor ("raw"), junto com o offset inicial ("start_offset") e offset final ("end_offset")
+* Chaves internas da própria aplicação: parse_tree
+* Utilizar unpack de forma padronizada, para desempacotar apenas um conjunto relacionado de bytes por vez, isso por causa do resultado parse_tree e como ele será utilizado pela interface gráfica para exibição e navegação hexadecimal pelo frame.
 
 ## Referências
 [Hashcat](https://hashcat.net/wiki/doku.php?id=cracking_wpawpa2)

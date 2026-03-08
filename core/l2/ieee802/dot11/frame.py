@@ -178,78 +178,33 @@ class Frame:
 
         @staticmethod
         def parse(frame: bytes, subtype: int, protected: bool, offset: int = 0) -> dict:
-            body = {}
-            flen = len(frame)
-
-            payload = frame[offset:flen].hex()
-        
-            if protected:
-                body["payload"] = payload
-                return body
-
-            if subtype in {DATA_NULL, DATA_CF_ACK, DATA_CF_POLL, DATA_CF_ACK_CF_POLL, 
-                           DATA_QOS_NULL, DATA_QOS_CF_POLL, DATA_QOS_CF_ACK_CF_POLL, 
-                           DATA_RESERVED}:
-                return body
-
-            try:
-                llc, offset = llc_parser.llc(frame, offset)
-                start_offset = offset
-                body["llc"] = llc
-                
-                llc_type = llc.get("type")
-                
-                handler = dot11_parsers.LLC_PAYLOAD_DISPATCH.get(llc_type)
-                
-                if handler:
-                    name = handler.get("name", llc_type)
-                    parser = handler.get("parser")
-                else:
-                    name = llc_type
-                    parser = None
-                
-                body[name] = {}
-                
-                if parser:
-                    content, offset = parser(frame, offset)
-                    body[name].update(content)
-                
-                body[name]["raw"] = frame[start_offset:offset].hex()
-                body[name]["start_offset"] = start_offset
-                body[name]["end_offset"] = offset
-
-            except Exception as e:
-                logger.debug(f"LLC Parser error: {e}")
-                body["payload"] = payload
-        
-            return body
+            llc, offset = llc_parser.llc(frame, offset)
+            return llc, offset
         
     def parse(frame: bytes, mac_vendor_resolver: object, offset: int = 0) -> dict:
         logger.debug("function frame parse:")
     
         parsed_frame = {}
-    
-        rt_hdr, offset = RadiotapHeader.parse(frame, offset)
-    
-        fcs_bytes, frame_end = detect_fcs(frame, offset)
-    
-        if frame_end - offset < 2:
-            logger.warning("Empty 802.11 frame after radiotap, skipping")
-            return {
+        ctx = ParserContext()
+        token = CURRENT_CONTEXT.set(ctx)
+
+        try:
+            rt_hdr, offset = RadiotapHeader.parse(frame, offset)
+        
+            fcs_bytes, frame_end = detect_fcs(frame, offset)
+        
+            mac_hdr, offset = dot11_parsers.mac_header(frame, mac_vendor_resolver, offset)
+        
+            parsed_frame = {
                 "rt_hdr": rt_hdr,
-                "mac_hdr": None,
+                "mac_hdr": mac_hdr,
                 "fcs": fcs_bytes.hex() if fcs_bytes else None
             }
     
-        mac_hdr, offset = dot11_parsers.mac_header(frame, mac_vendor_resolver, offset)
-    
-        parsed_frame = {
-            "rt_hdr": rt_hdr,
-            "mac_hdr": mac_hdr,
-            "fcs": fcs_bytes.hex() if fcs_bytes else None
-        }
-    
-        try:
+            if frame_end - offset < 2:
+                logger.warning("Empty 802.11 frame after radiotap, skipping")
+                return parsed_frame 
+
             frame_type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
             protected = mac_hdr.get("protected", False)
@@ -266,12 +221,12 @@ class Frame:
                 body = {}
     
             parsed_frame["body"] = body
-    
-            parsed_frame["body"]["raw"] = frame[offset:frame_end].hex()
-            parsed_frame["body"]["start_offset"] = offset
-            parsed_frame["body"]["end_offset"] = frame_end
+            # parsed_frame["parse_tree"] = 
     
         except Exception as e:
             logger.debug(f"Frames parser error: {e}")
+
+        finally:
+            CURRENT_CONTEXT.reset(token)
     
         return parsed_frame
