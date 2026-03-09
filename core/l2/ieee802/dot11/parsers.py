@@ -118,62 +118,32 @@ def fixed_parameters(frame: bytes, offset: int) -> tuple(dict, int):
     fixed_parameters['capabilities_information'] = bitmap_value_for_dict(capabilities_information, capabilities_information_list)
     return fixed_parameters, offset
 
-def tagged_parameters(frame: bytes, offset: int) -> tuple(dict, int):
+def tagged_parameters(frame: bytes, offset: int):
+    def _insert_ie(container: dict, key: str | int, value: dict | str | int):
+        if key not in container:
+            container[key] = value
+            return
+    
+        if not isinstance(container[key], dict) or not all(k.isdigit() for k in container[key]):
+            container[key] = {"1": container[key]}
+    
+        idx = str(len(container[key]) + 1)
+        container[key][idx] = value
+
     logger.debug(f"Parsing tagged parameters: offset={offset}")
-    tagged_parameters = {}
-    ie_min_len = 2
+    MIN_IE_LEN = 2
     flen = len(frame)
+    result = {}
 
-    try:
-        while offset + ie_min_len <= flen:
-            (tag_number, tag_length), offset = unpack("<BB", frame, offset)
+    while offset + MIN_IE_LEN <= flen:
+        ie, offset = unpack("<BB", frame, offset, ie_dispatch)
 
-            if offset + tag_length > flen:
-                logger.debug("Truncated IE detected")
-                break
+        tag_name = ie.get("tag_name")
+        tag_number = ie.get("tag_number")
 
-            data, offset = unpack(f"{tag_length}s", frame, offset)
+        _insert_ie(result, tag_name or tag_number, ie)
 
-            ie_data = {
-                "tag_number": tag_number,
-                "tag_length": tag_length,
-                "raw": data.hex()
-            }
-
-            entry = IE_DISPATCHER.get(tag_number)
-
-            if entry:
-                name = entry["name"]
-                parser = entry.get("parser")
-                
-                if parser:
-                    try:
-                        ie_data["parsed"] = parser(data, tag_length)
-                    except Exception as e:
-                        logger.debug(f"IE parser error ({name}): {e}")
-                
-                if name in tagged_parameters:
-                    if not isinstance(tagged_parameters[name], dict) or not all(k.isdigit() for k in tagged_parameters[name].keys()):
-                        first = tagged_parameters[name]
-                        tagged_parameters[name] = {"1": first}
-                    next_idx = str(len(tagged_parameters[name]) + 1)
-                    tagged_parameters[name][next_idx] = ie_data
-                else:
-                    tagged_parameters[name] = ie_data
-            else:
-                key = str(tag_number)
-                if key in tagged_parameters:
-                    if not isinstance(tagged_parameters[key], dict) or not all(k.isdigit() for k in tagged_parameters[key].keys()):
-                        first = tagged_parameters[key]
-                        tagged_parameters[key] = {"1": first}
-                    next_idx = str(len(tagged_parameters[key]) + 1)
-                    tagged_parameters[key][next_idx] = ie_data
-                else:
-                    tagged_parameters[key] = ie_data
-    except Exception as e:
-        logger.debug(f"Tagged parameters parser error: {e}")
-
-    return tagged_parameters, offset
+    return result, offset
 
 def mgmt_beacon(frame: bytes, offset: int):
     body = {}
@@ -423,14 +393,15 @@ FRAME_DISPATCH = {
     }
 }
 
-def dispatch(frame: bytes, type: int, subtype: int, protected: bool, offset: int = 0) -> dict:
+def frame_dispatch(frame: bytes, type: int, subtype: int, protected: bool, offset: int = 0) -> dict:
     body = {}
     flen = len(frame)
 
     payload = frame[offset:flen].hex()
 
+    body["raw"] = payload
+
     if protected:
-        body["payload"] = payload
         return body
 
     try:
@@ -438,20 +409,17 @@ def dispatch(frame: bytes, type: int, subtype: int, protected: bool, offset: int
         type_table = FRAME_DISPATCH.get(type)
 
         if not type_table:
-            body["payload"] = payload
             return body
 
         handler = type_table.get(subtype)
 
         if not handler:
-            body["payload"] = payload
             return body
 
-        parsed, offset = run_dispatch(frame, offset, payload, handler)
+        parsed, offset = run_dispatch(payload, offset, handler)
         body.update(parsed)
 
     except Exception as e:
-        logger.debug(f"Dispatch parser error: {e}")
-        body["payload"] = payload
+        logger.debug(f"Frame dispatch error: {e}")
 
     return body

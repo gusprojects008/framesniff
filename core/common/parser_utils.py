@@ -63,7 +63,7 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
     return result
 
 @lru_cache(maxsize=256)
-def parse_fmt_tokens(fmt: str):
+def _parse_fmt_tokens(fmt: str):
     fmt = fmt.replace(' ', '')
 
     prefix = ''
@@ -93,45 +93,54 @@ def parse_fmt_tokens(fmt: str):
 
     return sizes, tokens
 
-def field(fmt: str, blob: bytes, start_offset: int, end_offset: int):
-    sizes, tokens = parse_fmt_tokens(fmt)
+def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callback = None, metadata: bool = True): tuple(dict, int):
 
-    length = end_offset - start_start
+    start = offset
 
-    raw = blob[start_offset:end_offset].hex()
+    sizes, tokens = _parse_fmt_tokens(fmt)
 
-    return {
-        "raw": raw,
-        "start_offset": start_offset,
-        "end_offset": end_offset,
-        "length": length,
-        "sizes": sizes,
-        "tokens": tokens
-    }
+    lraw = len(raw)
+    size = sum(sizes)
 
-def unpack(fmt: str, blob: bytes, offset: int = 0, metadata: bool = True):
-    if metadata:
-        start = offset
+    if offset + size > lraw:
+        logger.debug(f"Unpack error: (offset + size) {offset + size} > {lraw}\n{fmt, raw, offset}")
+        raise ValueError("Truncated raw")
 
-    lblob = len(blob)
-    size = struct.calcsize(fmt)
+    value = struct.unpack_from(fmt, raw, offset)
 
-    if offset + size > lblob:
-        logger.debug(f"Unpack error: (offset + size) {offset + size} > {lblob}\n{fmt, blob, offset}")
-        raise ValueError("Truncated blob")
-
-    values = struct.unpack_from(fmt, blob, offset)
     offset += size
 
-    if len(values) == 1:
-        values = values[0]
+    if len(value) == 1:
+        value = value[0]
+
+    if parser:
+        parsed, offset = parser(value, raw, offset)
+    else:
+        parsed = None
+
+    result = {
+        "value": value,
+        "parsed": parsed
+    }
 
     if not metadata:
-        return values, offset
+        return result, offset
 
-    meta = field(fmt, blob, start, offset)
+    length = offset - start
+    raw_field = raw[start:offset].hex()
 
-    return values, offset, meta
+    result["_metadata_"] = {
+        "start": start,
+        "end": offset,
+        "length": length,
+        "raw_field":  raw_field,
+        "fmt": fmt,
+        "size": size,
+        "sizes": sizes,
+        "tokens": tokens
+    }
+
+    return result, offset
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
@@ -183,7 +192,7 @@ def iter_packets_from_json(path: str):
     except json.JSONDecodeError as error:
         raise ValueError(f"Error trying to load json file: {error}")
 
-def detect_fcs(frame: bytes, offset: int) -> tuple[bytes | None, int]:
+def detect_fcs(frame: bytes, offset: int) -> tuple(bytes | None, int):
     flen = len(frame)
 
     if offset is None or offset < 0 or offset >= flen:
@@ -243,3 +252,5 @@ def freq_to_channel(freq_mhz) -> int:
     if 5000 <= freq_mhz <= 5895:
         return (freq_mhz - 5000) // 5
     return "Unknown"
+
+

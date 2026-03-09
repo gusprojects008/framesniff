@@ -160,10 +160,6 @@ class Frame:
                     content, offset = parser(frame, offset)
                     body[name].update(content)
     
-                body[name]["raw"] = frame[start_offset:offset].hex()
-                body[name]["start_offset"] = start_offset
-                body[name]["end_offset"] = offset
-    
             except Exception as e:
                 logger.debug(f"CTRL Parser error: {e}")
                 body["payload"] = payload
@@ -185,13 +181,11 @@ class Frame:
         logger.debug("function frame parse:")
     
         parsed_frame = {}
-        ctx = ParserContext()
-        token = CURRENT_CONTEXT.set(ctx)
 
         try:
             rt_hdr, offset = RadiotapHeader.parse(frame, offset)
         
-            fcs_bytes, frame_end = detect_fcs(frame, offset)
+            fcs_bytes, offset  = detect_fcs(frame, offset)
         
             mac_hdr, offset = dot11_parsers.mac_header(frame, mac_vendor_resolver, offset)
         
@@ -205,28 +199,17 @@ class Frame:
                 logger.warning("Empty 802.11 frame after radiotap, skipping")
                 return parsed_frame 
 
-            frame_type = mac_hdr.get("fc").get("type")
+            type = mac_hdr.get("fc").get("type")
             subtype = mac_hdr.get("fc").get("subtype")
             protected = mac_hdr.get("protected", False)
     
             logger.debug(f"Parsing frame: type: {frame_type} subtype: {subtype}")
     
-            if frame_type == MGMT:
-                body = Frame.Management.parse(frame, subtype, protected, offset)
-            elif frame_type == CTRL:
-                body = Frame.Control.parse(frame, subtype, protected, offset)
-            elif frame_type == DATA:
-                body = Frame.Data.parse(frame, subtype, protected, offset)
-            else:
-                body = {}
+            body = frame_dispatch(frame, type, subtype, protected, offset)
     
             parsed_frame["body"] = body
-            # parsed_frame["parse_tree"] = 
     
         except Exception as e:
             logger.debug(f"Frames parser error: {e}")
 
-        finally:
-            CURRENT_CONTEXT.reset(token)
-    
         return parsed_frame

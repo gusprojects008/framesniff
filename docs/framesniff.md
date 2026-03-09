@@ -20,6 +20,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Estrutura e fluxo de funções para parsing de IEs, exemplo: parse_ssid(value, raw, offset) -> função interna passada como callback para unpack (ela recebe value e `**kwargs`) -> retorna "parsed" com tudo necessário. 
 * Acho que encontrei uma forma de resolver o problema da geração de arvore de parse com os dados necessários para desenvolver uma interface gŕafica que permita edição/navegação/inspeção de frames e pacotes. Cada função de principal de parse de frame de uma DLT de um padrão específico, irá criar o seu próprio contexto de parse, dessa forma, possívelmente, a própria função unpack irá lidar com a criação de metadados necessários com as informações do campo (offsetr inicio/final, length, parent, children etc...).
 * Possívelmente irei ter que criar um módulo chamado dissector ou dispatch, para fornecer uma interface única para módulos como "user_operations" obterem o parse de frames de uma DLT de um padrão específico.
 * trocar nome dispacther para apenas dispatch

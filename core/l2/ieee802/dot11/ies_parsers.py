@@ -292,6 +292,18 @@ def rsn_information(data: bytes, tag_length: int) -> dict:
 
     return result
 
+def rates(frame: bytes, offset: int, tag_length: int) -> tuple[dict, int]:
+    def _parse_rate(rate: int, raw: bytes, offset: int) -> tuple(dict, int):
+       return {"value": (rate & 0x7F) / 2, "basic": bool(rate & 0x80)}, offset 
+    rates_info = {}
+    end = offset + tag_length
+    i = 1
+    while offset < end:
+        field, offset = unpack("B", frame, offset, _parse_rate)
+        rates_info[i] = field 
+        i += 1
+    return rates_info, offset
+
 def rates(data: bytes, tag_length: int) -> dict:
     rates_info = {}
     for i in range(min(len(data), tag_length)):
@@ -477,7 +489,7 @@ def qbss_load_element(data: bytes, tag_length: int) -> dict:
 
     return result
 
-IE_DISPATCHER = {
+IE_DISPATCH = {
     TAG_SSID: {
         "name": "ssid",
         "parser": ssid
@@ -535,3 +547,25 @@ IE_DISPATCHER = {
       "parser": current_channel
     }
 }
+
+def ie_dispatch(value: tuple[int | str], frame: bytes, offset: int):
+    tag_number, tag_length = value
+    result = {
+        "tag_number": tag_number,
+        "tag_length": tag_length,
+    }
+    entry = IE_DISPATCH.get(tag_number)
+    if not entry:
+        _, offset = unpack(f"{tag_length}s", frame, offset)
+        return result, offset
+
+    result["tag_name"] = entry.get("name", tag_number)
+    parser = entry.get("parser")
+
+    if parser:
+        field, offset = parser(frame, offset, tag_length)
+    else:
+        field, offset = unpack(f"{tag_length}s", frame, offset)
+
+    result.update(field)
+    return result, offset
