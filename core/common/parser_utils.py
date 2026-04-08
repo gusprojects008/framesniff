@@ -1,11 +1,38 @@
 import json
 import re
 import binascii
-from logging import getLogger
 import struct
+from logging import getLogger
 from functools import lru_cache
 
 logger = getLogger(__name__)
+
+class MacVendorResolver:
+    _vendor_map = None
+    def __init__(self, filepath: str = "./core/common/mac-vendors-export.json"):
+        if MacVendorResolver._vendor_map is None:
+            logger.debug(f"Loading MAC vendors file {filepath} ...")
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    MacVendorResolver._vendor_map = {
+                        item['macPrefix']: item['vendorName'] for item in data
+                    }
+                logger.debug("MAC vendors loaded successfully.")
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                logger.error(f"Could not load or parse MAC vendors file: {e}")
+                MacVendorResolver._vendor_map = {}
+
+    def mac_resolver(self, mac_bytes: bytes):
+        if not mac_bytes:
+            return None
+        mac_address = bytes_for_mac(mac_bytes)
+        if not self._vendor_map or not mac_address:
+            return None
+        oui = mac_address.upper()[:8]
+        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "Unknown")}
+
+mac_vendor_resolver = MacVendorReolver()
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
@@ -63,18 +90,13 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
     return result
 
 @lru_cache(maxsize=256)
-def _parse_fmt_tokens(fmt: str):
-    fmt = fmt.replace(' ', '')
-
-    prefix = ''
+def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
+    prefix = '<'
     if fmt and fmt[0] in '<>!=@':
         prefix = fmt[0]
         fmt = fmt[1:]
 
-    if not prefix:
-       prefix = '<'
-
-    tokens = []
+    tokens: list[str] = []
     count_buf = ''
 
     for ch in fmt:
@@ -82,62 +104,58 @@ def _parse_fmt_tokens(fmt: str):
             count_buf += ch
         else:
             count = int(count_buf) if count_buf else 1
-            
-            if ch in ('s', 'p'): 
+            if ch in ('s', 'p'):
                 tokens.append(f"{prefix}{count}{ch}")
             else:
                 tokens.extend([prefix + ch] * count)
             count_buf = ''
 
-    sizes = [struct.calcsize(t) for t in tokens]
+    if count_buf:
+        raise ValueError(f"Invalid format: ends with count without type '{count_buf}'")
 
-    return sizes, tokens
+    sizes = tuple(struct.calcsize(t) for t in tokens)
+    return sizes, tuple(tokens)
 
-def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callback = None, metadata: bool = True): tuple(dict, int):
-
+def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callable = None, metadata: bool = True) -> tuple[dict, int]:
+    parsed = None
     start = offset
-
+    fmt = fmt.replace(' ', '')
     sizes, tokens = _parse_fmt_tokens(fmt)
+    size = sum(sizes)
 
-    lraw = len(raw)
-    size = sum(sizes)
+    if offset + size > len(raw):
+        logger.debug(
+            f"Unpack error: offset+size={offset + size} > len(raw)={len(raw)} | "
+            f"fmt={fmt} offset={offset}"
+        )
+        raise ValueError("Truncated raw")
 
-    if offset + size > lraw:
-        logger.debug(f"Unpack error: (offset + size) {offset + size} > {lraw}\n{fmt, raw, offset}")
-        raise ValueError("Truncated raw")
+    value = struct.unpack_from(fmt, raw, offset)
+    offset += size
 
-    value = struct.unpack_from(fmt, raw, offset)
-
-    offset += size
-
-    if len(value) == 1:
-        value = value[0]
+    if len(value) == 1:
+        value = value[0]
 
     if parser:
         parsed, offset = parser(value, raw, offset)
-    else:
-        parsed = None
 
-    result = {
-        "value": value,
-        "parsed": parsed
-    }
+    result = {"value": value, "parsed": parsed}
 
-    if not metadata:
-        return result, offset
+    if not metadata:
+        return result, offset
 
     length = offset - start
-    raw_field = raw[start:offset].hex()
+    raw_hex = raw[start:offset].hex()
 
     result["_metadata_"] = {
         "start": start,
         "end": offset,
         "length": length,
-        "raw_field":  raw_field,
+        "raw": raw_hex,
         "fmt": fmt,
         "size": size,
         "sizes": sizes,
-        "tokens": tokens
+        "tokens": tokens,
     }
 
     return result, offset
@@ -160,13 +178,13 @@ def iter_packets_from_json(path: str):
             for obj in data:
                 if not isinstance(obj, dict):
                     continue
-                raw = obj.get(key)
-                if isinstance(raw, str):
-                    cleaned = clean_hex_string(raw)
+                value = obj.get(key)
+                if isinstance(value, str):
+                    cleaned = clean_hex_string(value)
                     if cleaned:
                         yield (cleaned, bytes.fromhex(cleaned))
-                elif isinstance(raw, list):
-                    for entry in raw:
+                elif isinstance(value, list):
+                    for entry in value:
                         if not isinstance(entry, str):
                             continue
                         cleaned = clean_hex_string(entry)
@@ -217,31 +235,6 @@ def detect_fcs(frame: bytes, offset: int) -> tuple(bytes | None, int):
     else:
         return None, flen
 
-class MacVendorResolver:
-    _vendor_map = None
-    def __init__(self, filepath: str = "./core/common/mac-vendors-export.json"):
-        if MacVendorResolver._vendor_map is None:
-            logger.debug(f"Loading MAC vendors file {filepath} ...")
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    MacVendorResolver._vendor_map = {
-                        item['macPrefix']: item['vendorName'] for item in data
-                    }
-                logger.debug("MAC vendors loaded successfully.")
-            except (FileNotFoundError, json.JSONDecodeError) as e:
-                logger.error(f"Could not load or parse MAC vendors file: {e}")
-                MacVendorResolver._vendor_map = {}
-
-    def mac_resolver(self, mac_bytes: bytes):
-        if not mac_bytes:
-            return None
-        mac_address = bytes_for_mac(mac_bytes)
-        if not self._vendor_map or not mac_address:
-            return None
-        oui = mac_address.upper()[:8]
-        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "Unknown")}
-
 def freq_to_channel(freq_mhz) -> int:
     if not freq_mhz:
         return freq_mhz
@@ -252,5 +245,3 @@ def freq_to_channel(freq_mhz) -> int:
     if 5000 <= freq_mhz <= 5895:
         return (freq_mhz - 5000) // 5
     return "Unknown"
-
-

@@ -1,17 +1,46 @@
-import struct
-import binascii
-import re
-import socket
-from logging import getLogger
-from core.common.parser_utils import (unpack, bytes_for_mac, bitmap_value_for_dict, mac_vendor_resolver)
-from core.common.constants.l2 import (EUI48_LENGTH)
-from core.common.constants.ieee802_11 import *
-from core.l2.ieee802.dot11.ies_parsers import IE_DISPATCHER
-from core.l2.ieee802.llc import parse as llc_parser
-from core.l3 import parsers as l3_parsers
+essa arquitetura está boa?:
+frame.py:
 
-logger = getLogger(__name__)
+def parse(frame: bytes, offset: int = 0) -> dict:
+    logger.debug("function frame parse:")
 
+    parsed_frame = {}
+
+    try:
+        rt_hdr, offset = RadiotapHeader.parse(frame, offset)
+    
+        fcs_bytes, offset  = detect_fcs(frame, offset)
+    
+        mac_hdr, offset = dot11_parsers.mac_header(frame, offset)
+    
+        parsed_frame = {
+            "rt_hdr": rt_hdr,
+            "mac_hdr": mac_hdr,
+            "fcs": fcs_bytes.hex() if fcs_bytes else None
+        }
+
+        if frame_end - offset < 2:
+            logger.warning("Empty 802.11 frame after radiotap, skipping")
+            return parsed_frame 
+
+        type = mac_hdr.get("fc").get("type")
+        subtype = mac_hdr.get("fc").get("subtype")
+        protected = mac_hdr.get("protected", False)
+
+        logger.debug(f"Parsing frame: type: {frame_type} subtype: {subtype}")
+
+        body = frame_dispatch(frame, type, subtype, protected, offset)
+
+        parsed_frame["body"] = body
+
+    except Exception as e:
+        logger.debug(f"Frames parser error: {e}")
+
+    return parsed_frame
+
+
+
+parsers.py:
 def mac_header(frame: bytes, offset: int = 0) -> tuple(dict, int):
     logger.debug("function mac_header parser:")
 
@@ -178,6 +207,7 @@ def mgmt_deauthentication(frame: bytes, offset: int) -> tuple(dict, int):
     body["reason_code"], offset = unpack("<H", frame, offset)
     return body, offset
 
+
 def mgmt_authentication(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
 
@@ -192,6 +222,7 @@ def mgmt_authentication(frame: bytes, offset: int) -> tuple(dict, int):
     body["tagged_parameters"] = tagged_parameters
 
     return body, offset
+
 
 def mgmt_action(frame: bytes, offset: int) -> tuple(dict, int):
     body = {}
@@ -289,7 +320,8 @@ def eapol(frame: bytes, offset: int) -> tuple(dict, int):
         })
 
         if data_len > 0 and offset + data_len <= len(frame):
-            key_data_parsed, offset = _parse_key_data(frame, offset)
+            key_data_parsed, offset = _parse_key_data(key_data, offset)
+            key_data_hex = key_data.hex()
             result["key_data"] = key_data_parsed
 
     except Exception as e:
@@ -331,7 +363,7 @@ def ctrl_cf_end(frame: bytes, offset: int):
 def ctrl_cf_end_ack(frame: bytes, offset: int):
     return {}, offset
 
-BODY_DISPATCH = {
+FRAME_DISPATCH = {
     MGMT: {
         MGMT_BEACON: {
             "name": "beacon",
@@ -391,22 +423,130 @@ BODY_DISPATCH = {
     }
 }
 
-def body_dispatch(frame: bytes, frame_type: int, frame_subtype: int, protected: bool, offset: int = 0) -> tuple[dict, int]:
-    def _handle_fallback(frame: bytes, offset: int):
-        result, offset = unpack(f"{flen - offset}s", frame, offset)
-        return result, offset
-    body = {} 
+def frame_dispatch(frame: bytes, type: int, subtype: int, protected: bool, offset: int = 0) -> dict:
     flen = len(frame)
+    payload = frame[offset:flen].hex()
+    body = {"raw": payload}
     if protected:
-        return _handle_fallback(frame, offset)
+        return body
     try:
-        if frame_type == DATA:
-            llc, offset = llc_parser.parse(frame, offset)
-            body["llc"] = llc
-        handler = BODY_DISPATCH.get(frame_type, {}).get(frame_subtype, {})
-        parser = subtype_table.get("parser", _handle_fallback)
-        body_parsed, offset = parser(frame, offset)
-        body.update(body_parsed)
+        type_table = FRAME_DISPATCH.get(type)
+        if not type_table:
+            return body
+        handler = type_table.get(subtype)
+        if not handler:
+            return body
+        parsed, offset = handler(payload, offset)
+        body.update(parsed)
     except Exception as e:
         logger.debug(f"Frame dispatch error: {e}")
     return body
+
+
+função principal "user_operations.py":
+    @staticmethod
+    def sniff(dlt: str = "DLT_IEEE802_11_RADIO", ifname: str = None,
+            store_filter: str = None, display_filter: str = None, 
+            count: int = None, timeout: float = None, 
+            display_interval: float = 0.0, store_callback: callable = None,
+            display_callback: callable = None, stop_event: threading.Event = None,
+            output_filename: str = None
+        ):
+    
+        check_root()
+        check_interface_mode(ifname, "monitor")
+    
+        parser = None
+    
+        if dlt == "DLT_IEEE802_11_RADIO":
+            parser = Frame.parser
+    
+        if parser is None:
+            raise ValueError(f"There is no parser available for DLT: {dlt}")
+    
+        sock = create_raw_socket(ifname)
+
+        output_filename = new_file_path(filename=output_filename) if output_filename else new_file_path(base="framesniff-capture", ext=".json")
+
+        captured_frames = []
+        frame_counter = 0
+        last_display_time = 0.0
+    
+        try:
+            logger.info(f'''
+    Starting capture on {ifname}... (Press Ctrl+C to stop)\n
+    Store filter: {store_filter}"\n
+    Display filter: {display_filter}\n
+    Output path: {output_filename}
+    Timeout: {timeout} seconds
+            ''')
+    
+            start_time = time.time()
+    
+            while True:
+                if stop_event and stop_event.is_set():
+                    logger.info("Stop event received, finishing capture...")
+                    break
+                
+                if timeout and (time.time() - start_time) >= timeout:
+                    logger.info(f"Capture timeout reached after {timeout} seconds")
+                    break
+                
+                try:
+                    frame, _ = sock.recvfrom(65535)
+                    hex_frame = frame.hex()
+
+                    try:
+                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}") # exc_info=None: None None !?
+                        parsed_frame = parser(frame)
+                    except Exception as e:
+                        logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
+                        continue
+    
+                    if not parsed_frame:
+                        continue
+                    
+                    parsed_frame["counter"] = frame_counter
+                    parsed_frame["raw"] = hex_frame
+
+                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+                    
+                    if store_result:
+                        frame_counter += 1
+                        captured_frames.append(parsed_frame)
+                        if store_callback:
+                            store_callback(parsed_frame)
+                    if display_result and display_callback:
+                        display_callback(display_result)
+                    if display_result and not display_callback:
+                        current_time = time.time()
+                        if store_result and current_time - last_display_time >= display_interval:
+                            try:
+                                logger.info(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
+                            except Exception:
+                                logger.warning(f"[{frame_counter}] {display_result}")
+                            last_display_time = current_time
+                    if count is not None and frame_counter >= count:
+                        break
+                        
+                except KeyboardInterrupt:
+                    logger.info("Capture interrupted by user")
+                    break
+                except Exception as e:
+                    logger.error(f"Error receiving frame: {e}")
+                    continue
+
+        except Exception as e:
+            logger.critical(f"Unexpected error in sniff: {e}")
+
+        finally:
+            logger.info(f"Finishing capture, saving {len(captured_frames)} frames...")
+            if stop_event:
+                stop_event.set()
+            finish_capture(sock, start_time, captured_frames, output_filename)
+
+
+Estou com algumas dúvidas:
+Onde seria melhor fazer a detecção do tipo e subtipo do frame para fazer parse de llc?
+
+Qual nome é melhor?: frame_dispatch ou body_dispatch ?

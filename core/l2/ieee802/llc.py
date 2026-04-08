@@ -5,47 +5,6 @@ from core.l3 import parsers as l3_parsers
 
 logger = getLogger(__name__)
 
-def parse(frame: bytes, offset: int):
-    logger.debug(f"LLC parser: offset={offset}")
-
-    body = {}
-    start_offset = offset
-    flen = len(frame)
-
-    try:
-
-        (dsap, ssap, control, org_code, llc_type), offset, meta = unpack("!BBB3sH", frame, offset, True)
-
-        body.update({
-            "dsap": dsap,
-            "ssap": ssap,
-            "control_field": control,
-            "organization_code": bytes_for_mac(org_code),
-            "type": llc_type,
-            "__meta__": meta
-        })
-
-        payload_start = offset
-
-        handler = LLC_PAYLOAD_DISPATCH.get(llc_type, {})
-
-        name = handler.get("name", llc_type)
-        parser = handler.get("parser")
-
-        body[name] = {}
-
-        if parser:
-            content, offset = parser(frame, offset)
-            body[name].update(content)
-        else:
-            offset = flen
-
-    except Exception as e:
-        logger.debug(f"LLC parser error: {e}")
-
-    return body, offset
-
-
 LLC_PAYLOAD_DISPATCH = {
     LLC_EAPOL: {
         "name": "eapol",
@@ -95,4 +54,48 @@ LLC_PAYLOAD_DISPATCH = {
         "name": "qos_null",
         "parser": None
     }
-}
+
+def parse(frame: bytes, offset: int):
+    def _llc_payload_parse_fallback(payload: bytes, offset: int):
+        return unpack(f"{flen - offset}s", frame, offset)
+
+    logger.debug(f"LLC parser: offset={offset}")
+
+    body = {}
+    start = offset
+    flen = len(frame)
+
+    try:
+        result, offset = unpack("!BBB3sH", frame, offset)
+        
+        (dsap, ssap, control, org_code, llc_type) = result.get("value")
+
+        org_code = bytes_for_mac(org_code)
+
+        body.update({
+            "dsap": dsap,
+            "ssap": ssap,
+            "control_field": control,
+            "organization_code": org_code,
+            "type": llc_type,
+        })
+
+        payload_start = offset
+
+        handler = LLC_PAYLOAD_DISPATCH.get(llc_type, {})
+
+        name = handler.get("name", llc_type)
+        parser = handler.get("parser")
+
+        body[name] = {}
+
+        if parser:
+            content, offset = parser(frame, offset)
+            body[name].update(content)
+        else:
+            offset = flen
+
+    except Exception as e:
+        logger.debug(f"LLC parser error: {e}")
+
+    return body, offset

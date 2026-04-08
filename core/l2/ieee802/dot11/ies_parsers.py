@@ -304,14 +304,6 @@ def rates(frame: bytes, offset: int, tag_length: int) -> tuple[dict, int]:
         i += 1
     return rates_info, offset
 
-def rates(data: bytes, tag_length: int) -> dict:
-    rates_info = {}
-    for i in range(min(len(data), tag_length)):
-        r = data[i]
-        rate_value = (r & 0x7F) / 2
-        rates_info[i+1] = {"value": rate_value, "basic": bool(r & 0x80)}
-    return rates_info
-
 def tim_info(data: bytes, tag_length: int):
     tim = {}
     offset = 0
@@ -555,17 +547,12 @@ def ie_dispatch(value: tuple[int | str], frame: bytes, offset: int):
         "tag_length": tag_length,
     }
     entry = IE_DISPATCH.get(tag_number)
-    if not entry:
-        _, offset = unpack(f"{tag_length}s", frame, offset)
-        return result, offset
-
+    ie_data = {}
     result["tag_name"] = entry.get("name", tag_number)
     parser = entry.get("parser")
-
     if parser:
-        field, offset = parser(frame, offset, tag_length)
+        ie_data, offset = parser(frame, offset, tag_length)
     else:
-        field, offset = unpack(f"{tag_length}s", frame, offset)
-
-    result.update(field)
+        ie_data, offset = unpack(f"{tag_length}s", frame, offset)
+    result.update(ie_data)
     return result, offset

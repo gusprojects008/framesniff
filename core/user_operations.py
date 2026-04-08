@@ -10,7 +10,7 @@ from logging import getLogger
 from typing import Optional, Tuple, List
 from core.l2.ieee802.dot11.frame import Frame
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
-from core.common.parser_utils import (iter_packets_from_json, MacVendorResolver)
+from core.common.parser_utils import iter_packets_from_json
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 
@@ -274,7 +274,6 @@ class Operations:
         check_root()
         check_interface_mode(ifname, "monitor")
     
-        mac_vendor_resolver = MacVendorResolver()
         parser = None
     
         if dlt == "DLT_IEEE802_11_RADIO":
@@ -314,19 +313,18 @@ class Operations:
                 try:
                     frame, _ = sock.recvfrom(65535)
                     hex_frame = frame.hex()
+                    parsed_frame["counter"] = frame_counter
+                    parsed_frame["raw"] = hex_frame
 
                     try:
                         logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}") # exc_info=None: None None !?
-                        parsed_frame = parser(frame, mac_vendor_resolver)
+                        parsed_frame = parser(frame)
                     except Exception as e:
-                        logger.debug(f"Sniff: parser frame error: {e} ===>\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
+                        logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
                         continue
     
                     if not parsed_frame:
                         continue
-                    
-                    parsed_frame["counter"] = frame_counter
-                    parsed_frame["raw"] = hex_frame
 
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
                     
