@@ -101,19 +101,14 @@ def mac_header(frame: bytes, offset: int = 0) -> tuple[dict, int]:
                 "sequence_number": sequence_number,
                 "qos_control":     qos_control,
             })
-
     except Exception as e:
         logger.debug(f"MAC Header parser error: {e}")
-
     return mac_data, offset
-
 
 def fixed_parameters(frame: bytes, offset: int) -> tuple[dict, int]:
     logger.debug(f"Parsing fixed parameters: frame: {frame} offset {offset}")
-
     unpacked_result, offset = unpack("<QHH", frame, offset)
     timestamp, beacon_interval, capabilities_information = unpacked_result["value"]
-
     capabilities_information_list = [
         "ess_capabilities", "ibss_status", "reserved1", "reserved2",
         "privacy", "short_preamble", "critical_update_flag",
@@ -121,13 +116,11 @@ def fixed_parameters(frame: bytes, offset: int) -> tuple[dict, int]:
         "qos", "short_slot_time", "automatic_power_save_delivery",
         "radio_measurement", "epd", "reserved3", "reserved4",
     ]
-
     return {
         "timestamp":                timestamp,
         "beacon_interval":          beacon_interval,
         "capabilities_information": bitmap_value_for_dict(capabilities_information, capabilities_information_list),
     }, offset
-
 
 def tagged_parameters(frame: bytes, offset: int) -> tuple[dict, int]:
     logger.debug(f"Parsing tagged parameters: offset={offset}")
@@ -146,13 +139,12 @@ def tagged_parameters(frame: bytes, offset: int) -> tuple[dict, int]:
 
     while offset + MIN_IE_LEN <= flen:
         ie_result, offset = unpack("<BB", frame, offset, ie_dispatch)
-        ie = ie_result["parsed"]   # ie_dispatch returns the enriched dict via parser=
+        ie = ie_result["parsed"] # ie_dispatch returns the enriched dict via parser=
         tag_name = ie.get("tag_name")
         tag_number = ie.get("tag_number")
         _insert_ie(result, tag_name or tag_number, ie)
 
     return result, offset
-
 
 # Parsers of management frame subtypes and their dispatch table
 def mgmt_beacon(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:

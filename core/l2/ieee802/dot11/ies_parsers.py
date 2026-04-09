@@ -540,6 +540,27 @@ IE_DISPATCH = {
     }
 }
 
+def ie_dispatch(value: tuple[dict, int], frame: bytes, offset: int) -> tuple[dict, int]:
+    tag_number, tag_length = value
+    entry = IE_DISPATCH.get(tag_number) or {}
+
+    def _enrich_ie(ie_data: dict, offset: int) -> tuple[dict, int]:
+        return ie_data["parsed"].update({
+            "tag_number": tag_number,
+            "tag_length": tag_length,
+            "tag_name":   entry.get("name", tag_number),
+        }, offset
+
+    return run_dispatch(
+        frame,
+        offset,
+        IE_DISPATCH,
+        tag_number,
+        post_process=_enrich_ie,
+        tag_length=tag_length,
+    )
+
+"""
 def ie_dispatch(value: tuple[int | str], frame: bytes, offset: int):
     tag_number, tag_length = value
     result = {
@@ -556,26 +577,4 @@ def ie_dispatch(value: tuple[int | str], frame: bytes, offset: int):
         ie_data, offset = unpack(f"{tag_length}s", frame, offset)
     result.update(ie_data)
     return result, offset
-
-"""
-def ie_dispatch(value: tuple[int, int], frame: bytes, offset: int) -> tuple[dict, int]:
-    tag_number, tag_length = value
-    entry = IE_DISPATCH.get(tag_number) or {}
-
-    def _enrich_ie(ie_data: dict, offset: int) -> tuple[dict, int]:
-        return {
-            "tag_number": tag_number,
-            "tag_length": tag_length,
-            "tag_name":   entry.get("name", tag_number),
-            **ie_data,
-        }, offset
-
-    return run_dispatch(
-        frame,
-        offset,
-        IE_DISPATCH,
-        tag_number,
-        post_process=_enrich_ie,
-        tag_length=tag_length,
-    )
 """

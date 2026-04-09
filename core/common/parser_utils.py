@@ -38,6 +38,14 @@ wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in pack
 
 index_pack = lambda index : struct.pack("<I", index)
 
+def random_mac():
+    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
+    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
+
+bytes_for_mac = lambda mac : ":".join(format(byte, "02x") for byte in mac)
+
+mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
+
 def freq_converter(freq_unit: tuple, to_unit: str):
     freq, unit = freq_unit
     unit = unit.lower()
@@ -61,6 +69,17 @@ def freq_converter(freq_unit: tuple, to_unit: str):
     else:
         raise ValueError(f"Destiny unit invalid: {to_unit}. Use 'kHz', 'MHz' ou 'GHz'")
 
+def freq_to_channel(freq_mhz) -> int:
+    if not freq_mhz:
+        return freq_mhz
+    if 2412 <= freq_mhz <= 2472:
+        return (freq_mhz - 2407) // 5
+    if freq_mhz == 2484:
+        return 14
+    if 5000 <= freq_mhz <= 5895:
+        return (freq_mhz - 5000) // 5
+    return "Unknown"
+
 def bitmap_dict_to_hex(bitmap_dict: dict):
     result = 0
     for i, (field, active) in enumerate(bitmap_dict.items()):
@@ -68,20 +87,12 @@ def bitmap_dict_to_hex(bitmap_dict: dict):
             result |= (1 << i)
     return result
 
-def random_mac():
-    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
-    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
-
 def calc_rates(rates):
     list_rates_transmition = []
     for rate in rates:   
         value_rate = (rate & 0x7f) * 500
         list_rates_transmition.append(value_rate)
     return list_rates_transmition
-
-bytes_for_mac = lambda mac : ":".join(format(byte, "02x") for byte in mac)
-
-mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
 
 def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
     result = {}
@@ -160,9 +171,61 @@ def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callable = None, metad
 
     return result, offset
 
+# dispatch mechanism standardizer for frame byte parsing
+def run_dispatch(
+    frame: bytes,
+    offset: int,
+    dispatch_table: dict,
+    dispatch_id,
+    fallback: callable = None,
+    post_process: callable = None, # to enrich or transform the dictionary result returned by the handler
+    **handler_kwargs
+) -> tuple[dict, int]:
+
+    handler = dispatch_table.get(dispatch_id)
+
+    if not handler:
+        if fallback:
+            return fallback(frame, offset, **handler_kwargs)
+        remaining = len(frame) - offset
+        result, offset = unpack(f"{remaining}s", frame, offset)
+        return result, offset
+
+    result, offset = handler(frame, offset, **handler_kwargs)
+
+    if post_process:
+        result, offset = post_process(result, offset)
+
+    return result, offset
+
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
     return re.sub(r'[^0-9a-fA-F]', '', s).lower()
+
+def detect_fcs(frame: bytes, offset: int) -> tuple(bytes | None, int):
+    flen = len(frame)
+
+    if offset is None or offset < 0 or offset >= flen:
+        return None, flen
+
+    payload_len = flen - offset
+
+    if payload_len < IEEE80211_FCS_LEN:
+        return None, flen
+
+    fcs_start = flen - IEEE80211_FCS_LEN
+    fcs_bytes = frame[fcs_start:flen]
+
+    candidate_fcs = int.from_bytes(fcs_bytes, "little")
+
+    data_for_crc = frame[offset:fcs_start]
+
+    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+
+    if calc_crc == candidate_fcs:
+        return fcs_bytes, fcs_start
+    else:
+        return None, flen
 
 def iter_packets_from_json(path: str):
     try:
@@ -209,66 +272,3 @@ def iter_packets_from_json(path: str):
 
     except json.JSONDecodeError as error:
         raise ValueError(f"Error trying to load json file: {error}")
-
-def detect_fcs(frame: bytes, offset: int) -> tuple(bytes | None, int):
-    flen = len(frame)
-
-    if offset is None or offset < 0 or offset >= flen:
-        return None, flen
-
-    payload_len = flen - offset
-
-    if payload_len < IEEE80211_FCS_LEN:
-        return None, flen
-
-    fcs_start = flen - IEEE80211_FCS_LEN
-    fcs_bytes = frame[fcs_start:flen]
-
-    candidate_fcs = int.from_bytes(fcs_bytes, "little")
-
-    data_for_crc = frame[offset:fcs_start]
-
-    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
-
-    if calc_crc == candidate_fcs:
-        return fcs_bytes, fcs_start
-    else:
-        return None, flen
-
-def freq_to_channel(freq_mhz) -> int:
-    if not freq_mhz:
-        return freq_mhz
-    if 2412 <= freq_mhz <= 2472:
-        return (freq_mhz - 2407) // 5
-    if freq_mhz == 2484:
-        return 14
-    if 5000 <= freq_mhz <= 5895:
-        return (freq_mhz - 5000) // 5
-    return "Unknown"
-
-# dispatch mechanism standardizer for frame byte parsing
-def run_dispatch(
-    frame: bytes,
-    offset: int,
-    dispatch_table: dict,
-    dispatch_id,
-    fallback: callable = None,
-    post_process: callable = None, # to enrich or transform the dictionary result returned by the handler
-    **handler_kwargs
-) -> tuple[dict, int]:
-
-    handler = dispatch_table.get(dispatch_id)
-
-    if not handler:
-        if fallback:
-            return fallback(frame, offset, **handler_kwargs)
-        remaining = len(frame) - offset
-        result, offset = unpack(f"{remaining}s", frame, offset)
-        return result, offset
-
-    result, offset = handler(frame, offset, **handler_kwargs)
-
-    if post_process:
-        result, offset = post_process(result, offset)
-
-    return result, offset
