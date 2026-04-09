@@ -1,13 +1,11 @@
 import struct
 import time
-from core.common.parser_utils import (random_mac, unpack, extract_fcs_from_frame, clean_hex_string, iter_packets_from_json, MacVendorResolver)
-from core.common.function_utils import (new_file_path)
-from core.l2.ieee802.dot11.radiotap_header import RadiotapHeader
-from core.l2.ieee802 import llc as llc_parser
-from core.l2.ieee802.dot11 import builders
 from core.common.constants.ieee802_11 import *
-from core.common.constants.l2 import *
-from core.common.constants.hashcat import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
+from core.common.parser_utils import detect_fcs
+from core.common.function_utils import new_file_path
+from core.l2.ieee802.dot11.radiotap_header import RadiotapHeader
+from core.l2.ieee802.dot11.frame as dot11_parsers
+#from core.l2.ieee802.dot11 import builders
 
 logger = getLogger(__name__)
 
@@ -31,7 +29,7 @@ def parse(frame: bytes, offset: int = 0) -> dict:
         frame_subtype = mac_hdr.get("fc").get("subtype")
         protected = mac_hdr.get("fc").get("protected", False)
         logger.debug(f"Parsing frame: type: {frame_type} subtype: {frame_subtype}")
-        body, _ = frame_dispatch(frame, frame_type, frame_subtype, protected, offset)
+        body, offset = dot11_parsers.body_dispatch(frame, frame_type, frame_subtype, protected, offset)
         parsed_frame["body"] = body
     except Exception as e:
         logger.debug(f"Frames parser error: {e}")

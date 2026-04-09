@@ -21,6 +21,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Rever a necessidade de ter suporte à argumento post_process para enriquer o processar o resultado retornado pelo handler. Ver se é possível ou necessário encaixa-lo em ie_dispatcher.
 * Adaptar todas funções de parse para o novo retorno consistente de "unpack". E decidir como e onde o LLC vai ser parseado.
 * Estrutura e fluxo de funções para parsing de IEs, exemplo: parse_ssid(value, raw, offset) -> função interna passada como callback para unpack (ela recebe value e `**kwargs`) -> retorna "parsed" com tudo necessário. 
 * Acho que encontrei uma forma de resolver o problema da geração de arvore de parse com os dados necessários para desenvolver uma interface gŕafica que permita edição/navegação/inspeção de frames e pacotes. Cada função de principal de parse de frame de uma DLT de um padrão específico, irá criar o seu próprio contexto de parse, dessa forma, possívelmente, a própria função unpack irá lidar com a criação de metadados necessários com as informações do campo (offsetr inicio/final, length, parent, children etc...).
@@ -101,3 +102,9 @@ https://learn.microsoft.com/en-us/windows-hardware/drivers/mobilebroadband/netwo
 
 # Decisões de arquitetura pendentes:
 frame_dispatch ou body_dispatch ?
+
+Possível arquitetura futura:
+/dot11/frames/:
+management.py: (funções de parse de subtipos de frames de gerenciamento, tabela de dispatch que mapeia subtipo para função de parse de subtipo, função de parse única que utiliza a tabela de dispatch de frame por subtipo)
+control.py: O mesmo que management
+data.py: O mesmo que management

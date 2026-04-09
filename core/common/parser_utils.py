@@ -245,3 +245,30 @@ def freq_to_channel(freq_mhz) -> int:
     if 5000 <= freq_mhz <= 5895:
         return (freq_mhz - 5000) // 5
     return "Unknown"
+
+# dispatch mechanism standardizer for frame byte parsing
+def run_dispatch(
+    frame: bytes,
+    offset: int,
+    dispatch_table: dict,
+    dispatch_id,
+    fallback: callable = None,
+    post_process: callable = None, # to enrich or transform the dictionary result returned by the handler
+    **handler_kwargs
+) -> tuple[dict, int]:
+
+    handler = dispatch_table.get(dispatch_id)
+
+    if not handler:
+        if fallback:
+            return fallback(frame, offset, **handler_kwargs)
+        remaining = len(frame) - offset
+        result, offset = unpack(f"{remaining}s", frame, offset)
+        return result, offset
+
+    result, offset = handler(frame, offset, **handler_kwargs)
+
+    if post_process:
+        result, offset = post_process(result, offset)
+
+    return result, offset
