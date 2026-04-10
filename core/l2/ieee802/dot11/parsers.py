@@ -294,6 +294,7 @@ def eapol(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
         return tagged_parameters(frame, offset)
 
     result = {}
+
     try:
         header_result, offset = unpack("!BBH", frame, offset)
         auth_ver, eapol_type, length = header_result["value"]
@@ -356,15 +357,21 @@ def eapol(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
             f"{EAPOL_KEY_ID_LENGTH}s{EAPOL_KEY_MIC_LENGTH}s"
             f"{EAPOL_KEY_DATA_LENGTH_FIELD}"
         )
+
         bulk_result, offset = unpack(fmt, frame, offset)
         replay, nonce, iv, rsc, key_id, mic, data_len = bulk_result["value"]
 
+        key_nonce = nonce.hex()
+        key_iv = iv.hex()
+        key_rsc = rsc.hex()
+        key_id = key_id.hex()
+
         result.update({
             "replay_counter":    replay,
-            "key_nonce":         nonce.hex(),
-            "key_iv":            iv.hex(),
-            "key_rsc":           rsc.hex(),
-            "key_id":            key_id.hex(),
+            "key_nonce":         key_nonce,
+            "key_iv":            key_iv,
+            "key_rsc":           key_rsc,
+            "key_id":            key_id,
             "key_mic":           mic,
             "key_data_length":   data_len,
         })
@@ -383,7 +390,7 @@ def mgmt_frame(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
     subtype = kwargs["subtype"]
     return run_dispatch(
         frame,
-        offset
+        offset,
         MGMT_FRAME_DISPATCH,
         subtype,
     )
@@ -425,21 +432,14 @@ def body_dispatch(
         remaining = len(frame) - offset
         return unpack(f"{remaining}s", frame, offset)
 
-    def _unknown_type_fallback(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
-        logger.debug(f"Unknown frame type: {kwargs.get('frame_type')}")
-        remaining = len(frame) - offset
-        return unpack(f"{remaining}s", frame, offset)
-
     try:
         body, offset = run_dispatch(
             frame,
             offset,
             BODY_DISPATCH,
             frame_type,
-            fallback=_unknown_type_fallback,
-            frame_type=frame_type,
+            post_process=add_metadata,
             subtype=frame_subtype,
-            protected=protected,
         )
     except Exception as e:
         logger.debug(f"body_dispatch error: {e}")

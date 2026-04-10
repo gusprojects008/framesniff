@@ -548,7 +548,7 @@ def ie_dispatch(value: tuple[dict, int], frame: bytes, offset: int) -> tuple[dic
         return ie_data["parsed"].update({
             "tag_number": tag_number,
             "tag_length": tag_length,
-            "tag_name":   entry.get("name", tag_number),
+            "tag_name": entry.get("name", tag_number),
         }, offset
 
     return run_dispatch(
@@ -560,21 +560,3 @@ def ie_dispatch(value: tuple[dict, int], frame: bytes, offset: int) -> tuple[dic
         tag_length=tag_length,
     )
 
-"""
-def ie_dispatch(value: tuple[int | str], frame: bytes, offset: int):
-    tag_number, tag_length = value
-    result = {
-        "tag_number": tag_number,
-        "tag_length": tag_length,
-    }
-    entry = IE_DISPATCH.get(tag_number)
-    ie_data = {}
-    result["tag_name"] = entry.get("name", tag_number)
-    parser = entry.get("parser")
-    if parser:
-        ie_data, offset = parser(frame, offset, tag_length)
-    else:
-        ie_data, offset = unpack(f"{tag_length}s", frame, offset)
-    result.update(ie_data)
-    return result, offset
-"""

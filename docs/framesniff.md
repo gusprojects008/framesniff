@@ -108,3 +108,8 @@ Possível arquitetura futura:
 management.py: (funções de parse de subtipos de frames de gerenciamento, tabela de dispatch que mapeia subtipo para função de parse de subtipo, função de parse única que utiliza a tabela de dispatch de frame por subtipo)
 control.py: O mesmo que management
 data.py: O mesmo que management
+
+E se eu tivesse uma função add_metadata universal? que percorrer todo o resultado do frame já parseado, que são sempre vários dicionários, obtenho o value de cada dicionário e calculo o tamanho e vou fazendo a detecção de formats usados dentro de struct.unpack, e assim por diante.
+
+utilizando contextmanager é possível definir dados que podem ser acessados globalmente por todas as funções executadas dentro de um contexto, dessa forma, posso fazer com que todos os meu parsers não precisem receber o argumento frame e nem offset, pois podem acessar a partir do state do contexto. Então talvez seja possível atualizar dinâmicamente o resultado completo do frame paseado.
+Preciso padronizar a assinatura de função de parser: (raw, offset, **kwargs)

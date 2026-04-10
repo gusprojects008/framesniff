@@ -100,6 +100,21 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
         result[name] = bool(bitmap_value & (1 << i))
     return result
 
+def add_metadata(raw: bytes, offset: int, **kwargs):
+    end_offset = **kwargs["end_offset"]
+    **kwargs.pop("end_offset")
+    raw_hex = raw[offset:end_offset].hex()
+    length = end_offset - offset
+    return {
+        "_metadata_": {
+            "start": offset,
+            "end": end_offset,
+            "length": length,
+            "raw": raw_hex,
+            **kwargs
+        }
+    }
+
 @lru_cache(maxsize=256)
 def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
     prefix = '<'
@@ -127,9 +142,7 @@ def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
     sizes = tuple(struct.calcsize(t) for t in tokens)
     return sizes, tuple(tokens)
 
-def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callable = None, metadata: bool = True) -> tuple[dict, int]:
-    parsed = None
-    start = offset
+def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callable = None, metadata: bool = True):
     fmt = fmt.replace(' ', '')
     sizes, tokens = _parse_fmt_tokens(fmt)
     size = sum(sizes)
@@ -141,33 +154,33 @@ def unpack(fmt: str, raw: bytes, offset: int = 0, parser: callable = None, metad
         )
         raise ValueError("Truncated raw")
 
+    start = offset
+
     value = struct.unpack_from(fmt, raw, offset)
     offset += size
 
     if len(value) == 1:
         value = value[0]
 
+    result = {"value": value, "parsed": None}
+
     if parser:
-        parsed, offset = parser(value, raw, offset)
+        parsed, offset = parser(raw, offset, value=value)
+        result["parsed"] = parsed
 
-    result = {"value": value, "parsed": parsed}
-
-    if not metadata:
-        return result, offset
-
-    length = offset - start
-    raw_hex = raw[start:offset].hex()
-
-    result["_metadata_"] = {
-        "start": start,
-        "end": offset,
-        "length": length,
-        "raw": raw_hex,
-        "fmt": fmt,
-        "size": size,
-        "sizes": sizes,
-        "tokens": tokens,
-    }
+    if metadata:
+        result.update(
+            add_metadata(
+                raw,
+                start,
+                end_offset=offset,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens,
+                result=result
+            )
+        )
 
     return result, offset
 
@@ -193,8 +206,11 @@ def run_dispatch(
 
     result, offset = handler(frame, offset, **handler_kwargs)
 
+    **handler_kwargs["result"] = result
+    **handler_kwargs["end_offset"] = offset
+
     if post_process:
-        result, offset = post_process(result, offset)
+        result, offset = post_process(frame, offset, **handler_kwargs)
 
     return result, offset
 
