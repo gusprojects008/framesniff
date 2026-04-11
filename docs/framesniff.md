@@ -2,6 +2,7 @@
 
 Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma está garantida para ser implementada. Elas exigem revisão e pesquisa adicional.
 
+* Permitir o usuário escolher se ele quer ou não incluir os metadados na captura, se ele escolher que não quer, não será possível realizar a visualização estilo wireshark do campos.
 * implementar editor de conteúdo de pacotes e frames assim como o mitmproxy, usar "select-editor" abrir o editor com o conteúdo do frame, quando o usuário salvar alterar o conteúdo e permitir ele realizar o replay.
 * Captura em modo monitor realizada apenas via raw sockets; análise, descriptografia etc., tratadas a partir dos payloads LLC.
 * Opção para os usuários enviarem frames devidamente criptografados para que os APs os aceitem.
@@ -21,6 +22,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Refatorar todas as funções parse de parsers.py de acordo com o funcionamento de unpack e run_dispatch
 * Rever a necessidade de ter suporte à argumento post_process para enriquer o processar o resultado retornado pelo handler. Ver se é possível ou necessário encaixa-lo em ie_dispatcher.
 * Adaptar todas funções de parse para o novo retorno consistente de "unpack". E decidir como e onde o LLC vai ser parseado.
 * Estrutura e fluxo de funções para parsing de IEs, exemplo: parse_ssid(value, raw, offset) -> função interna passada como callback para unpack (ela recebe value e `**kwargs`) -> retorna "parsed" com tudo necessário. 
@@ -113,3 +115,7 @@ E se eu tivesse uma função add_metadata universal? que percorrer todo o result
 
 utilizando contextmanager é possível definir dados que podem ser acessados globalmente por todas as funções executadas dentro de um contexto, dessa forma, posso fazer com que todos os meu parsers não precisem receber o argumento frame e nem offset, pois podem acessar a partir do state do contexto. Então talvez seja possível atualizar dinâmicamente o resultado completo do frame paseado.
 Preciso padronizar a assinatura de função de parser: (raw, offset, **kwargs)
+
+Poderia adicionar uma função de post_process à run_dispatch mas isso traz muitos problemas e complexidade adicional, pois essa função pode depender de vários outros dados que estão fora do parse principal. Decidi remover para manter a simplificidade.
+
+A função run_dispatch deve receber uma tabela que possui apenas entradas que contenha exatamente o id e a callback.

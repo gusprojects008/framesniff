@@ -1,0 +1,215 @@
+preciso revisar o pipeline e fluxo da arquitetura.
+Preciso corrigir e tomar algumas decisões erquiteturais.
+De acordo com projetos grande e profissionais, me dê sujestões de melhorias e remoção de código desnecessários.
+Quero aproveitar ao máximo o funcionamento e suporte que cada função oferece.
+Aqui está as principais funções e classes atualmente:
+parser_utils.py:
+class ParseContext:
+    def __init__(self, frame: bytes, start_offset: int = 0):
+        self.frame = frame
+        self.offset = start_offset
+        self.result = {}
+        self._token = None
+
+    def __enter__(self):
+        self._token = _parse_context.set(self)
+        return self
+
+    def __exit__(self, *args):
+        _parse_context.reset(self._token)
+
+    @staticmethod
+    def current():
+        return _parse_context.get(None)
+
+    def parse(self, parser_func, *args, metadata: bool = True, **kwargs):
+        start = self.offset
+
+        result = parser_func(*args, **kwargs)
+
+        if metadata and isinstance(result, dict):
+            result.update(add_metadata(start_offset=start, end_offset=self.offset))
+
+        return result
+
+    def set(self, key, value):
+        self.result[key] = value
+
+    def get(self, key, default=None):
+        return self.result.get(key, default)
+
+    def update(self, data):
+        self.result.update(data)
+
+def add_metadata(**kwargs):
+    ctx = ParseContext.current()
+    raw = ctx.frame
+    start_offset = **kwargs.get(start_offset, ctx.offset)
+    end_offset = ctx.offset
+    raw_hex = raw[start_offset:end_offset].hex()
+    length = end_offset - start_offset
+    return {
+        "_metadata_": {
+            "start": start_offset,
+            "end": end_offset,
+            "length": length,
+            "raw": raw_hex,
+            **kwargs
+        }
+    }
+
+def unpack(fmt: str, parser: callable = None, metadata: bool = True, **kwargs):
+    ctx = ParseContext.current()
+
+    raw = ctx.frame
+    offset = ctx.offset
+    
+    start = offset
+
+    fmt = fmt.replace(' ', '')
+
+    sizes, tokens = _parse_fmt_tokens(fmt)
+    size = sum(sizes)
+
+    if offset + size > len(raw):
+        raise ValueError("Truncated raw")
+
+    value = struct.unpack_from(fmt, raw, offset)
+    offset += size
+
+    if len(value) == 1:
+        value = value[0]
+
+    ctx.offset = offset
+
+    result = {"value": value}
+
+    if parser:
+        parsed = parser(value=value, **kwargs)
+        result["parsed"] = parsed
+
+    if isinstance(value, bytes):
+        value = value.hex()
+    elif isinstance(value, int):
+        value = hex(value)
+    elif isinstance(value, str):
+        value = value.encode().hex()
+    elif isinstance(value, tuple):
+        value = [
+            v.hex() if isinstance(v, bytes)
+            else hex(v) if isinstance(v, int)
+            else v.encode().hex() if isinstance(v, str)
+            else v
+            for v in value
+        ]
+    
+    result["value"] = value
+    
+    if metadata:
+        result.update(
+            add_metadata(
+                start_offset=start,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens
+            )
+        )
+
+    return result
+
+# dispatch mechanism standardizer for frame byte parsing
+def run_dispatch(
+        dispatch_table: dict,
+        dispatch_id,
+        fallback: callable = None,
+        post_process: callable = None, # to enrich or transform the dictionary result returned by the handler
+        **kwargs
+    ):
+
+    handler = dispatch_table.get(dispatch_id)
+
+    if not handler:
+        if fallback:
+            return fallback(**kwargs)
+        return unpack(f"{len(ParseContext.current().frame) - ParseContext.current().offset}s")
+
+    result = handler(**kwargs)
+
+    if post_process:
+        result = post_process(result=result, **kwargs)
+
+    return result
+
+
+
+frame.py:
+def parse(frame: bytes, offset: int = 0) -> dict:
+    logger.debug("function frame parse:")
+
+    try:
+        with ParseContext(frame, offset) as ctx:
+            ctx.set("rt_hdr", ctx.parse(RadiotapHeader.parse))
+
+            fcs = ctx.parse(detect_fcs, metadata=False)
+            ctx.set("fcs", fcs)
+
+            mac_hdr = ctx.parse(dot11_parsers.mac_header)
+            ctx.set("mac_hdr", mac_hdr)
+
+            if ctx.offset >= len(ctx.frame):
+                logger.warning("Empty 802.11 frame after radiotap, skipping")
+                return ctx.result
+
+            ctx.set(
+                "body",
+                ctx.parse(
+                    dot11_parsers.body_dispatch,
+                )
+            )
+
+            return ctx.result
+
+    except Exception as e:
+        logger.debug(f"Frames parser error: {e}")
+        return {}
+
+
+
+parsers.py:
+Preciso corrigir todas essa funções serem de acordo com o funcionamento de unpack 
+
+BODY_DISPATCH = {
+    MGMT: mgmt_frame,
+    CTRL: ctrl_frame,
+    DATA: data_frame,
+}
+
+def body_dispatch(**kwargs) -> tuple[dict, int]:
+    body = {}
+
+    ctx = ParseContext.current()
+
+    frame_type = ctx.get("mac_hdr").get("fc", {}).get("type")
+    frame_subtype = ctx.get("mac_hdr").get("fc", {}).get("subtype")
+    protected = ctx.get("mac_hdr").get("fc", {}).get("protected", False)
+
+    frame = ctx.frame
+    offset = ctx.offset
+
+    if protected:
+        logger.debug(f"Protected frame")
+        remaining = len(frame) - offset
+        return unpack(f"{remaining}s")
+
+    try:
+        body = run_dispatch(
+            BODY_DISPATCH,
+            frame_type,
+            subtype=frame_subtype,
+        )
+    except Exception as e:
+        logger.debug(f"body_dispatch error: {e}")
+
+    return body
+

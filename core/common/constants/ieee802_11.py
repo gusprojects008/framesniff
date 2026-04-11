@@ -96,24 +96,6 @@ FRAME_SUBTYPES = {
     },
 }
 
-MIN_IE_LEN = 2
-
-TAG_SSID = 0
-TAG_SUPPORTED_RATES = 1
-TAG_CURRENT_CHANNEL = 3
-TAG_TIM = 5
-TAG_COUNTRY = 7
-TAG_QBSS_LOAD = 11
-TAG_POWER_CONSTRAINT = 32
-TAG_TPC_REPORT = 35
-TAG_ERP = 42
-TAG_HT_CAPABILITIES = 45
-TAG_RM_ENABLED_CAPABILITIES = 70
-TAG_RSN_INFORMATION = 48
-TAG_EXTENDED_SUPPORTED_RATES = 50
-TAG_EXTENDED_CAPABILITIES = 127
-TAG_VENDOR_SPECIFIC = 221
-
 RSN_CIPHER_WEP40 = 1
 RSN_CIPHER_TKIP = 2
 RSN_CIPHER_CCMP = 4
@@ -140,6 +122,10 @@ RSN_AKM_FILS_SHA256 = 14
 RSN_AKM_FILS_SHA384 = 15
 RSN_AKM_OWE = 18
 
+RSN_MIN_LEN = 2
+RSN_GROUP_CIPHER_LEN = 4
+RSN_SUITE_LEN = 4
+
 EAPOL_REPLAY_COUNTER_LENGTH = 8
 EAPOL_NONCE_LENGTH = 32
 EAPOL_KEY_IV_LENGTH = 16
@@ -149,156 +135,5 @@ EAPOL_MIC_LENGTH = 16
 EAPOL_KEY_DATA_LENGTH_FIELD = 2
 EAPOL_PMKID_LENGTH = 16
 
-OUI_MICROSOFT = "00:50:f2"
-MS_VENDOR_WPA = 1
-MS_VENDOR_WPS = 4
-MS_VENDOR_WMM_WME = 2
-MS_VENDOR_WMM_PARAM = 2
-MS_VENDOR_WMM_INFO = 2
-MS_VENDOR_WMM_P2P = 4
-
-OUI_IEEE_80211 = "00:0f:ac"
-RSN_VENDOR_RSN_IE = 1
-RSN_VENDOR_RSN_IE_ALT = 2
-RSN_VENDOR_PMKID = 4
-
-OUI_WFA = "50:6f:9a"
-WFA_VENDOR_WPS = 4
-WFA_VENDOR_P2P = 9
-WFA_VENDOR_HS20 = 16
-WFA_VENDOR_OSEN = 18
-
-OUI_MEDIATEK = "00:0c:43"
-OUI_BROADCOM = "00:10:18"
-OUI_ATHEROS = "00:03:7f"
-
-VENDOR_DESCRIPTION = {
-    OUI_MICROSOFT: {
-        MS_VENDOR_WPS: "Wi-Fi Alliance WPS",
-        MS_VENDOR_WPA: "Microsoft WPA",
-        MS_VENDOR_WMM_WME: "Microsoft WMM",
-    },
-    OUI_IEEE_80211: {
-        RSN_VENDOR_RSN_IE: "RSN Information",
-        RSN_VENDOR_RSN_IE_ALT: "RSN Information",
-        RSN_VENDOR_PMKID: "PMKID",
-    },
-    OUI_WFA: {
-        WFA_VENDOR_WPS: "Wi-Fi Alliance WPS",
-        WFA_VENDOR_P2P: "Wi-Fi Alliance P2P",
-        WFA_VENDOR_HS20: "Wi-Fi Alliance Hotspot 2.0",
-        WFA_VENDOR_OSEN: "Wi-Fi Alliance OSEN",
-    },
-    OUI_MEDIATEK: "MediaTek Inc",
-    OUI_BROADCOM: "Broadcom",
-    OUI_ATHEROS: "Atheros"
-}
-
-WPS_ATTRIBUTE_IDS = {
-    "version": 0x104A,
-    "device_name": 0x1012,
-    "device_password_id": 0x1011,
-    "config_methods": 0x1008,
-    "manufacturer": 0x1021,
-    "model_name": 0x1023,
-    "model_number": 0x1024,
-    "wps_state": 0x1044,
-    "uuid_e": 0x1047,
-    "rf_bands": 0x103C,
-    "vendor_extension": 0x1049,
-    "primary_device_type": 0x1054,
-    "selected_registrar": 0x1057,
-    "selected_registrar_config_methods": 0x1053,
-    "public_key": 0x100d,
-    "network_key": 0x1042,
-    "network_key_index": 0x1041,
-    "ap_setup_locked": 0x1057,
-    "message_type": 0x101a,
-    "mac_address": 0x1020,
-    "response_type": 0x103B,
-    "registrar_config_methods": 0x103e,
-    "version2": 0x1010,
-    "ssid": 0x1045,
-    "serial_number": 0x1022,
-    "os_version": 0x103b,
-    "association_state": 0x1033,
-}
-
-WPS_CONFIGURATION_STATES = {
-    "not_configured": 0x01,
-    "configured": 0x02,
-}
-
-WPS_MESSAGE_TYPES = {
-    "m4_message": 0x04,
-    "m5_message": 0x05,
-    "m6_message": 0x06,
-    "m7_message": 0x07,
-    "m8_message": 0x08,
-    "wsc_ack": 0x0b,
-    "wsc_nack": 0x0c,
-    "wsc_done": 0x0d,
-}
-
-WPS_RESPONSE_TYPES = {
-    "enrollee_info": 0x00,
-    "enrollee": 0x01,
-    "registrar": 0x02,
-    "ap": 0x03,
-}
-
-WPS_RF_BANDS = {
-    "2.4ghz": 0x01,
-    "5ghz": 0x02,
-    "2.4ghz_and_5ghz": 0x03,
-}
-
-WPS_CONFIG_METHODS = {
-    "usb": 0x0001,
-    "ethernet": 0x0002,
-    "label": 0x0004,
-    "display": 0x0008,
-    "external_nfc_token": 0x0010,
-    "integrated_nfc_token": 0x0020,
-    "nfc_interface": 0x0040,
-    "push_button": 0x0080,
-    "keypad": 0x0100,
-}
-
-WPS_DEVICE_PASSWORD_IDS = {
-    "default": 0x0000,
-    "user_specified": 0x0001,
-    "machine_specified": 0x0002,
-    "rekey": 0x0003,
-    "push_button": 0x0004,
-    "registrar_specified": 0x0005,
-}
-
-WPS_DEVICE_CATEGORIES = {
-    "computer": 0x0001,
-    "input_device": 0x0002,
-    "print_scan_fax_copy": 0x0003,
-    "camera": 0x0004,
-    "storage": 0x0005,
-    "network_infrastructure": 0x0006,
-    "display": 0x0007,
-    "multimedia": 0x0008,
-    "gaming": 0x0009,
-    "telephone": 0x000a,
-    "audio": 0x000b,
-    "other": 0x000f,
-}
-
 IEEE80211_FCS_LEN = 4
 
-RSN_MIN_LEN          = 2
-RSN_GROUP_CIPHER_LEN = 4
-RSN_SUITE_LEN        = 4
-HT_CAPS_MIN_LEN      = 26
-TIM_MIN_LEN          = 4
-TIM_FIXED_FIELDS_LEN = 3
-QBSS_MIN_LEN         = 5
-RM_CAPS_MIN_LEN      = 2
-EXT_CAPS_BYTE0_MIN   = 1
-EXT_CAPS_BYTE2_MIN   = 3
-EXT_CAPS_BYTE3_MIN   = 4

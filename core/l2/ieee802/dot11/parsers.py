@@ -8,7 +8,6 @@ from core.common.constants.l2 import (EUI48_LENGTH)
 from core.common.constants.ieee802_11 import *
 from core.l2.ieee802.dot11.ies_parsers import IE_DISPATCHER
 from core.l2.ieee802.llc import parse as llc_parser
-from core.l3 import parsers as l3_parsers
 
 logger = getLogger(__name__)
 
@@ -134,7 +133,6 @@ def tagged_parameters(frame: bytes, offset: int) -> tuple[dict, int]:
         idx = str(len(container[key]) + 1)
         container[key][idx] = value
 
-    flen   = len(frame)
     result = {}
 
     while offset + MIN_IE_LEN <= flen:
@@ -199,37 +197,6 @@ def mgmt_action(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
         body["tagged_parameters"] = tp
     return body, offset
 
-MGMT_FRAME_DISPATCH = {
-    MGMT_BEACON: {
-        "name": "beacon",
-        "parser": mgmt_beacon
-    },
-    MGMT_PROBE_RESPONSE: {
-        "name": "probe_response",
-        "parser": mgmt_probe_response
-    },
-    MGMT_ATIM: {
-        "name": "atim",
-        "parser": mgmt_atim
-    },
-    MGMT_DISASSOCIATION: {
-        "name": "disassociation",
-        "parser": mgmt_disassociation
-    },
-    MGMT_DEAUTHENTICATION: {
-        "name": "deauthentication",
-        "parser": mgmt_deauthentication
-    },
-    MGMT_AUTHENTICATION: {
-        "name": "authentication",
-        "parser": mgmt_authentication
-    },
-    MGMT_ACTION: {
-        "name": "action",
-        "parser": mgmt_action
-    }
-}
-
 # Parsers of control frame subtypes and their dispatch table
 def ctrl_block_ack_request(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
     bac_result, offset = unpack("<H", frame, offset)
@@ -260,33 +227,6 @@ def ctrl_cf_end(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
 
 def ctrl_cf_end_ack(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
     return {}, offset
-
-CTRL_FRAME_DISPATCH = {
-    CTRL_BLOCK_ACK_REQUEST: {
-        "name": "block_ack_request",
-        "parser": ctrl_block_ack_request
-    },
-    CTRL_BLOCK_ACK: {
-        "name": "block_ack",
-        "parser": ctrl_block_ack
-    },
-    CTRL_PS_POLL: {
-        "name": "ps_poll",
-        "parser": ctrl_ps_poll
-    },
-    CTRL_ACK: {
-        "name": "ack",
-        "parser": ctrl_ack
-    },
-    CTRL_CF_END: {
-        "name": "cf_end",
-        "parser": ctrl_cf_end
-    },
-    CTRL_CF_END_ACK: {
-        "name": "cf_end_ack",
-        "parser": ctrl_cf_end_ack
-    }
-}
 
 # Parsers payloads LLC of the IEEE 80211 standard
 def eapol(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
@@ -385,63 +325,48 @@ def eapol(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
 
     return result, offset
 
-
-def mgmt_frame(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
-    subtype = kwargs["subtype"]
-    return run_dispatch(
-        frame,
-        offset,
-        MGMT_FRAME_DISPATCH,
-        subtype,
-    )
-
-def ctrl_frame(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
-    subtype = kwargs["subtype"]
-    return run_dispatch(
-        frame,
-        offset
-        CTRL_FRAME_DISPATCH,
-        subtype,
-    )
-
-def data_frame(frame: bytes, offset: int, **kwargs) -> tuple[dict, int]:
+def data_frame(**kwargs) -> dict:
     body = {}
-    llc, offset = llc_parser.parse(frame, offset)
-    body["llc"] = llc
-    return body, offset
-
+    body["llc"] = unpack(parser=llc_parser.parse)
+    return body
 
 BODY_DISPATCH = {
-    MGMT: mgmt_frame,
-    CTRL: ctrl_frame,
-    DATA: data_frame,
+    MGMT: {
+        MGMT_BEACON: mgmt_beacon,
+        MGMT_PROBE_RESPONSE: mgmt_probe_response,
+        MGMT_ATIM: mgmt_atim,
+        MGMT_DISASSOCIATION: mgmt_disassociation,
+        MGMT_DEAUTHENTICATION: mgmt_deauthentication,
+        MGMT_AUTHENTICATION: mgmt_authentication,
+        MGMT_ACTION: mgmt_action,
+    },
+    CTRL: {
+        CTRL_BLOCK_ACK_REQUEST: ctrl_block_ack_request,
+        CTRL_BLOCK_ACK: ctrl_block_ack,
+        CTRL_PS_POLL: ctrl_ps_poll,
+        CTRL_ACK: ctrl_ack,
+        CTRL_CF_END: ctrl_cf_end,
+        CTRL_CF_END_ACK: ctrl_cf_end_ack,
+    },
+    DATA: {
+        None: data_frame
+    }
 }
 
-def body_dispatch(
-    frame: bytes,
-    frame_type: int,
-    frame_subtype: int,
-    protected: bool,
-    offset: int = 0,
-) -> tuple[dict, int]:
+def body_dispatch(**kwargs) -> dict:
+    ctx = ParseContext.current()
 
-    body = {}
+    fc = ctx.get("mac_hdr").get("fc", {})
+    frame_type = fc.get("type")
+    frame_subtype = fc.get("subtype")
+    protected = fc.get("protected", False)
 
     if protected:
-        logger.debug(f"Protected frame")
-        remaining = len(frame) - offset
-        return unpack(f"{remaining}s", frame, offset)
+        return unpack()
 
-    try:
-        body, offset = run_dispatch(
-            frame,
-            offset,
-            BODY_DISPATCH,
-            frame_type,
-            post_process=add_metadata,
-            subtype=frame_subtype,
-        )
-    except Exception as e:
-        logger.debug(f"body_dispatch error: {e}")
+    dispatch_table = BODY_DISPATCH.get(frame_type)
 
-    return body, offset
+    return run_dispatch(
+        dispatch_table,
+        frame_subtype
+    )
