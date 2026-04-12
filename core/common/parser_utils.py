@@ -23,16 +23,29 @@ class MacVendorResolver:
                 logger.error(f"Could not load or parse MAC vendors file: {e}")
                 MacVendorResolver._vendor_map = {}
 
-    def mac_resolver(self, mac_bytes: bytes):
-        if not mac_bytes:
-            return None
-        mac_address = bytes_for_mac(mac_bytes)
+    def mac_resolver(self, mac_bytes: bytes = None):
+        mac_address = (mac_bytes or unpack(f"{EUI48_LENGTH}s")["value"]).":".join(format(byte, "02x") for byte in mac_bytes)
         if not self._vendor_map or not mac_address:
             return None
         oui = mac_address.upper()[:8]
-        return {"mac": mac_address, "vendor": self._vendor_map.get(oui, "Unknown")}
+        return {"mac": mac_address, "vendor": self._vendor_map.get(oui)}
+
+    def oui_resolver(self, oui_bytes: bytes = None):
+        oui = (oui_bytes or unpack(f"{OUI_LENGTH}s")["value"]).":".join(format(byte, "02x") for byte in oui_bytes)
+        if not self._vendor_map or not oui:
+            return None
+        return {"oui": oui, "vendor": self._vendor_map.get(oui)}
 
 mac_vendor_resolver = MacVendorReolver()
+
+def random_mac():
+    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
+    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
+
+bytes_for_mac = lambda mac : mac_vendor_resolver.mac_resolver(mac))
+bytes_for_oui = lambda oui : mac_vendor_resolver.oui_resolver(oui))
+
+mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
 
 class ParseContext:
     def __init__(self, frame: bytes, start_offset: int = 0):
@@ -61,106 +74,10 @@ class ParseContext:
     def update(self, data):
         self.result.update(data)
 
-def add_metadata(**kwargs):
-    ctx = ParseContext.current()
-    raw = ctx.frame
-    start_offset = kwargs.get("start_offset", ctx.offset)
-    end_offset = ctx.offset
-    raw_hex = raw[start_offset:end_offset].hex()
-    length = end_offset - start_offset
-    return {
-        "_metadata_": {
-            "start": start_offset,
-            "end": end_offset,
-            "length": length,
-            "raw": raw_hex,
-            **kwargs
-        }
-    }
-
-def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
-    ctx = ParseContext.current()
-
-    raw = ctx.frame
-    offset = ctx.offset
-    
-    start = offset
-
-    fmt = fmt.replace(' ', '') if fmt else f"{len(raw) - offset}s"
-
-    sizes, tokens = _parse_fmt_tokens(fmt)
-    size = sum(sizes)
-
-    if offset + size > len(raw):
-        raise ValueError("Truncated raw")
-
-    value = struct.unpack_from(fmt, raw, offset)
-    offset += size
-
-    if len(value) == 1:
-        value = value[0]
-
-    ctx.offset = offset
-
-    result = {"value": value}
-
-    if parser:
-        parsed = parser(value=value, **kwargs)
-        result["parsed"] = parsed
-
-    if isinstance(value, bytes):
-        value = value.hex()
-    elif isinstance(value, int):
-        value = hex(value)
-    elif isinstance(value, str):
-        value = value.encode().hex()
-    elif isinstance(value, tuple):
-        value = [
-            v.hex() if isinstance(v, bytes)
-            else hex(v) if isinstance(v, int)
-            else v.encode().hex() if isinstance(v, str)
-            else v
-            for v in value
-        ]
-    
-    result["value"] = value
-    
-    if metadata:
-        result.update(
-            add_metadata(
-                start_offset=start,
-                fmt=fmt,
-                size=size,
-                sizes=sizes,
-                tokens=tokens
-            )
-        )
-
-    return result
-
-# dispatch mechanism standardizer for frame byte parsing
-def run_dispatch(
-    dispatch_table: dict,
-    dispatch_id,
-    fallback: callable = None,
-    **kwargs
-):
-    handler = dispatch_table.get(dispatch_id)
-
-    if handler:
-        return handler(**kwargs)
-
-    if fallback:
-        return fallback(
-            dispatch_id=dispatch_id,
-            dispatch_table=dispatch_table,
-            **kwargs
-        )
-
-    return unpack(**kwargs)
-
 @lru_cache(maxsize=256)
 def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
+    s = struct.Struct(fmt)
+
     prefix = '<'
     if fmt and fmt[0] in '<>!=@':
         prefix = fmt[0]
@@ -184,20 +101,141 @@ def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
         raise ValueError(f"Invalid format: ends with count without type '{count_buf}'")
 
     sizes = tuple(struct.calcsize(t) for t in tokens)
-    return sizes, tuple(tokens)
+
+    return sizes, tuple(tokens), s
+
+def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
+    raw_hex = raw[start_offset:end_offset].hex()
+    length = end_offset - start_offset
+    return {
+        "_metadata_": {
+            "start": start_offset,
+            "end": end_offset,
+            "length": length,
+            "raw": raw_hex,
+            **kwargs
+        }
+    }
+
+def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+    ctx = ParseContext.current()
+    raw = ctx.frame
+    offset = ctx.offset
+    start = offset
+    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
+    sizes, tokens, s = _parse_fmt_tokens(fmt)
+    size = sum(sizes)
+
+    if offset + size > len(raw):
+        raise ValueError("Truncated raw")
+
+    value = s.unpack_from(raw, offset)
+
+    offset += s.size
+
+    value = value[0] if len(value) == 1 else value
+
+    ctx.offset = offset
+
+    result = {"value": value}
+
+    if parser:
+        result["parsed"] = parser(value=value, **kwargs)
+
+    if isinstance(value, bytes):
+        value = value.hex()
+    elif isinstance(value, int):
+        value = hex(value)
+    elif isinstance(value, tuple):
+        value = (
+            v.hex() if isinstance(v, bytes)
+            else hex(v) if isinstance(v, int)
+            else v
+            for v in value
+        )
+    
+    result["value"] = value
+    
+    if metadata:
+        result.update(
+            _add_metadata(
+                raw,
+                start,
+                offset,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens
+            )
+        )
+
+    return result
+
+def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, **kwargs):
+    entry = dispatch_table.get(dispatch_id)
+
+    dispatch_ctx = {
+        "dispatch_id": dispatch_id,
+        "dispatch_table": dispatch_table,
+        "dispatch_fallback": fallback,
+        "dispatch_entry": entry
+    }
+
+    kwargs["dispatch_ctx"] = dispatch_ctx
+
+    handler = None
+
+    if callable(entry):
+        handler = entry
+
+    elif isinstance(entry, dict):
+        handler = entry.get("parser")
+
+    if handler:
+        return handler(**kwargs)
+
+    if fallback:
+        return fallback(**kwargs)
+
+    logger.warning(f"No handler for dispatch_id={dispatch_id}, using unpack fallback")
+
+    return unpack(**kwargs)
+
+def detect_fcs(**kwargs) -> bytes | None:
+    ctx = ParseContext.current()
+
+    frame = ctx.frame
+    offset = ctx.offset
+    flen = len(frame)
+
+    if offset is None or offset < 0 or offset >= flen:
+        ctx.offset = flen
+        return None
+
+    payload_len = flen - offset
+
+    if payload_len < IEEE80211_FCS_LEN:
+        ctx.offset = flen
+        return None
+
+    fcs_start = flen - IEEE80211_FCS_LEN
+    fcs_bytes = frame[fcs_start:flen]
+
+    candidate_fcs = int.from_bytes(fcs_bytes, "little")
+    data_for_crc = frame[offset:fcs_start]
+
+    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+
+    if calc_crc == candidate_fcs:
+        ctx.offset = fcs_start
+        return fcs_bytes
+    else:
+        ctx.offset = flen
+        return None
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
 index_pack = lambda index : struct.pack("<I", index)
-
-def random_mac():
-    mac = [random.randint(0x00, 0xFF) for _ in range(6)]
-    return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
-
-#bytes_for_mac = lambda mac : ":".join(format(byte, "02x") for byte in mac)
-bytes_for_mac = lambda mac : mac_vendor_resolver.mac_resolver(mac))
-
-mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
 
 def freq_converter(freq_unit: tuple, to_unit: str):
     freq, unit = freq_unit
@@ -252,38 +290,6 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
     for i, name in enumerate(field_names):
         result[name] = bool(bitmap_value & (1 << i))
     return result
-
-def detect_fcs(**kwargs) -> bytes | None:
-    ctx = ParseContext.current()
-
-    frame = ctx.frame
-    offset = ctx.offset
-    flen = len(frame)
-
-    if offset is None or offset < 0 or offset >= flen:
-        ctx.offset = flen
-        return None
-
-    payload_len = flen - offset
-
-    if payload_len < IEEE80211_FCS_LEN:
-        ctx.offset = flen
-        return None
-
-    fcs_start = flen - IEEE80211_FCS_LEN
-    fcs_bytes = frame[fcs_start:flen]
-
-    candidate_fcs = int.from_bytes(fcs_bytes, "little")
-    data_for_crc = frame[offset:fcs_start]
-
-    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
-
-    if calc_crc == candidate_fcs:
-        ctx.offset = fcs_start
-        return fcs_bytes
-    else:
-        ctx.offset = flen
-        return None
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')

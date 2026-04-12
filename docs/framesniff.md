@@ -22,6 +22,13 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Padronização e melhorias de legibilidade do framesniff
+* futuramente atualizar todos os formats de struct, para utilizarem valores de constantes definidas, dessa forma irá eliminar boa parte dos hardcodes, irá melhorar a legibilidade, e significativamente a escalabilidade.
+* Sempre montar o dict completo em memória
+* Evitar lógica pesada inline no dict
+* Usar escrita atômica (tempfile + replace)
+* Considerar JSON Lines para streaming
+* Decidir se todas as dispatch tables vão seguir o padrão {"name": , "description" , "parser": } ou não, ou se vamos manter a flexibilidade através de run_dispacth.
 * Refatorar todas as funções parse de parsers.py de acordo com o funcionamento de unpack e run_dispatch
 * Rever a necessidade de ter suporte à argumento post_process para enriquer o processar o resultado retornado pelo handler. Ver se é possível ou necessário encaixa-lo em ie_dispatcher.
 * Adaptar todas funções de parse para o novo retorno consistente de "unpack". E decidir como e onde o LLC vai ser parseado.
@@ -86,6 +93,7 @@ Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start
 * A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso 
 
 ## Explicações e esclarecimentos
+* /core representa o motor de analise do modelo OSI, e o diretório layers presentam as diferentes camada do modelo.
 * Todo esse projeto tenta replicar ao máximo o modelo OSI, para deixar o mais didático possível.
 * A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso o IEEE decidir mudar o tamanho de algum campo, então se eu poder eu venho aqui e corrijo removendo o hardcode. Em protocolos de padrões, muitas vezes não dá para fugir de formatos e números arbitrários.
 * Para mensagens de debug, usar "error" para erros relacionados a funções.
@@ -103,19 +111,22 @@ Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start
 https://learn.microsoft.com/en-us/windows-hardware/drivers/mobilebroadband/network-cost-information-element
 
 # Decisões de arquitetura pendentes:
-frame_dispatch ou body_dispatch ?
+Minha arquitetura atualmente:
+/core
 
-Possível arquitetura futura:
-/dot11/frames/:
-management.py: (funções de parse de subtipos de frames de gerenciamento, tabela de dispatch que mapeia subtipo para função de parse de subtipo, função de parse única que utiliza a tabela de dispatch de frame por subtipo)
-control.py: O mesmo que management
-data.py: O mesmo que management
 
-E se eu tivesse uma função add_metadata universal? que percorrer todo o resultado do frame já parseado, que são sempre vários dicionários, obtenho o value de cada dicionário e calculo o tamanho e vou fazendo a detecção de formats usados dentro de struct.unpack, e assim por diante.
 
-utilizando contextmanager é possível definir dados que podem ser acessados globalmente por todas as funções executadas dentro de um contexto, dessa forma, posso fazer com que todos os meu parsers não precisem receber o argumento frame e nem offset, pois podem acessar a partir do state do contexto. Então talvez seja possível atualizar dinâmicamente o resultado completo do frame paseado.
-Preciso padronizar a assinatura de função de parser: (raw, offset, **kwargs)
+Possível arquitetura:
+/core/l2/:
+constants/
 
-Poderia adicionar uma função de post_process à run_dispatch mas isso traz muitos problemas e complexidade adicional, pois essa função pode depender de vários outros dados que estão fora do parse principal. Decidi remover para manter a simplificidade.
-
-A função run_dispatch deve receber uma tabela que possui apenas entradas que contenha exatamente o id e a callback.
+/ieee802/dot11/:
+/constants
+/frames/:
+builders/
+parsers/:
+parser.py: função parse principal, que orquestra e os principais parsers.
+/radiotap_header/parser
+/management/parser.py: (funções de parse de subtipos de frames de gerenciamento, tabela de dispatch que mapeia subtipo para função de parse de subtipo)
+/control/parser.py: O mesmo que management
+/data/parser.py: O mesmo que management
