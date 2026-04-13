@@ -1,3 +1,5 @@
+from core.common.parser_utils import (unpack, run_dispatch)
+
 def ctrl_block_ack_request(**kwargs) -> dict:
     def _parser(value: tuple, **k) -> dict:
         ctrl, start_seq = value
@@ -15,3 +17,15 @@ def ctrl_ps_poll(**kwargs) -> dict:
 
 def ctrl_ack(**kwargs) -> dict:
     return unpack()
+
+DISPATCH_TABLE = {
+    CTRL_BLOCK_ACK_REQUEST: ctrl_block_ack_request,
+    CTRL_BLOCK_ACK: ctrl_block_ack,
+    CTRL_PS_POLL: ctrl_ps_poll,
+    CTRL_ACK: ctrl_ack,
+    CTRL_CF_END: ctrl_cf_end,
+    CTRL_CF_END_ACK: ctrl_cf_end_ack,
+}
+
+def parser(subtype: int, **kwargs):
+    return run_dispatch(DISPATCH_TABLE, subtype)

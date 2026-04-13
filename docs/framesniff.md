@@ -22,6 +22,8 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Revisar toda a arquitetura, avaliar e decidir.
+* Padronizar estrutura de todas as camadas e padrões.
 * Padronização e melhorias de legibilidade do framesniff
 * futuramente atualizar todos os formats de struct, para utilizarem valores de constantes definidas, dessa forma irá eliminar boa parte dos hardcodes, irá melhorar a legibilidade, e significativamente a escalabilidade.
 * Sempre montar o dict completo em memória

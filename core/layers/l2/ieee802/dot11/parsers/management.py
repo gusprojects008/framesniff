@@ -1,13 +1,20 @@
+from core.common.parser_utils import (ParseContext, unpack, run_dispatch)
+from core.layers.l2.ieee802.dot11.parsers.common import (fixed_parameters, tagged_parameters)
+
 def mgmt_beacon(**kwargs) -> dict:
+    fp = fixed_parameters()
+    tp = tagged_parameters()
     return {
-        "fixed_parameters": fixed_parameters(),
-        "tagged_parameters": tagged_parameters()
+        "fixed_parameters": fp,
+        "tagged_parameters": tp
     }
 
 def mgmt_probe_response(**kwargs) -> dict:
+    fp = fixed_parameters()
+    tp = tagged_parameters()
     return {
-        "fixed_parameters": fixed_parameters(),
-        "tagged_parameters": tagged_parameters()
+        "fixed_parameters": fp,
+        "tagged_parameters": tp
     }
 
 def mgmt_atim(**kwargs) -> dict:
@@ -22,12 +29,14 @@ def mgmt_deauthentication(**kwargs) -> dict:
 def mgmt_authentication(**kwargs) -> dict:
     def _parser(value: tuple, **k) -> dict:
         alg, seq, status = value
+        fp = fixed_parameters()
+        tp = tagged_parameters()
         return {
             "auth_algorithm": alg,
             "auth_sequence": seq,
             "status_code": status,
-            "fixed_parameters": fixed_parameters(),
-            "tagged_parameters": tagged_parameters()
+            "fixed_parameters": fp,
+            "tagged_parameters": tp
         }
     return unpack("<HHH", parser=_parser)
 
@@ -39,7 +48,21 @@ def mgmt_action(**kwargs) -> dict:
         res = {"category": cat, "action": act}
         
         if ctx.offset < len(ctx.frame):
-            res["tagged_parameters"] = tagged_parameters()
+            tp = tagged_parameters()
+            res["tagged_parameters"] = tp
             
         return res
     return unpack("BB", parser=_parser)
+
+DISPATCH_TABLE = {
+    MGMT_BEACON: mgmt_beacon,
+    MGMT_PROBE_RESPONSE: mgmt_probe_response,
+    MGMT_ATIM: mgmt_atim,
+    MGMT_DISASSOCIATION: mgmt_disassociation,
+    MGMT_DEAUTHENTICATION: mgmt_deauthentication,
+    MGMT_AUTHENTICATION: mgmt_authentication,
+    MGMT_ACTION: mgmt_action
+}
+
+def parser(subtype: int, **kwargs):
+    return run_dispatch(DISPATCH_TABLE, subtype)

@@ -1,7 +1,7 @@
 from logging import getLogger
 from core.common.parser_utils import (unpack, bytes_for_mac) 
-from core.l2.ieee802.dot11.parsers import (eapol)
-from core.l3.parsers import (ip, arp, ipv6)
+from core.layers.l2.ieee802.dot11.data import (eapol)
+from core.layers.l3.parsers import (ip, arp, ipv6)
 
 logger = getLogger(__name__)
 
@@ -68,7 +68,7 @@ LLC_PAYLOAD_DISPATCH = {
     }
 }
 
-def llc(**kwargs) -> dict:
+def parser(**kwargs) -> dict:
     logger.debug(f"LLC parse")
 
     def _parser(value: tuple, **kwargs) -> dict:

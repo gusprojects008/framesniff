@@ -1,3 +1,5 @@
+from core.l2.ieee802.llc.parser import parser as llc_parser
+
 # Parsers payloads LLC of the IEEE 80211 standard
 def eapol(**kwargs) -> dict:
     def _parser(value: tuple, **kwargs) -> dict:

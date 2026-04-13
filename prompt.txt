@@ -1,32 +1,619 @@
-Possível arquitetura:
-dot11/
-├── __init__.py
-├── build.py           # Futuro: criar frames personalizados
-├── constants.py
-├── parse.py           # Ponto de entrada principal
-├── 
-├── parsers/           # ✨ NOVO: Módulo centralizado de parsers
-│   ├── __init__.py
-│   ├── common.py      # Funções compartilhadas (mac_header, fixed_parameters, tagged_parameters)
-│   ├── ies.py         # IE parsing (renomeado de ies_parsers.py)
-│   ├── management.py  # Management frame parsers
-│   ├── control.py     # Control frame parsers
-│   └── data.py        # Data frame parsers
-│
-├── frames/
-│   ├── control/
-│   │   ├── builder.py
-│   │   └── parser.py  # Importa de parsers.control
-│   ├── data/
-│   │   ├── builder.py
-│   │   └── parser.py  # Importa de parsers.data
-│   └── management/
-│       ├── builder.py
-│       └── parser.py  # Importa de parsers.management
-│
-└── radiotap/
-    ├── builder.py
-    └── parser.py
+Minha estrutura atualmente, usando o exemplo de parse de frames management:
+[gus@voidlinux core]$ ls -R layers/ --hide="__pycache__"
+layers/:
+l1  l2  l3  l4  l7
+
+layers/l1:
+__init__.py
+
+layers/l2:
+bluetooth  constants.py  ieee802
+
+layers/l2/ieee802:
+__init__.py  __main__.py  dot11  dot3  frames_test.json  llc
+
+layers/l2/ieee802/dot11:
+__init__.py  build.py  builders  constants.py  parse.py  parsers  radiotap
+
+layers/l2/ieee802/dot11/builders:
+
+layers/l2/ieee802/dot11/parsers:
+common.py  control.py  data.py  ies.py  management.py
+
+layers/l2/ieee802/dot11/radiotap:
+builder.py  parser.py
+
+layers/l2/ieee802/dot3:
+constants.py
+
+layers/l2/ieee802/llc:
+parser.py
+
+layers/l3:
+__init__.py  parsers.py
+
+layers/l4:
+__init__.py
+
+layers/l7:
+__init__.py
+
+Os principais módulos de parse.
+parse.py:
+from logging import getLogger
+from core.common.parser_utils import (ParseContext, unpack, run_dispatch, detect_fcs)
+from core.layers.l2.ieee802.dot11.radiotap import parser as radiotap_parser
+from core.layers.l2.ieee802.dot11.parsers import (common, management, control, data)
+
+logger = getLogger(__name__)
+
+BODY_DISPATCH = {
+    MGMT: management.parser,
+    CTRL: control.parser,
+    DATA: data.parser
+}
+
+def parse(frame: bytes, offset: int = 0) -> dict:
+    logger.debug("frame parse")
+    try:
+        with ParseContext(frame, offset) as ctx:
+            ctx.set("rt_hdr", unpack(parser=radiotap_parser))
+            ctx.set("fcs", unpack(parser=detect_fcs, metadata=False))
+            ctx.set("mac_hdr", unpack(parser=dot11_common_parsers.mac_header))
+            if ctx.offset >= len(ctx.frame):
+                logger.warning("Empty 802.11 frame after radiotap, skipping")
+                return ctx.result
+            fc = ctx.get("mac_hdr").get("fc", {})
+            frame_type = fc.get("type")
+            frame_subtype = fc.get("subtype")
+            protected = fc.get("protected", False)
+            if protected:
+                return unpack()
+            body_parser = BODY_DISPATCH.get(frame_type, {})
+            ctx.set("body", unpack(parser=body_parser(frame_subtype)))
+            return ctx.result
+    except Exception as e:
+        logger.debug(f"Frames parser error: {e}")
+        return {}
 
 
-no lugar de "frames/" poderia ser "builders", dessa forma, os arquivos de tipo de frames dentro de "parsers/" teriam o parser.
+
+common.py:
+from logging import getLogger
+from core.common.parser_utils import (ParseContext, unpack, bytes_for_mac, bitmap_value_for_dict)
+from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.ieee802.dot11.parsers.ies import ie_dispatch
+
+logger = getLogger(__name__)
+
+# Parsers that can be used in both management frames and data frames
+def mac_header(**kwargs) -> dict:
+    logger.debug("MAC Header parse")
+
+    def _parser(fc_val: int, **k) -> dict:
+        protocol_version = fc_val & 0b11
+        f_type = (fc_val >> 2) & 0b11
+        f_subtype = (fc_val >> 4) & 0b1111
+        to_ds = (fc_val >> 8) & 1
+        from_ds = (fc_val >> 9) & 1
+        protected = bool(fc_val & 0x4000)
+        
+        type_name = FRAME_TYPES.get(f_type)
+        subtype_name = FRAME_SUBTYPES.get(f_type, {}).get(f_subtype)
+        is_qos = f_type == DATA and bool(f_subtype & 0b1000)
+
+        duration = unpack("<H")
+        
+        addr1 = bytes_for_mac()
+        
+        addr2 = addr3 = addr4 = seq = qos = None
+
+        if f_type == CTRL:
+            if f_subtype in (CTRL_BLOCK_ACK_REQUEST, CTRL_BLOCK_ACK, CTRL_PS_POLL, 
+                             CTRL_RTS, CTRL_CF_END, CTRL_CF_END_ACK):
+                addr2 = bytes_for_mac()
+        else:
+            addr2 = bytes_for_mac()
+            addr3 = bytes_for_mac()
+            seq_res = unpack("<H")
+            seq = seq_res >> 4
+
+            if to_ds and from_ds:
+                addr4 = bytes_for_mac()
+
+        ra = addr1
+        ta = addr2 if addr2 else None
+        a3 = addr3 if addr3 else None
+        a4 = addr4 if addr4 else None
+
+        sa = da = bssid = None
+        if to_ds == 0 and from_ds == 0:
+            sa, da, bssid = ta, ra, a3
+        elif to_ds == 0 and from_ds == 1:
+            sa, da, bssid = a3, ra, ta
+        elif to_ds == 1 and from_ds == 0:
+            sa, da, bssid = ta, a3, ra
+        elif to_ds == 1 and from_ds == 1:
+            sa, da, bssid = a4, a3, None
+
+        # QoS Control
+        if is_qos:
+            qos = unpack("<H")
+
+        return {
+            "fc": {
+                "protocol_version": protocol_version,
+                "type": f_type,
+                "type_name": type_name,
+                "subtype": f_subtype,
+                "subtype_name": subtype_name,
+                "tods": to_ds,
+                "fromds": from_ds,
+                "protected": protected,
+            },
+            "duration_id": duration,
+            "ra": ra, "ta": ta, "sa": sa, "da": da, "bssid": bssid,
+            "sequence_number": seq,
+            "qos_control": qos
+        }
+
+    return unpack("<H", parser=_parser)
+
+def fixed_parameters(**kwargs) -> dict:
+    def _parser(value: tuple, **k) -> dict:
+        ts, interval, cap_raw = value
+        
+        cap_list = [
+            "ess_capabilities", "ibss_status", "reserved1", "reserved2",
+            "privacy", "short_preamble", "critical_update_flag",
+            "nontransmitted_bssid_critical_update_flag", "spectrum_management",
+            "qos", "short_slot_time", "automatic_power_save_delivery",
+            "radio_measurement", "epd", "reserved3", "reserved4",
+        ]
+        
+        capabilities = bitmap_value_for_dict(cap_raw, cap_list)
+        
+        return {
+            "timestamp": ts,
+            "beacon_interval": interval,
+            "capabilities_information": capabilities
+        }
+
+    return unpack("<QHH", parser=_parser)
+
+def tagged_parameters(max_length: int = None, **kwargs) -> tuple[dict, int]:
+    logger.debug(f"Parsing tagged parameters: offset={offset}")
+
+    def _insert_ie(container: dict, key: str | int, value: dict | str | int):
+        if key not in container:
+            container[key] = value
+            return
+        if not isinstance(container[key], dict) or not all(k.isdigit() for k in container[key]):
+            container[key] = {"1": container[key]}
+        idx = str(len(container[key]) + 1)
+        container[key][idx] = value
+
+    ctx = ParseContext.current()
+    ies_container = {}
+
+    limit = (ctx.offset + max_length) if max_length else len(ctx.frame)
+
+    while ctx.offset + MIN_IE_LEN <= limit:
+        ie_entry = unpack("<BB", parser=ie_dispatch, **kwargs)
+        
+        parsed_data = ie_entry.get("parsed")
+        tag_name = parsed_data.get("name") or parsed_data.get("tag_number")
+        
+        _insert_ie(ies_container, tag_name, ie_entry)
+
+    return ies_container
+
+
+
+
+radiotap/parser.py:
+import struct
+from core.common.parser_utils import (bitmap_dict_to_hex, bitmap_value_for_dict, unpack)
+
+class RadiotapHeader:
+    @staticmethod
+    def build():
+        config = {
+            "tsft": True,
+            "flags": True,
+            "rate": True,
+            "channel": False,
+            "antenna_signal": True,
+            "mac_timestamp": 0,
+            "data_rate": 5,
+            "antenna_signal_dbm": -60,
+        }
+
+        rth_version = struct.pack("<B", 0)
+        rth_pad = struct.pack("<B", 0)
+        
+        rth_btm_present = {
+            "tsft": config["tsft"],
+            "flags": config["flags"],
+            "rate": config["rate"],
+            "channel": config["channel"],
+            "antenna_signal": config["antenna_signal"],
+        }
+        rth_btm_present_int = struct.pack("<I", RadiotapHeader.boolean_fields_to_hex(rth_btm_present))
+        
+        rth_mac_timestamp = struct.pack("<Q", config["mac_timestamp"])
+        rth_btm_flags = {k: False for k in ["cfp", "preamble", "wep", "fragmentation", "fcs", "data_pad", "bad_fcs", "short_gi"]}
+        rth_btm_flags_int = struct.pack("<B", RadiotapHeader.boolean_fields_to_hex(rth_btm_flags))
+        rth_data_rate = struct.pack("<B", config["data_rate"])
+        rth_btm_channels = {"2ghz": True, "5ghz": True}
+        rth_btm_channels_int = struct.pack("<H", RadiotapHeader.boolean_fields_to_hex(rth_btm_channels))
+        rth_antenna_signal = struct.pack("<b", config["antenna_signal_dbm"])
+
+        radiotap_data = rth_mac_timestamp + rth_btm_flags_int + rth_data_rate + rth_btm_channels_int + rth_antenna_signal
+        rth_length = struct.pack("<H", len(rth_version) + len(rth_pad) + len(rth_btm_present_int) + len(radiotap_data))
+        
+        return rth_version + rth_pad + rth_length + rth_btm_present_int + radiotap_data
+
+   def parser(**kwargs) -> dict:
+        def _parser(value: tuple, **kwargs) -> dict:
+            rth_version, rth_pad, rth_length = value
+    
+            result = {
+                "version": rth_version,
+                "pad": rth_pad,
+                "length": rth_length,
+            }
+    
+            ctx = ParseContext.current()
+    
+            if rth_length > len(ctx.frame):
+                result["error"] = "Radiotap length exceeds frame size"
+                return result
+    
+            present_flags_all = {}
+            combined_present = 0
+    
+            for i in range(32):
+                present_result = unpack("<I", metadata=False)
+                present = present_result
+    
+                present_flags_all[i] = hex(present)
+                combined_present |= present << (32 * i)
+    
+                if not (present & (1 << 31)):
+                    break
+    
+            result["present_bitmaps"] = present_flags_all
+    
+            def _flags(value):
+                flags = bitmap_value_for_dict(value, [
+                    'cfp', 'preamble', 'wep', 'fragmentation',
+                    'fcs_at_end', 'data_pad', 'bad_fcs', 'short_gi'
+                ])
+                return {'flags': flags}
+    
+            def _channel(value):
+                freq, flags_val = value
+                channel = freq_to_channel(freq)
+                channel_flags = bitmap_value_for_dict(flags_val, [
+                    None, None, None, None, 'turbo', 'cck', 'ofdm', '2ghz',
+                    '5ghz', 'passive', 'dynamic_cck_ofdm', 'gfsk', 'gsm',
+                    'static_turbo', 'half_rate', 'quarter_rate'
+                ])
+                return {
+                    'channel_freq': freq,
+                    'channel': channel,
+                    'channel_flags': channel_flags
+                }
+    
+            def _rx_flags(value):
+                rx_flags = bitmap_value_for_dict(value, [
+                    'bad_plcp', 'short_gi', None, 'greenfield', 'ht40', None, None,
+                    'vht_ldpc_extra_symbol', 'vht_stbc', 'vht_txop_ps_not_allowed',
+                    'vht_sgi_nsym_da'
+                ])
+                return {'rx_flags': rx_flags}
+    
+            def _mcs(value):
+                known, flags_val, mcs_index = value
+                known_bits = bitmap_value_for_dict(known, [
+                    'bandwidth', 'mcs_index', 'guard_interval', 'ht_format',
+                    'fec_type', 'stbc_streams', 'ness', 'ness_bit_1'
+                ])
+                flags_bits = bitmap_value_for_dict(flags_val, [
+                    'bandwidth', None, 'guard_interval', 'ht_format', 'fec_type'
+                ])
+                return {'mcs': {
+                    'known': known_bits,
+                    'flags': flags_bits,
+                    'index': mcs_index
+                }}
+    
+            def _ampdu(value):
+                ref_num, flags_val, delim_crc, reserved = value
+                flags_bits = bitmap_value_for_dict(flags_val, [
+                    'report_zerolen', 'is_zerolen', 'last_known', 'is_last',
+                    'delim_crc_err', 'delim_crc_known'
+                ])
+                return {'ampdu_status': {
+                    'reference_num': ref_num,
+                    'flags': flags_bits,
+                    'delimiter_crc_value': delim_crc,
+                    'reserved': reserved
+                }}
+    
+            def _vht(value):
+                known, flags_val, bandwidth, mcs_nss1, mcs_nss2, mcs_nss3, mcs_nss4, \
+                    coding, group_id, partial_aid = value
+                known_bits = bitmap_value_for_dict(known, [
+                    'stbc', 'txop_ps_not_allowed', 'guard_interval', 'sgi_nsym_da',
+                    'ldpc_extra_symbol', 'beamformed', 'bandwidth', 'group_id',
+                    'partial_aid'
+                ])
+                flags_stbc = bool(flags_val & 0x01)
+                flags_txop = bool(flags_val & 0x02)
+                mcs_nss = [mcs_nss1, mcs_nss2, mcs_nss3, mcs_nss4]
+                return {'vht': {
+                    'known': known_bits,
+                    'flags_is_stbc': flags_stbc,
+                    'flags_txop_ps_not_allowed': flags_txop,
+                    'bandwidth': bandwidth,
+                    'mcs_nss': mcs_nss,
+                    'coding': coding,
+                    'group_id': group_id,
+                    'partial_aid': partial_aid
+                }}
+    
+            RADIOTAP_FIELDS = [
+                (0,  "tsft",               "<Q",          8, None),
+                (1,  "flags",              "<B",          1, _flags),
+                (2,  "rate",               "<B",          1, lambda v: {"rate_mbps": v * 0.5}),
+                (3,  "channel",            "<HH",         2, _channel),
+                (4,  "fhss",               "<BB",         1, lambda v: {"fhss": {"hop_set": v[0], "hop_pattern": v[1]}}),
+                (5,  "dbm_antenna_signal", "<b",          1, None),
+                (6,  "dbm_antenna_noise",  "<b",          1, None),
+                (7,  "lock_quality",       "<H",          2, None),
+                (8,  "tx_attenuation",     "<H",          2, None),
+                (9,  "db_tx_attenuation",  "<H",          2, None),
+                (10, "dbm_tx_power",       "<b",          1, None),
+                (11, "antenna",            "<B",          1, None),
+                (12, "db_antenna_signal",  "<B",          1, None),
+                (13, "db_antenna_noise",   "<B",          1, None),
+                (14, "rx_flags",           "<H",          2, _rx_flags),
+                (15, "tx_flags",           "<H",          2, None),
+                (16, "rts_retries",        "<B",          1, None),
+                (17, "data_retries",       "<B",          1, None),
+                (19, "mcs",                "<BBB",        1, _mcs),
+                (20, "ampdu_status",       "<IHBB",       4, _ampdu),
+                (21, "vht",                "<HBBBBBBBBH", 2, _vht),
+            ]
+    
+            for bit_index, name, fmt, alignment, parser_func in RADIOTAP_FIELDS:
+                if not (combined_present & (1 << bit_index)):
+                    continue
+    
+                pad = (alignment - (ctx.offset % alignment)) % alignment
+                ctx.offset += pad
+    
+                if parser_func is None:
+                    field_result = unpack(fmt, metadata=False)
+                    result[name] = field_result
+                else:
+                    field_result = unpack(fmt, parser=parser_func, metadata=False)
+                    result.update(field_result)
+    
+            return result
+    
+        try:
+            return unpack("<BBH", parser=_parser)
+    
+        except Exception as e:
+            logger.debug(f"Parser radiotap header error: {e}")
+            return {}
+
+
+
+
+management.py:
+from core.common.parser_utils import (ParseContext, unpack, run_dispatch)
+from core.layers.l2.ieee802.dot11.parsers.common import (fixed_parameters, tagged_parameters)
+
+def mgmt_beacon(**kwargs) -> dict:
+    fp = fixed_parameters()
+    tp = tagged_parameters()
+    return {
+        "fixed_parameters": fp,
+        "tagged_parameters": tp
+    }
+
+def mgmt_probe_response(**kwargs) -> dict:
+    fp = fixed_parameters()
+    tp = tagged_parameters()
+    return {
+        "fixed_parameters": fp,
+        "tagged_parameters": tp
+    }
+
+def mgmt_atim(**kwargs) -> dict:
+    return unpack("<H", parser=lambda v: {"aid": v & 0x3FFF})
+
+def mgmt_disassociation(**kwargs) -> dict:
+    return unpack("<H", parser=lambda v: {"reason_code": v})
+
+def mgmt_deauthentication(**kwargs) -> dict:
+    return mgmt_disassociation()
+
+def mgmt_authentication(**kwargs) -> dict:
+    def _parser(value: tuple, **k) -> dict:
+        alg, seq, status = value
+        fp = fixed_parameters()
+        tp = tagged_parameters()
+        return {
+            "auth_algorithm": alg,
+            "auth_sequence": seq,
+            "status_code": status,
+            "fixed_parameters": fp,
+            "tagged_parameters": tp
+        }
+    return unpack("<HHH", parser=_parser)
+
+def mgmt_action(**kwargs) -> dict:
+    def _parser(value: tuple, **k) -> dict:
+        cat, act = value
+        ctx = ParseContext.current()
+        
+        res = {"category": cat, "action": act}
+        
+        if ctx.offset < len(ctx.frame):
+            tp = tagged_parameters()
+            res["tagged_parameters"] = tp
+            
+        return res
+    return unpack("BB", parser=_parser)
+
+DISPATCH_TABLE = {
+    MGMT_BEACON: mgmt_beacon,
+    MGMT_PROBE_RESPONSE: mgmt_probe_response,
+    MGMT_ATIM: mgmt_atim,
+    MGMT_DISASSOCIATION: mgmt_disassociation,
+    MGMT_DEAUTHENTICATION: mgmt_deauthentication,
+    MGMT_AUTHENTICATION: mgmt_authentication,
+    MGMT_ACTION: mgmt_action
+}
+
+def parser(subtype: int, **kwargs):
+    return run_dispatch(DISPATCH_TABLE, subtype)
+
+
+
+
+
+Funcionamento das funções de parser_utils.py:
+def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
+    raw_hex = raw[start_offset:end_offset].hex()
+    length = end_offset - start_offset
+    return {
+        "_metadata_": {
+            "start": start_offset,
+            "end": end_offset,
+            "length": length,
+            "raw": raw_hex,
+            **kwargs
+        }
+    }
+
+def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+    ctx = ParseContext.current()
+    raw = ctx.frame
+    offset = ctx.offset
+    start = offset
+    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
+    sizes, tokens, s = _parse_fmt_tokens(fmt)
+    size = sum(sizes)
+
+    if offset + size > len(raw):
+        raise ValueError("Truncated raw")
+
+    value = s.unpack_from(raw, offset)
+
+    offset += s.size
+
+    value = value[0] if len(value) == 1 else value
+
+    ctx.offset = offset
+
+    result = {"value": value}
+
+    if parser:
+        result["parsed"] = parser(value=value, **kwargs)
+
+    if isinstance(value, bytes):
+        value = value.hex()
+    elif isinstance(value, int):
+        value = hex(value)
+    elif isinstance(value, tuple):
+        value = (
+            v.hex() if isinstance(v, bytes)
+            else hex(v) if isinstance(v, int)
+            else v
+            for v in value
+        )
+    
+    result["value"] = value
+    
+    if metadata:
+        result.update(
+            _add_metadata(
+                raw,
+                start,
+                offset,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens
+            )
+        )
+
+    return result
+
+def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, **kwargs):
+    entry = dispatch_table.get(dispatch_id)
+
+    dispatch_ctx = {
+        "dispatch_id": dispatch_id,
+        "dispatch_table": dispatch_table,
+        "dispatch_fallback": fallback,
+        "dispatch_entry": entry
+    }
+
+    kwargs["dispatch_ctx"] = dispatch_ctx
+
+    handler = None
+
+    if callable(entry):
+        handler = entry
+
+    elif isinstance(entry, dict):
+        handler = entry.get("parser")
+
+    if handler:
+        return handler(**kwargs)
+
+    if fallback:
+        return fallback(**kwargs)
+
+    logger.warning(f"No handler for dispatch_id={dispatch_id}, using unpack fallback")
+
+    return unpack(**kwargs)
+
+def detect_fcs(**kwargs) -> bytes | None:
+    ctx = ParseContext.current()
+
+    frame = ctx.frame
+    offset = ctx.offset
+    flen = len(frame)
+
+    if offset is None or offset < 0 or offset >= flen:
+        ctx.offset = flen
+        return None
+
+    payload_len = flen - offset
+
+    if payload_len < IEEE80211_FCS_LEN:
+        ctx.offset = flen
+        return None
+
+    fcs_start = flen - IEEE80211_FCS_LEN
+    fcs_bytes = frame[fcs_start:flen]
+
+    candidate_fcs = int.from_bytes(fcs_bytes, "little")
+    data_for_crc = frame[offset:fcs_start]
+
+    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+
+    if calc_crc == candidate_fcs:
+        ctx.offset = fcs_start
+        return fcs_bytes
+    else:
+        ctx.offset = flen
+        return None

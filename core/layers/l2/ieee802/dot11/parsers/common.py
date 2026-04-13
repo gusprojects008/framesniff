@@ -1,12 +1,7 @@
-import struct
-import binascii
-import re
-import socket
 from logging import getLogger
-from core.common.parser_utils import (unpack, bytes_for_mac, bitmap_value_for_dict)
-from core.common.constants.ieee802_11 import *
-from core.l2.ieee802.dot11.ies_parsers import ie_dispatch
-from core.l2.ieee802.llc import parse as llc_parser
+from core.common.parser_utils import (ParseContext, unpack, bytes_for_mac, bitmap_value_for_dict)
+from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.ieee802.dot11.parsers.ies import ie_dispatch
 
 logger = getLogger(__name__)
 
@@ -131,41 +126,3 @@ def tagged_parameters(max_length: int = None, **kwargs) -> tuple[dict, int]:
         _insert_ie(ies_container, tag_name, ie_entry)
 
     return ies_container
-
-BODY_DISPATCH = {
-    MGMT: {
-        MGMT_BEACON: mgmt_beacon,
-        MGMT_PROBE_RESPONSE: mgmt_probe_response,
-        MGMT_ATIM: mgmt_atim,
-        MGMT_DISASSOCIATION: mgmt_disassociation,
-        MGMT_DEAUTHENTICATION: mgmt_deauthentication,
-        MGMT_AUTHENTICATION: mgmt_authentication,
-        MGMT_ACTION: mgmt_action,
-    },
-    CTRL: {
-        CTRL_BLOCK_ACK_REQUEST: ctrl_block_ack_request,
-        CTRL_BLOCK_ACK: ctrl_block_ack,
-        CTRL_PS_POLL: ctrl_ps_poll,
-        CTRL_ACK: ctrl_ack,
-        CTRL_CF_END: ctrl_cf_end,
-        CTRL_CF_END_ACK: ctrl_cf_end_ack,
-    },
-    DATA: {
-        None: data_frame
-    }
-}
-
-def body_dispatch(**kwargs) -> dict:
-    ctx = ParseContext.current()
-
-    fc = ctx.get("mac_hdr").get("fc", {})
-    frame_type = fc.get("type")
-    frame_subtype = fc.get("subtype")
-    protected = fc.get("protected", False)
-
-    if protected:
-        return unpack()
-
-    dispatch_table = BODY_DISPATCH.get(frame_type, {})
-
-    return run_dispatch(dispatch_table, frame_subtype)
