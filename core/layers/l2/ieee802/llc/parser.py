@@ -1,6 +1,7 @@
 from logging import getLogger
 from core.common.parser_utils import (unpack, bytes_for_mac) 
-from core.layers.l2.ieee802.dot11.data import (eapol)
+from core.layers.l2.constants import *
+from core.layers.l2.ieee802.dot1x.parsers.eapol import parser as eapol
 from core.layers.l3.parsers import (ip, arp, ipv6)
 
 logger = getLogger(__name__)
@@ -74,16 +75,16 @@ def parser(**kwargs) -> dict:
     def _parser(value: tuple, **kwargs) -> dict:
         dsap, ssap, ctrl, org_raw, proto_type = value
         
-        org_code = bytes_for_mac(org_raw)
+        payload = run_dispatch(LLC_PAYLOAD_DISPATCH, proto_type, **kwargs)
         
-        entry = LLC_PAYLOAD_DISPATCH.get(proto_type, {})
-        proto_name = entry.get("name", "unknown")
-        proto_desc = entry.get("description", "Unknown Protocol")
+        org_code = bytes_for_oui(org_raw)
 
-        payload = run_dispatch(
-            dispatch_table=LLC_PAYLOAD_DISPATCH,
-            dispatch_id=proto_type
-        )
+        entry = LLC_PAYLOAD_DISPATCH.get(proto_type, {})
+        proto_name = entry.get("name")
+        proto_desc = entry.get("description")
+        #parser = entry.get("parser")
+
+        #payload = parser(**kwargs)
 
         result = {
             "dsap": dsap,

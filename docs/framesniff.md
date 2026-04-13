@@ -22,6 +22,11 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Revisar e corrigir como o parse dot11 lida com erros inesperados, como ao tentar parsear um frame ethernet.
+* Revisar todo o conteúdo de frames parseados, decidir quais campos de metadata são necessários.
+* Analisar e decidir como llc irá importar os parsers. Analisar a estrutura de parse em dot1x e parsers em l3.
+* Quando possível, criar tabelas de dispatch com name e description do handler. Para facilitar entendimento do usuário e apresentação na TUI.
+* Desenvolvendo __main__.py para padronizar e automatizar testes.
 * Revisar toda a arquitetura, avaliar e decidir.
 * Padronizar estrutura de todas as camadas e padrões.
 * Padronização e melhorias de legibilidade do framesniff
@@ -81,7 +86,7 @@ Tudo isso para padronizar chaves e valores específicos, por exemplo, raw, start
 * Adicionar verificações adicionais de detecção de erros.
 * Tornar as mensagens de erro mais rastreáveis e claras.
 * Desenvolver uma TUI para sniffing (semelhante ao tshark).
-* Desenvolver uma TUI para createpkt.
+* Desenvolver uma TUI para edição de frames de forma semelhante ao mitmproxy.
 * Manter verificações de segurança e de tipos apenas nas partes críticas do programa (validação de entrada e uso final).
 * Adicionar vídeos e imagens à documentação ou criar um vídeo tutorial.
 * Verificar as bandas suportadas pela interface antes de realizar o channel hopping.

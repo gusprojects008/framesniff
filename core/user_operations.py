@@ -8,11 +8,13 @@ import threading
 import os
 from logging import getLogger
 from typing import Optional, Tuple, List
-from core.l2.ieee802.dot11.frame import Frame
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
 from core.common.parser_utils import iter_packets_from_json
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
+from core.common.constants.hashcat import *
+from core.layers.registry import (get_parser, get_dlt_value)
+import dpkt
 
 logger = getLogger(__name__)
 
@@ -53,7 +55,7 @@ class Hashcat:
             line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
             logger.info(line)
     
-        elif bitmask_message_pair == MESSAGE_PAIR_M2:
+        elif bitmask_message_pair == MESSAGE_PAIR_M1_M2:
             eapol_msg1_hex = None
             eapol_msg2_hex = None
             seen = 0
@@ -71,22 +73,22 @@ class Hashcat:
             if eapol_msg2_hex is None:
                 raise ValueError("Only one frame found in input file; need two EAPOL frames")
 
-            mac_vendor_resolver = MacVendorResolver()
-            parser = Frame.parser
+            parser = get_parser("DLT_IEEE802_11_RADIO")
 
-            msg1 = parser(bytes.fromhex(eapol_msg1_hex), mac_vendor_resolver) 
-            msg2 = parser(bytes.fromhex(eapol_msg2_hex), mac_vendor_resolver)
+            msg1 = parser(bytes.fromhex(eapol_msg1_hex)) 
+            msg2 = parser(bytes.fromhex(eapol_msg2_hex))
     
             msg2_mac_hdr = msg2.get("mac_hdr")
 
-            ap_mac = msg2_mac_hdr.get("bssid").get("mac") or msg2_mac_hdr.get("da").get("mac"))
-            sta_mac = msg2_mac_hdr.get("sa").get("mac") or msg2_mac_hdr.get("ta").get("mac"))
+            ap_mac = msg2_mac_hdr.get("bssid").get("mac") or msg2_mac_hdr.get("da").get("mac")
+            sta_mac = msg2_mac_hdr.get("sa").get("mac") or msg2_mac_hdr.get("ta").get("mac")
     
-            msg1_eapol = msg1.get("eapol")
-            msg2_eapol = msg2.get("eapol")
+            msg1_eapol = msg1.get("body").get("llc").get("eapol")
+            msg2_eapol = msg2.get("body").get("llc").get("eapol")
     
             anonce = msg1_eapol.get("key_nonce", "")
             mic = msg2_eapol.get("key_mic", "")
+
             if not all([ap_mac, sta_mac, anonce, mic]):
                 raise ValueError("Missing essential EAPOL data")
             if len(mic) != EAPOL_MIC_LENGTH:
@@ -274,13 +276,11 @@ class Operations:
         check_root()
         check_interface_mode(ifname, "monitor")
     
-        parser = None
-    
-        if dlt == "DLT_IEEE802_11_RADIO":
-            parser = Frame.parser
-    
-        if parser is None:
-            raise ValueError(f"There is no parser available for DLT: {dlt}")
+        try:
+            parser = get_parser(dlt)
+        except ValueError as e:
+            logger.error(e)
+            return
     
         sock = create_raw_socket(ifname)
 
@@ -313,18 +313,19 @@ class Operations:
                 try:
                     frame, _ = sock.recvfrom(65535)
                     hex_frame = frame.hex()
-                    parsed_frame["counter"] = frame_counter
-                    parsed_frame["raw"] = hex_frame
-
+                    
                     try:
-                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}") # exc_info=None: None None !?
+                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}")
                         parsed_frame = parser(frame)
                     except Exception as e:
                         logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
                         continue
-    
+                    
                     if not parsed_frame:
                         continue
+                    
+                    parsed_frame["counter"] = frame_counter
+                    parsed_frame["raw"] = hex_frame
 
                     store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
                     
@@ -361,6 +362,48 @@ class Operations:
             if stop_event:
                 stop_event.set()
             finish_capture(sock, start_time, captured_frames, output_filename)
+
+    @staticmethod
+    def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
+        linktype = get_dlt_value(dlt) 
+        output_filename = new_file_path("packets", ".pcap", output_filename)
+        with open(output_filename, "wb") as out:
+            writer = dpkt.pcap.Writer(out, linktype=linktype)
+            count = 0
+            for hexstr, b in iter_packets_from_json(input_filename):
+                writer.writepkt(b, ts=time.time())
+                count += 1
+                logger.info(f"{count} packet writed: {b[:50]}...")
+            writer.close()
+            logger.info(f"Output file: {output_filename}")
+
+    @staticmethod
+    def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
+        sock = create_raw_socket(ifname)
+        if timeout is not None:
+            sock.settimeout(timeout)
+        try:
+            for cleaned, raw_bytes in iter_packets_from_json(input_filename):
+                for i in range(count):
+                    try:
+                        bytes_sent = sock.send(raw_bytes)
+                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
+                        if i < count - 1:
+                            time.sleep(interval)
+                    except socket.error as e:
+                        logger.error(f"Failed to send frame: {e}")
+                        break
+                    except Exception as e:
+                        logger.critical(f"Unexpected error: {e}")
+                        break
+        finally:
+            sock.close()
+
+    @staticmethod
+    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
+        from core.tui.scan_monitor import scan_monitor
+        logger.info("press ctrl+s or <F12> to save tui information!")
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
 
     @staticmethod
     def set_frequency(ifname: str, frequency_mhz: int, channel: int, channel_width: int = None) -> bool:
@@ -524,52 +567,3 @@ class Operations:
             logger.error(traceback.format_exc())
         finally:
             logger.info("Channel hopper finished.")
-
-    @staticmethod
-    def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
-        verify_supported_dlts(dlt)
-        import_module("dpkt")
-        import dpkt
-        linktypes = {
-            "DLT_IEEE802_11_RADIO": dpkt.pcap.DLT_IEEE802_11_RADIO,
-            "DLT_EN10MB": dpkt.pcap.DLT_EN10MB,
-            "DLT_BLUETOOTH_HCI_H4": dpkt.pcap.DLT_BLUETOOTH_HCI_H4,
-        }
-        output_filename = new_file_path("packets", ".pcap", output_filename)
-        with open(output_filename, "wb") as out:
-            writer = dpkt.pcap.Writer(out, linktype=linktypes[dlt])
-            count = 0
-            for hexstr, b in iter_packets_from_json(input_filename):
-                writer.writepkt(b, ts=time.time())
-                count += 1
-                logger.info(f"{count} packet writed: {b[:50]}...")
-            writer.close()
-            logger.info(f"Output file: {output_filename}")
-
-    @staticmethod
-    def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
-        sock = create_raw_socket(ifname)
-        if timeout is not None:
-            sock.settimeout(timeout)
-        try:
-            for cleaned, raw_bytes in iter_packets_from_json(input_filename):
-                for i in range(count):
-                    try:
-                        bytes_sent = sock.send(raw_bytes)
-                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
-                        if i < count - 1:
-                            time.sleep(interval)
-                    except socket.error as e:
-                        logger.error(f"Failed to send frame: {e}")
-                        break
-                    except Exception as e:
-                        logger.critical(f"Unexpected error: {e}")
-                        break
-        finally:
-            sock.close()
-
-    @staticmethod
-    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
-        from core.tui.scan_monitor import scan_monitor
-        logger.info("press ctrl+s or <F12> to save tui information!")
-        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)

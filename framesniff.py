@@ -1,44 +1,15 @@
 import sys
 import logging
-from logging import FileHandler, Formatter
-from rich.logging import RichHandler
-from pathlib import Path
 import argparse
-from core.common.function_utils import new_file_path
-from core.common.constants.hashcat import (MESSAGE_PAIR_M1, MESSAGE_PAIR_M2)
+from pathlib import Path
+from logging import FileHandler, Formatter
+from core.common.function_utils import (import_module, new_file_path, setup_logging)
+import_module("rich")
+from rich.logging import RichHandler
+from core.common.constants.hashcat import *
 from core.user_operations import Operations
 
 operations = Operations()
-
-def setup_logging(verbose: bool) -> Path | None:
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    logger.handlers.clear()
-
-    log_file_path = None
-
-    console_handler = RichHandler(
-        rich_tracebacks=True,
-        show_time=False,
-        show_path=False
-    )
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(Formatter("%(asctime)s %(message)s"))
-
-    logger.addHandler(console_handler)
-
-    if verbose:
-        log_file_path = str(new_file_path("framesniff", ".log"))
-
-        file_handler = FileHandler(log_file_path)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-        )
-
-        logger.addHandler(file_handler)
-
-    return log_file_path
 
 def main():
     parser = argparse.ArgumentParser(
@@ -95,7 +66,7 @@ def main():
     generate_hashcat_parser.add_argument(
         "--bitmask",
         type=int,
-        choices=[MESSAGE_PAIR_M1_M2, MESSAGE_PAIR_M1_M4]
+        choices=[MESSAGE_PAIR_M1_M2, MESSAGE_PAIR_M1_M4],
         help=(
             f"Bitmask message pair ({MESSAGE_PAIR_M1_M2} or {MESSAGE_PAIR_M1_M4})\n"
             f"bitmask {MESSAGE_PAIR_M1_M2} format:\n"

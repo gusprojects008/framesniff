@@ -4,6 +4,9 @@ import binascii
 import struct
 from logging import getLogger
 from functools import lru_cache
+from contextvars import ContextVar
+from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.constants import *
 
 logger = getLogger(__name__)
 
@@ -23,30 +26,37 @@ class MacVendorResolver:
                 logger.error(f"Could not load or parse MAC vendors file: {e}")
                 MacVendorResolver._vendor_map = {}
 
-    def mac_resolver(self, mac_bytes: bytes = None):
-        mac_address = (mac_bytes or unpack(f"{EUI48_LENGTH}s")["value"]).":".join(format(byte, "02x") for byte in mac_bytes)
+    def mac_resolver(self, mac_bytes: bytes):
+        mac_address = ':'.join(format(byte, "02x") for byte in mac_bytes)
         if not self._vendor_map or not mac_address:
             return None
         oui = mac_address.upper()[:8]
         return {"mac": mac_address, "vendor": self._vendor_map.get(oui)}
-
-    def oui_resolver(self, oui_bytes: bytes = None):
-        oui = (oui_bytes or unpack(f"{OUI_LENGTH}s")["value"]).":".join(format(byte, "02x") for byte in oui_bytes)
+    
+    def oui_resolver(self, oui_bytes: bytes):
+        oui = ':'.join(format(byte, "02x") for byte in oui_bytes)
         if not self._vendor_map or not oui:
             return None
         return {"oui": oui, "vendor": self._vendor_map.get(oui)}
 
-mac_vendor_resolver = MacVendorReolver()
+mac_vendor_resolver = MacVendorResolver()
+
+bytes_for_mac = lambda mac : mac_vendor_resolver.mac_resolver(mac)
+bytes_for_oui = lambda oui : mac_vendor_resolver.oui_resolver(oui)
+
+def read_mac() -> dict:
+    return unpack(f"{EUI48_LENGTH}s", parser=bytes_for_mac)
+
+def read_oui() -> dict:
+    return unpack(f"{OUI_LENGTH}s", parser=bytes_for_oui)
 
 def random_mac():
     mac = [random.randint(0x00, 0xFF) for _ in range(6)]
     return ':'.join(f"{hex_byte:02x}" for hex_byte in mac)
 
-bytes_for_mac = lambda mac : mac_vendor_resolver.mac_resolver(mac))
-bytes_for_oui = lambda oui : mac_vendor_resolver.oui_resolver(oui))
-
 mac_for_bytes = lambda mac : bytes(int(hex_byte, 16) for hex_byte in mac.split(":"))
 
+_parse_context = ContextVar("_parse_context")
 class ParseContext:
     def __init__(self, frame: bytes, start_offset: int = 0):
         self.frame = frame
@@ -102,6 +112,9 @@ def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
 
     sizes = tuple(struct.calcsize(t) for t in tokens)
 
+    sizes = sizes[0] if len(sizes) == 1 else sizes
+    tokens = tokens[0] if len(tokens) == 1 else tokens
+
     return sizes, tuple(tokens), s
 
 def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
@@ -124,10 +137,10 @@ def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kw
     start = offset
     fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
     sizes, tokens, s = _parse_fmt_tokens(fmt)
-    size = sum(sizes)
+    size = s.size
 
     if offset + size > len(raw):
-        raise ValueError("Truncated raw")
+        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
 
     value = s.unpack_from(raw, offset)
 
@@ -140,14 +153,16 @@ def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kw
     result = {"value": value}
 
     if parser:
-        result["parsed"] = parser(value=value, **kwargs)
+       # result["parsed"] = parser(value=value, **kwargs)
+        logger.debug(f"{value, fmt}")
+        result["parsed"] = parser(value, **kwargs)
 
     if isinstance(value, bytes):
         value = value.hex()
     elif isinstance(value, int):
         value = hex(value)
     elif isinstance(value, tuple):
-        value = (
+        value = tuple(
             v.hex() if isinstance(v, bytes)
             else hex(v) if isinstance(v, int)
             else v
@@ -203,34 +218,27 @@ def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, *
 
 def detect_fcs(**kwargs) -> bytes | None:
     ctx = ParseContext.current()
-
     frame = ctx.frame
     offset = ctx.offset
     flen = len(frame)
 
     if offset is None or offset < 0 or offset >= flen:
-        ctx.offset = flen
         return None
 
     payload_len = flen - offset
-
     if payload_len < IEEE80211_FCS_LEN:
-        ctx.offset = flen
         return None
 
     fcs_start = flen - IEEE80211_FCS_LEN
     fcs_bytes = frame[fcs_start:flen]
-
     candidate_fcs = int.from_bytes(fcs_bytes, "little")
     data_for_crc = frame[offset:fcs_start]
-
-    calc_crc = binascii.crc32(data_for_crc) & 0xffffffff
+    calc_crc = binascii.crc32(data_for_crc) & 0xFFFFFFFF
 
     if calc_crc == candidate_fcs:
-        ctx.offset = fcs_start
-        return fcs_bytes
+        ctx.frame = frame[:fcs_start]
+        return fcs_bytes.hex()
     else:
-        ctx.offset = flen
         return None
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
@@ -249,7 +257,7 @@ def freq_converter(freq_unit: tuple, to_unit: str):
     elif unit == 'ghz':
          base_freq = freq * 1000000
     else:
-        raise ValueError(f"Unidade de origem inválida: {from_unit}. Use 'kHz', 'MHz' ou 'GHz'")
+        raise ValueError(f"Invalid source unit: {unit} Use 'kHz', 'MHz' ou 'GHz'")
     
     if to_unit == 'khz':
        return base_freq

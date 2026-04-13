@@ -1,6 +1,8 @@
 import os
+import sys
 import subprocess
 import re
+import logging
 from logging import getLogger
 import time
 from pathlib import Path
@@ -65,7 +67,7 @@ def import_module(module_name):
     try:
         __import__(module_name)
     except ImportError:
-        raise ImportError(f'''
+        raise ImportError(f'''\n
     Error when trying to import {module_name}, run the following commands:\n
     python -m venv venv
     source venv/bin/activate
@@ -86,3 +88,34 @@ def new_file_path(base: str = None, ext: str = None, filename: str = None) -> Pa
             return Path(f"{timestamp}")
     else:
         return Path(f"{timestamp}-{filename}")
+
+def setup_logging(verbose: bool) -> Path | None:
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.handlers.clear()
+
+    log_file_path = None
+
+    console_handler = RichHandler(
+        rich_tracebacks=True,
+        show_time=False,
+        show_path=False
+    )
+
+    console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    console_handler.setFormatter(Formatter("%(asctime)s %(message)s"))
+
+    logger.addHandler(console_handler)
+
+    if verbose:
+        log_file_path = str(new_file_path("framesniff", ".log"))
+
+        file_handler = FileHandler(log_file_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(
+            Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+        )
+
+        logger.addHandler(file_handler)
+
+    return log_file_path

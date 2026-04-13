@@ -1,8 +1,9 @@
+import struct
 from uuid import UUID
 from logging import getLogger
-from core.common.constants.ieee802_11 import *
-from core.common.constants.l2 import *
-from core.common.parser_utils import (unpack, ParseContext, run_dispatch, bytes_for_mac, add_metadata)
+from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.constants import *
+from core.common.parser_utils import (ParseContext, unpack, run_dispatch, bytes_for_mac, bytes_for_oui)
 
 logger = getLogger(__name__)
 
@@ -275,7 +276,7 @@ def _wmm_wme_extension(tag_length: int, **kwargs) -> dict:
                     "txop_limit": txop
                 }
 
-            ac_entry = unpack("BB<H", parser=_ac_parser)
+            ac_entry = unpack("<BBH", parser=_ac_parser)
             key = ac_entry.get("parsed", {}).get("ac_index", idx)
             ac_params[key] = ac_entry
             idx += 1
@@ -324,8 +325,8 @@ SPECIFIC_VENDOR_DISPATCH = {
     },
     OUI_WFA: {
         WFA_VENDOR_WPS: {"description": "Wi-Fi Alliance WPS", "parser": None},
-        WFA_VENDOR_P2P: {"description": "Wi-Fi Alliance P2P", "parser": None}
-        WFA_VENDOR_HS20: {"description": "Wi-Fi Alliance Hotspot 2.0", "parser": None}
+        WFA_VENDOR_P2P: {"description": "Wi-Fi Alliance P2P", "parser": None},
+        WFA_VENDOR_HS20: {"description": "Wi-Fi Alliance Hotspot 2.0", "parser": None},
         WFA_VENDOR_OSEN: {"description": "Wi-Fi Alliance OSEN", "parser": None}
     },
     OUI_MEDIATEK: {"description": "MediaTek Inc", "parser": None},
@@ -337,10 +338,10 @@ def vendor_specific(tag_length: int, **kwargs) -> dict:
     fmt = f"{OUI_LENGTH}sB"
 
     def _parser(value: tuple, **kwargs) -> dict:
-        oui_raw, vtype = value
-        oui_mac = bytes_for_mac(oui_raw)
+        oui, vtype = value
+        oui = bytes_for_oui(oui)
         
-        vendor_sub_table = SPECIFIC_VENDOR_DISPATCH.get(oui_mac, {})
+        vendor_sub_table = SPECIFIC_VENDOR_DISPATCH.get(oui["oui"], {})
         entry = vendor_sub_table.get(vtype, {})
         description = entry.get("description", "Generic Vendor Specific")
         
@@ -357,7 +358,7 @@ def vendor_specific(tag_length: int, **kwargs) -> dict:
         )
 
         result = {
-            "oui": oui_mac,
+            "oui": oui,
             "vendor_type": vtype,
             "description": description,
             "data": data
@@ -365,8 +366,6 @@ def vendor_specific(tag_length: int, **kwargs) -> dict:
         return result
 
     return unpack(fmt, parser=_parser)
-
-
 
 def ssid(tag_length: int, **kwargs) -> dict:
     return unpack(f"{tag_length}s", parser=lambda value: value.decode(errors="ignore"))
@@ -421,7 +420,6 @@ def tim_info(tag_length: int, **kwargs) -> dict:
         }
     
     return unpack("<BBB", parser=_parser)
-
 
 def country_code(tag_length: int, **kwargs) -> dict:
     def _parser(values: tuple, **kwargs) -> dict:
@@ -511,13 +509,14 @@ def erp_info(tag_length: int, **kwargs) -> dict:
     
     return unpack("B", parser=_parser)
 
-
 def ht_capabilities(tag_length: int, **kwargs) -> dict:
     if tag_length < 26:
         return {}
     
     def _parser(values: tuple, **kwargs) -> dict:
-        ht_caps_info, ampdu_params, rx_mcs_bitmask, highest_supported_rate, tx_mcs_info, _, _, ht_ext_caps, txbf_caps, asel_caps = values
+        (ht_caps_info, ampdu_params, rx_mcs_bitmask, highest_supported_rate, 
+                 tx_mcs_info, _reserved1, _reserved2, ht_ext_caps, 
+                 txbf_caps, asel_caps, _pad) = values
         
         # HT Capabilities Info
         ldpc_coding_capable = bool(ht_caps_info & 0x0001)
@@ -618,9 +617,8 @@ def ht_capabilities(tag_length: int, **kwargs) -> dict:
             }
         }
     
-    fmt = "<HB10sHBBBBH4s3s"
+    fmt = "<HB10sHBBBHIBB" 
     return unpack(fmt, parser=_parser)
-
 
 def rm_enable_capabilities(tag_length: int, **kwargs) -> dict:
     if tag_length < 2:
@@ -749,75 +747,74 @@ def rsn_information(tag_length: int, **kwargs) -> dict:
     end = ctx.offset + tag_length
     result = {}
     
-    # Parse version
-    version = unpack("<H")
-    result["version"] = version
+    if ctx.offset + 2 <= end:
+        result["version"] = unpack("<H")
     
-    # Parse group cipher
     if ctx.offset + 4 <= end:
-        group_cipher_oui = unpack("3s", parser=lambda v: bytes_for_mac(v))
-        group_cipher_type = unpack("B")
-        
-        result["group_cipher"] = {
-            "oui": group_cipher_oui,
-            "cipher_type": group_cipher_type
-        }
+        def _group_parser(value: tuple, **kwargs):
+            oui, ctype = value
+            oui = bytes_for_mac(oui), 
+            return {
+                "oui": oui, 
+                "cipher_type": ctype
+            }
+        result["group_cipher"] = unpack("3sB", parser=_group_parser)
     
-    # Parse pairwise ciphers
     if ctx.offset + 2 <= end:
-        pairwise_count = unpack("<H")
-        result["pairwise_cipher_count"] = pairwise_count
-        pairwise_ciphers = {}
-        
-        for i in range(pairwise_count):
-            if ctx.offset + 4 <= end:
-                p_oui = unpack("3s", parser=lambda v: bytes_for_mac(v))
-                p_type = unpack("B")
-                
-                pairwise_ciphers[i] = {
-                    "oui": p_oui,
-                    "cipher_type": p_type
+        def _pairwise_parser(pairwise_count: int, **kwargs):
+            def __parser(value: tuple, **kwargs):
+                oui, ctype = value
+                oui = bytes_for_oui(oui)
+                return {
+                    "oui": oui,
+                    "cipher_type": ctype
                 }
-        
-        if pairwise_ciphers:
-            result["pairwise_ciphers"] = pairwise_ciphers
-    
-    # Parse AKM suites
-    if ctx.offset + 2 <= end:
-        akm_count = unpack("<H")
-        result["akm_suite_count"] = akm_count
-        akm_suites = {}
-        
-        for i in range(akm_count):
-            if ctx.offset + 4 <= end:
-                a_oui = unpack("3s", parser=lambda v: bytes_for_mac(v))
-                a_type = unpack("B")
                 
-                akm_suites[i] = {
-                    "oui": a_oui,
+            pairwise_ciphers = {}
+            for i in range(pairwise_count):
+                if ctx.offset + OUI_LENGTH + 1 <= end:
+                    pairwise_cipher_result = unpack("3sB", parser=__parser)
+                    pairwise_ciphers[i] = pairwise_cipher_result
+            return pairwise_ciphers
+            
+        result["pairwise_ciphers"] = unpack("<H", parser=_pairwise_parser)
+    
+    if ctx.offset + 2 <= end:
+        def _akm_parser(akm_count: int, **kwargs):
+            def __akm_item_parser(value: tuple, **kwargs):
+                oui, a_type = value
+                return {
+                    "oui": bytes_for_mac(oui),
                     "akm_type": a_type
                 }
-        
-        if akm_suites:
-            result["akm_suites"] = akm_suites
+            
+            akm_suites = {}
+            for i in range(akm_count):
+                if ctx.offset + 4 <= end:
+                    akm_suite_result = unpack("3sB", parser=__akm_item_parser)
+                    akm_suites[i] = akm_suite_result
+            return akm_suites
+
+        result["akm_suites"] = unpack("<H", parser=_akm_parser)
+        if result["akm_suites"]:
+            result["akm_suite_count"] = len(result["akm_suites"])
+
+    if ctx.offset + 2 <= end:
+        result["capabilities"] = unpack("<H", parser=_parse_rsn_capabilities)
     
     if ctx.offset + 2 <= end:
-        capabilities_result = unpack("<H", parser=_parse_rsn_capabilities)
-        result["capabilities"] = capabilities_result
-    
-    if ctx.offset + 2 <= end:
-        pmkid_count = unpack("<H")
-        result["pmkid_count"] = pmkid_count
-        pmkids = {}
-        
-        for i in range(pmkid_count):
-            if ctx.offset + EAPOL_PMKID_LENGTH <= end:
-                pmkid_result = unpack(f"{EAPOL_PMKID_LENGTH}s")
-                pmkids[i] = pmkid_result
-        
-        if pmkids:
-            result["pmkids"] = pmkids
-    
+        def _pmkid_parser(pmkid_count: int, **kwargs):
+            pmkids = {}
+            for i in range(pmkid_count):
+                if ctx.offset + EAPOL_PMKID_LENGTH <= end:
+                    pmkid_result = unpack(f"{EAPOL_PMKID_LENGTH}s")
+                    pmkids[i] = pmkid_result
+            return pmkids
+
+        result["pmkids"] = unpack("<H", parser=_pmkid_parser)
+        if result["pmkids"]:
+            result["pmkid_count"] = len(result["pmkids"])
+            
     return result
 
 def _parse_rsn_capabilities(value: int, **kwargs) -> dict:
@@ -936,26 +933,29 @@ def ie_dispatch(value: tuple, **kwargs) -> dict:
         return unpack(f"{tag_length}s")
 
     ie_result = {}
+    tag_number, tag_length = value
 
     try:
-        tag_number, tag_length = value
-        entry = IE_DISPATCH.get(tag_number, {})
+        ctx = ParseContext.current()
+        start_offset = ctx.offset
 
+        entry = IE_DISPATCH.get(tag_number, {})
         ie_result = {
             "tag_number": tag_number,
             "tag_length": tag_length,
-            "name": entry.get("name", "Unknown"),
-            "description": entry.get("description", "")
+            "name": entry.get("name"),
+            "description": entry.get("description")
         }
-
         ie_result["data"] = run_dispatch(
-            IE_DISPATCH, 
-            tag_number, 
-            fallback=_fallback, 
+            IE_DISPATCH,
+            tag_number,
+            fallback=_fallback,
             tag_length=tag_length
         )
 
     except Exception as e:
         logger.debug(f"IE parser error for tag {tag_number}: {e}")
+        ctx = ParseContext.current()
+        ctx.offset = start_offset + tag_length
 
     return ie_result

@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (ParseContext, unpack, bytes_for_mac, bitmap_value_for_dict)
+from core.common.parser_utils import (ParseContext, unpack, read_mac, read_oui, bitmap_value_for_dict)
 from core.layers.l2.ieee802.dot11.constants import *
 from core.layers.l2.ieee802.dot11.parsers.ies import ie_dispatch
 
@@ -23,22 +23,22 @@ def mac_header(**kwargs) -> dict:
 
         duration = unpack("<H")
         
-        addr1 = bytes_for_mac()
+        logger.debug("MAC Header _parser")
+        addr1 = read_mac()
         
         addr2 = addr3 = addr4 = seq = qos = None
 
         if f_type == CTRL:
             if f_subtype in (CTRL_BLOCK_ACK_REQUEST, CTRL_BLOCK_ACK, CTRL_PS_POLL, 
                              CTRL_RTS, CTRL_CF_END, CTRL_CF_END_ACK):
-                addr2 = bytes_for_mac()
+                addr2 = read_mac() 
         else:
-            addr2 = bytes_for_mac()
-            addr3 = bytes_for_mac()
-            seq_res = unpack("<H")
-            seq = seq_res >> 4
+            addr2 = read_mac() 
+            addr3 = read_mac() 
+            seq = unpack("<H", parser=lambda v, **k: v >> 4)
 
             if to_ds and from_ds:
-                addr4 = bytes_for_mac()
+                addr4 = read_mac() 
 
         ra = addr1
         ta = addr2 if addr2 else None
@@ -101,7 +101,7 @@ def fixed_parameters(**kwargs) -> dict:
     return unpack("<QHH", parser=_parser)
 
 def tagged_parameters(max_length: int = None, **kwargs) -> tuple[dict, int]:
-    logger.debug(f"Parsing tagged parameters: offset={offset}")
+    logger.debug(f"Tagged parameters parser")
 
     def _insert_ie(container: dict, key: str | int, value: dict | str | int):
         if key not in container:

@@ -1,5 +1,6 @@
 from core.common.parser_utils import (ParseContext, unpack, run_dispatch)
 from core.layers.l2.ieee802.dot11.parsers.common import (fixed_parameters, tagged_parameters)
+from core.layers.l2.ieee802.dot11.constants import *
 
 def mgmt_beacon(**kwargs) -> dict:
     fp = fixed_parameters()
@@ -64,5 +65,5 @@ DISPATCH_TABLE = {
     MGMT_ACTION: mgmt_action
 }
 
-def parser(subtype: int, **kwargs):
-    return run_dispatch(DISPATCH_TABLE, subtype)
+def parser(**kwargs):
+    return run_dispatch(DISPATCH_TABLE, kwargs.get("subtype"))
