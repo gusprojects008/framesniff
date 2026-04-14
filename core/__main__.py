@@ -32,13 +32,15 @@ def parser_test(dlt: str, input_filename: str, output_filename: str = None):
         i = 1
         for cleaned, raw_bytes in iter_packets_from_json(input_filename):
             result[i] = parser(raw_bytes)
-            result["raw"] = cleaned
-            result["frame_counter"] = i
+            result[i]["raw"] = cleaned
+            result[i]["frame_counter"] = i
     except Exception as e:
         logger.critical(f"Unexpected error: {e}")
 
-    print(result)
+    logger.info(result)
+
 def main():
+    log_file_path = str(setup_logging(True))
     parser_test("DLT_IEEE802_11_RADIO", "/home/gus/Documents/framesniff/core/tests/frames.json")
 
 if __name__ == "__main__":

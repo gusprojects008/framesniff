@@ -117,6 +117,17 @@ def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
 
     return sizes, tuple(tokens), s
 
+def size_to_struct_fmt(size: int) -> str:
+    mapping = {
+        1: "B",
+        2: "H",
+        4: "I",
+        8: "Q"
+    }
+    if size not in mapping:
+        raise ValueError(f"Unsupported struct size: {size}")
+    return mapping[size]
+
 def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
     raw_hex = raw[start_offset:end_offset].hex()
     length = end_offset - start_offset
@@ -153,8 +164,6 @@ def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kw
     result = {"value": value}
 
     if parser:
-       # result["parsed"] = parser(value=value, **kwargs)
-        logger.debug(f"{value, fmt}")
         result["parsed"] = parser(value, **kwargs)
 
     if isinstance(value, bytes):

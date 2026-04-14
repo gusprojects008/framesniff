@@ -1,15 +1,17 @@
 Preciso padronizar e automatizar testes.
-Criei um __main__.py em core/ :
+estou desenvolvendo um arquivo __main__.py em core/ do meu projeto, ele irá automatizar teste de funcionalidades.
+
+preciso que você melhore e atualize:
+from core.common.function_utils import setup_logging
 from core.common.filter_engine import apply_filters
+from core.common.parser_utils import iter_packets_from_json
 from core.layers.registry import (get_parser, get_dlt_value)
+import logging
 
-IEEE802_11_FRAMES = {
-  "raw": ["ffffffffffffa4f933ed5b75080045000156b50e00004011c48900000000ffffffff0044004301426781010106006ef3d0d803b9000000000000000000000000000000000000a4f933ed5b750000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063825363350101370701031c21333a3b390205d03c316468637063642d31302e312e303a4c696e75782d362e362e3132365f313a7838365f36343a47656e75696e65496e74656c740101910101ff"]
-}
+logger = logging.getLogger(__name__)
 
-def parser_test(dlt: str):
-    
-    parsed_frame = get_parser(dlt)
+def parser_test(dlt: str, input_filename: str, output_filename: str = None):
+    """
     #store_filter, display_result = apply_filters("mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('06:ab:f1:d6:31:16', '5c:62:8b:80:83:8a') and mac_hdr.mac_dst.mac in ('06:ab:f1:d6:31:16', '5c:62:8b:80:83:8a') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.type == '0x888e' and body.eapol", "mac_hdr, body", parsed_frame)
     store_filter, display_result = apply_filters("mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.mac_dst.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == '0x888e' and body.eapol", "mac_hdr, body", parsed_frame)
     store_filter, display_result = apply_filters("mac_hdr.fc.type == 2 and mac_hdr.mac_src.mac in ('06:ab:f1:d6:31:16', '5c:62:8b:80:83:8a') and mac_hdr.mac_dst.mac in ('06:ab:f1:d6:31:16', '5c:62:8b:80:83:8a')", "mac_hdr, body", parsed_frame)
@@ -25,18 +27,681 @@ def parser_test(dlt: str):
           #      print(vv)
            #     print()
 
+    """
+    parser = get_parser(dlt)
+
+    result = {}
+
+    try:
+        i = 1
+        for cleaned, raw_bytes in iter_packets_from_json(input_filename):
+            result[i] = parser(raw_bytes)
+            result[i]["raw"] = cleaned
+            result[i]["frame_counter"] = i
+    except Exception as e:
+        logger.critical(f"Unexpected error: {e}")
+
+    logger.info(result)
 
 def main():
-    parser_test("DLT_IEEE802_11_RADIO")
+    log_file_path = str(setup_logging(True))
+    parser_test("DLT_IEEE802_11_RADIO", "/home/gus/Documents/framesniff/core/tests/frames.json")
 
 if __name__ == "__main__":
-    main() 
+    main()
 
 
 
+Exemplo de resultado de frame parseado:
+ {'rt_hdr': {'value': ('0x0', '0x0', '0x38'), 'parsed': {'version': 0, 'pad': 0,
+         'length': 56, 'present_bitmaps': {0: '0xa040402f', 1: '0xa0000820', 2: '0x820'}, 'tsft': 15707620111, 'flags':
+         {'cfp': False, 'preamble': False, 'wep': False, 'fragmentation': False, 'fcs_at_end': True, 'data_pad': False,
+         'bad_fcs': False, 'short_gi': False}, 'rate_mbps': 1.0, 'channel_freq': 2437, 'channel': 6, 'channel_flags':
+         {None: False, 'turbo': False, 'cck': True, 'ofdm': False, '2ghz': True, '5ghz': False, 'passive': False,
+         'dynamic_cck_ofdm': False, 'gfsk': False, 'gsm': False, 'static_turbo': False, 'half_rate': False,
+         'quarter_rate': False}, 'dbm_antenna_signal': -24, 'rx_flags': {'bad_plcp': False, None: False}, 'timestamp':
+         {'value': 2822764984, 'accuracy': 22, 'unit': 'us', 'sample_offset': 1, 'flags': {'accuracy_known': True,
+         'known': True}}}, '_metadata_': {'start': 0, 'end': 4, 'length': 4, 'raw': '00003800', 'fmt': '<BBH', 'size':
+         4, 'sizes': (1, 1, 2), 'tokens': ('<B', '<B', '<H')}}, 'fcs': 'abb70efa', 'mac_hdr': {'value': '0x988',
+         'parsed': {'fc': {'protocol_version': 0, 'type': 2, 'type_name': 'Data', 'subtype': 8, 'subtype_name': 'QoS
+         Data', 'tods': 1, 'fromds': 0, 'protected': False}, 'duration_id': {'value': '0x13a', '_metadata_': {'start':
+         58, 'end': 60, 'length': 2, 'raw': '3a01', 'fmt': '<H', 'size': 2, 'sizes': 2, 'tokens': ('<', 'H')}}, 'ra':
+         {'value': '5c628b80838a', 'parsed': {'mac': '5c:62:8b:80:83:8a', 'vendor': 'TP-Link Corporation Limited'},
+         '_metadata_': {'start': 60, 'end': 66, 'length': 6, 'raw': '5c628b80838a', 'fmt': '6s', 'size': 6, 'sizes': 6,
+         'tokens': ('<', '6', 's')}}, 'ta': {'value': 'da9209a258a5', 'parsed': {'mac': 'da:92:09:a2:58:a5', 'vendor':
+         None}, '_metadata_': {'start': 66, 'end': 72, 'length': 6, 'raw': 'da9209a258a5', 'fmt': '6s', 'size': 6,
+         'sizes': 6, 'tokens': ('<', '6', 's')}}, 'sa': {'value': 'da9209a258a5', 'parsed': {'mac':
+         'da:92:09:a2:58:a5', 'vendor': None}, '_metadata_': {'start': 66, 'end': 72, 'length': 6, 'raw':
+         'da9209a258a5', 'fmt': '6s', 'size': 6, 'sizes': 6, 'tokens': ('<', '6', 's')}}, 'da': {'value':
+         '5c628b80838a', 'parsed': {'mac': '5c:62:8b:80:83:8a', 'vendor': 'TP-Link Corporation Limited'}, '_metadata_':
+         {'start': 72, 'end': 78, 'length': 6, 'raw': '5c628b80838a', 'fmt': '6s', 'size': 6, 'sizes': 6, 'tokens':
+         ('<', '6', 's')}}, 'bssid': {'value': '5c628b80838a', 'parsed': {'mac': '5c:62:8b:80:83:8a', 'vendor':
+         'TP-Link Corporation Limited'}, '_metadata_': {'start': 60, 'end': 66, 'length': 6, 'raw': '5c628b80838a',
+         'fmt': '6s', 'size': 6, 'sizes': 6, 'tokens': ('<', '6', 's')}}, 'sequence_number': {'value': '0x0', 'parsed':
+         0, '_metadata_': {'start': 78, 'end': 80, 'length': 2, 'raw': '0000', 'fmt': '<H', 'size': 2, 'sizes': 2,
+         'tokens': ('<', 'H')}}, 'qos_control': {'value': '0x6', '_metadata_': {'start': 80, 'end': 82, 'length': 2,
+         'raw': '0600', 'fmt': '<H', 'size': 2, 'sizes': 2, 'tokens': ('<', 'H')}}}, '_metadata_': {'start': 56, 'end':
+         58, 'length': 2, 'raw': '8809', 'fmt': '<H', 'size': 2, 'sizes': 2, 'tokens': ('<', 'H')}}, 'body': {'llc':
+         {'value': ('0xaa', '0xaa', '0x3', '000000', '0x888e'), 'parsed': {'dsap': 170, 'ssap': 170, 'control_field':
+         3, 'organization_code': {'oui': '00:00:00', 'vendor': 'XEROX CORPORATION'}, 'protocol_type': 34958, 'name':
+         'eapol', 'description': 'EAP over LAN', 'payload': {'value': ('0x1', '0x3', '0x75', '0x2', '0x10a', '0x0',
+         '0000000000000001', '78a2c3f64eb2ed41d00413ed5116a4ca32c920feb1b787a757c1aa264f277f6e',
+         '00000000000000000000000000000000', '0000000000000000', '0000000000000000',
+         'dc6024e7421f6d945d19d73b8f40ea58', '0x16'), 'parsed': {'authentication_version': 1, 'type': 3,
+         'header_length': 117, 'key_descriptor_type': 2, 'key_information': {'key_descriptor_version': {'value': 2,
+         'description': 'HMAC_SHA1_128_AES_WPA2_RSN'}, 'key_type': {'value': 1, 'description': 'group_smk'},
+         'key_index': 0, 'install': False, 'key_ack': False, 'key_mic': True, 'secure': False, 'error': False,
+         'request': False, 'encrypted_key_data': False, 'smk_message': False}, 'key_length': 0, 'replay_counter':
+         '0000000000000001', 'key_nonce': '78a2c3f64eb2ed41d00413ed5116a4ca32c920feb1b787a757c1aa264f277f6e', 'key_iv':
+         '00000000000000000000000000000000', 'key_rsc': '0000000000000000', 'key_id': '0000000000000000', 'key_mic':
+         'dc6024e7421f6d945d19d73b8f40ea58', 'key_data_length': 22, 'key_data': {'rsn_information': {'value': ('0x30',
+         '0x14'), 'parsed': {'tag_number': 48, 'tag_length': 20, 'name': 'rsn_information', 'description': 'RSN
+         Information', 'data': {'version': {'value': '0x1', '_metadata_': {'start': 191, 'end': 193, 'length': 2,
+         'raw': '0100', 'fmt': '<H', 'size': 2, 'sizes': 2, 'tokens': ('<', 'H')}}, 'group_cipher': {'value':
+         ('000fac', '0x4'), 'parsed': {'oui': ({'mac': '00:0f:ac', 'vendor': 'IEEE 802.11'},), 'cipher_type': 4},
+         '_metadata_': {'start': 193, 'end': 197, 'length': 4, 'raw': '000fac04', 'fmt': '3sB', 'size': 4, 'sizes': (3,
+         1), 'tokens': ('<3s', '<B')}}, 'pairwise_ciphers': {'value': '0x1', 'parsed': {0: {'value': ('000fac', '0x4'),
+         'parsed': {'oui': {'oui': '00:0f:ac', 'vendor': None}, 'cipher_type': 4}, '_metadata_': {'start': 199, 'end':
+         203, 'length': 4, 'raw': '000fac04', 'fmt': '3sB', 'size': 4, 'sizes': (3, 1), 'tokens': ('<3s', '<B')}}},
+         '_metadata_': {'start': 197, 'end': 199, 'length': 2, 'raw': '0100', 'fmt': '<H', 'size': 2, 'sizes': 2,
+         'tokens': ('<', 'H')}}, 'akm_suites': {'value': '0x1', 'parsed': {0: {'value': ('000fac', '0x2'), 'parsed':
+         {'oui': {'mac': '00:0f:ac', 'vendor': 'IEEE 802.11'}, 'akm_type': 2}, '_metadata_': {'start': 205, 'end': 209,
+         'length': 4, 'raw': '000fac02', 'fmt': '3sB', 'size': 4, 'sizes': (3, 1), 'tokens': ('<3s', '<B')}}},
+         '_metadata_': {'start': 203, 'end': 205, 'length': 2, 'raw': '0100', 'fmt': '<H', 'size': 2, 'sizes': 2,
+         'tokens': ('<', 'H')}}, 'akm_suite_count': 3, 'capabilities': {'value': '0x80', 'parsed': {'pre_auth': False,
+         'no_pairwise': False, 'ptksa_replay_counter': 0, 'gtksa_replay_counter': 0, 'mgmt_frame_protection_required':
+         False, 'mgmt_frame_protection_capable': True, 'joint_multi_band_rsna': False, 'peerkey_enabled': False,
+         'spp_amsdu_capable': False, 'spp_amsdu_required': False, 'pbac': False, 'extended_key_id': False, 'ocvc':
+         False, 'reserved': False}, '_metadata_': {'start': 209, 'end': 211, 'length': 2, 'raw': '8000', 'fmt': '<H',
+         'size': 2, 'sizes': 2, 'tokens': ('<', 'H')}}}}, '_metadata_': {'start': 189, 'end': 191, 'length': 2, 'raw':
+         '3014', 'fmt': '<BB', 'size': 2, 'sizes': (1, 1), 'tokens': ('<B', '<B')}}}}, '_metadata_': {'start': 90,
+         'end': 189, 'length': 99, 'raw':
+         '0103007502010a0000000000000000000178a2c3f64eb2ed41d00413ed5116a4ca32c920feb1b787a757c1aa264f277f6e00000000000
+         00000000000000000000000000000000000000000000000000000dc6024e7421f6d945d19d73b8f40ea580016', 'fmt':
+         '!BBHBHH8s32s16s8s8s16sH', 'size': 99, 'sizes': (1, 1, 2, 1, 2, 2, 8, 32, 16, 8, 8, 16, 2), 'tokens': ('!B',
+         '!B', '!H', '!B', '!H', '!H', '!8s', '!32s', '!16s', '!8s', '!8s', '!16s', '!H')}}}, '_metadata_': {'start':
+         82, 'end': 90, 'length': 8, 'raw': 'aaaa03000000888e', 'fmt': '!BBB3sH', 'size': 8, 'sizes': (1, 1, 1, 3, 2),
+         'tokens': ('!B', '!B', '!B', '!3s', '!H')}}}, 'raw':
+         '000038002f4040a0200800a0200800000f433fa80300000010028509a000e8000000000000000000b8f93fa80000000016001103e800e
+         60188093a015c628b80838ada9209a258a55c628b80838a00000600aaaa03000000888e0103007502010a0000000000000000000178a2c
+         3f64eb2ed41d00413ed5116a4ca32c920feb1b787a757c1aa264f277f6e000000000000000000000000000000000000000000000000000
+         0000000000000dc6024e7421f6d945d19d73b8f40ea58001630140100000fac040100000fac040100000fac028000abb70efa',
+         'frame_counter': 1}
 
 
 
+As funções que quero testar estão core/user_operations.py:
+import subprocess
+import re
+import sys
+import time
+import json
+import socket
+import threading
+import os
+from logging import getLogger
+from typing import Optional, Tuple, List
+from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
+from core.common.parser_utils import iter_packets_from_json
+from core.common.filter_engine import apply_filters
+from core.common.sockets import create_raw_socket
+from core.common.constants.hashcat import *
+from core.layers.registry import (get_parser, get_dlt_value)
+import dpkt
 
+logger = getLogger(__name__)
 
+class Hashcat:
+    GENERATORS = {
+        WPA_PBKDF2_PMKID_EAPOL: "_generate_22000"
+    }
+
+    @classmethod
+    def generate(cls, hformat: int, **kwargs):
+        generator_name = cls.GENERATORS.get(hformat)
+
+        if not generator_name:
+            raise ValueError(f"Unsupported hashcat format: {hformat}")
+
+        generator = getattr(cls, generator_name)
+        return generator(**kwargs)
+
+    @staticmethod
+    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M1_M2, ssid: str = None, input_filename: str = None):
+        if not input_filename:
+            raise ValueError("Input file must be provided.")
+    
+        output_filename = str(new_file_path("hashcat", ".22000", output_filename))
+        essid = ssid.encode("utf-8", errors="ignore").hex()
+        message_pair = 0
+        line = None
+    
+        with open(input_filename, "r") as f:
+            data = json.load(f)
+
+        if bitmask_message_pair == MESSAGE_PAIR_M1_M4:
+            pmkid = clean_hex_string(data.get("pmkid"))
+            ap_mac = clean_hex_string(data.get("ap_mac"))
+            sta_mac = clean_hex_string(data.get("sta_mac"))
+            if not all([ssid, pmkid, ap_mac, sta_mac]):
+                raise ValueError("Missing one or more required keys: pmkid, ap_mac, sta_mac")
+            line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
+            logger.info(line)
+    
+        elif bitmask_message_pair == MESSAGE_PAIR_M1_M2:
+            eapol_msg1_hex = None
+            eapol_msg2_hex = None
+            seen = 0
+    
+            for hexstr, _ in iter_packets_from_json(input_filename):
+                if seen == 0:
+                    eapol_msg1_hex = hexstr
+                elif seen == 1:
+                    eapol_msg2_hex = hexstr
+                    break
+                seen += 1
+    
+            if eapol_msg1_hex is None:
+                raise ValueError("No frames found in input file")
+            if eapol_msg2_hex is None:
+                raise ValueError("Only one frame found in input file; need two EAPOL frames")
+
+            parser = get_parser("DLT_IEEE802_11_RADIO")
+
+            msg1 = parser(bytes.fromhex(eapol_msg1_hex)) 
+            msg2 = parser(bytes.fromhex(eapol_msg2_hex))
+    
+            msg2_mac = msg2["mac_hdr"]["parsed"]
+            
+            ap_mac = msg2_mac.get("bssid", {}).get("parsed", {}).get("mac") \
+                or msg2_mac.get("da", {}).get("parsed", {}).get("mac")
+            
+            sta_mac = msg2_mac.get("sa", {}).get("parsed", {}).get("mac") \
+                or msg2_mac.get("ta", {}).get("parsed", {}).get("mac")
+
+            msg1_eapol = msg1["body"]["llc"]["parsed"]["payload"]["parsed"]
+            msg2_eapol = msg2["body"]["llc"]["parsed"]["payload"]["parsed"]
+
+            anonce = msg1_eapol.get("key_nonce", "")
+            mic = msg2_eapol.get("key_mic", "")
+
+            if not all([ap_mac, sta_mac, anonce, mic]):
+                raise ValueError("Missing essential EAPOL data")
+            if len(mic) != EAPOL_MIC_LENGTH:
+                raise ValueError(f"Invalid MIC length: {len(mic)}")
+            if len(anonce) != EAPOL_NONCE_LENGTH:
+                raise ValueError(f"Invalid ANonce length: {len(anonce)}")
+    
+            mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_REPLAY_COUNTER_LENGTH}s{EAPOL_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
+
+            msg2_eapol_raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
+
+            eapol_bytes = bytes.fromhex(msg2_eapol_raw)
+
+            mic = msg2_eapol["key_mic"]
+            raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
+            
+            eapol_zero_mic = raw.replace(mic, "0" * len(mic))
+
+            line = f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair:02x}"
+        else:
+            raise ValueError("Unsupported bitmask_message_pair!")
+
+        return line
+
+class Operations:
+    @staticmethod
+    def list_network_interfaces() -> str:
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
+        result = subprocess.run(
+            ["iw", "dev"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+
+    @staticmethod
+    def list_network_interface(ifname: str) -> str:
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
+        result = subprocess.run(
+            ["iw", "dev", ifname, "info"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+
+    @staticmethod
+    def set_monitor(ifname: str):
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
+        try:
+            subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            logger.info(f"{ifname} configured for monitor mode!")
+        except Exception as e:
+            logger.error(f"error configure {ifname} to monitor mode: {e}")
+
+    @staticmethod
+    def set_station(ifname: str):
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
+        try:
+            subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            logger.info(f"{ifname} configured for station/management mode!")
+        except Exception as e:
+            logger.error(f"error configure {ifname} to station mode: {e}")
+
+    @staticmethod
+    def scan_station_mode(ifname: str = None, output_filename: str = None):
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy\n")
+    
+        logger.info(f" Scanning WiFi networks on {ifname}...\n")
+        
+        try:
+            result = subprocess.run(
+                ["sudo", "iw", "dev", ifname, "scan"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                check=True
+            )
+        except subprocess.CalledProcessError as e:
+            logger.critical(f"Error during scan: {e}")
+            return
+        except FileNotFoundError:
+            logger.error("Error: 'iw' command not found. Please install wireless tools.")
+            return
+    
+        def _extract_value(block: str, pattern: str) -> str:
+            match = re.search(pattern, block)
+            return match.group(1) if match else "N/A"
+    
+        def _get_security_type(block: str) -> str:
+            if "WPA3" in block or "SAE" in block:
+                return "WPA3"
+            elif "WPA2" in block or "RSN:" in block:
+                return "WPA2"
+            elif "WPA:" in block:
+                return "WPA"
+            elif "privacy" in block:
+                return "WEP"
+            else:
+                return "OPEN"
+    
+        def _get_wps_status(block: str) -> str:
+            if "WPS:" not in block:
+                return "Disabled"
+            status = "Enabled"
+            state_match = re.search(r"Wi-Fi Protected Setup State:\s*(\d+)\s*\((\w+)\)", block)
+            if state_match:
+                status += f" ({state_match.group(2)})"
+            methods_match = re.search(r"Config methods:\s*(.+)", block)
+            if methods_match:
+                status += f" - {methods_match.group(1)}"
+            if "AP setup locked: 0x01" in block:
+                status += " [LOCKED]"
+            return status
+    
+        def _print_network_summary(block: str, num: int):
+            bssid = _extract_value(block, r"^([0-9a-f:]{17})")
+            ssid = _extract_value(block, r"SSID:\s*(.+)") or "Hidden"
+            signal = _extract_value(block, r"signal:\s*([-\d.]+)\s*dBm")
+            channel = _extract_value(block, r"DS Parameter set:\s*channel\s*(\d+)")
+            frequency = _extract_value(block, r"freq:\s*([\d.]+)")
+            
+            security = _get_security_type(block)
+            wps_info = _get_wps_status(block)
+            vendor = _extract_value(block, r"Manufacturer:\s*(.+)")
+            
+            encryption = []
+            if "CCMP" in block: encryption.append("AES")
+            if "TKIP" in block: encryption.append("TKIP")
+            
+            print(
+                f"┌─── NETWORK #{num} {'─' * 50}\n"
+                f"│ SSID: {ssid}\n"
+                f"│ BSSID: {bssid}\n"
+                f"│ Signal: {signal} dBm | Channel: {channel} | Freq: {frequency} MHz\n"
+                f"│ Security: {security}"
+            )
+            
+            if encryption:
+                print(f"│ Encryption: {', '.join(encryption)}")
+            
+            if vendor and vendor != "Unknown":
+                print(f"│ Vendor: {vendor}")
+            
+            print(f"│ WPS: {wps_info}")
+            
+            flags = []
+            if "WPA3" in block or "SAE" in block: flags.append("WPA3")
+            if "Management frame protection: required" in block: flags.append("PMF-Required")
+            elif "Management frame protection: capable" in block: flags.append("PMF-Capable")
+            
+            if flags:
+                print(f"│ Security Flags: {', '.join(flags)}")
+            
+            print(f"└{'─' * 60}")
+    
+        output_filename = str(new_file_path("station-scan-result", ".txt", output_filename))
+    
+        if result.stdout:
+            with open(output_filename, "w") as file:
+                file.write(result.stdout)
+        
+            blocks = result.stdout.strip().split("\nBSS ")
+            network_count = 0
+            
+            for block in blocks[1:]:
+                network_count += 1
+                _print_network_summary(block, network_count)
+            
+            logger.info(f"\nTotal networks found: {network_count}")
+
+    @staticmethod
+    def sniff(dlt: str = "DLT_IEEE802_11_RADIO", ifname: str = None,
+            store_filter: str = None, display_filter: str = None, 
+            count: int = None, timeout: float = None, 
+            display_interval: float = 0.0, store_callback: callable = None,
+            display_callback: callable = None, stop_event: threading.Event = None,
+            output_filename: str = None
+        ):
+    
+        check_root()
+        check_interface_mode(ifname, "monitor")
+    
+        try:
+            parser = get_parser(dlt)
+        except ValueError as e:
+            logger.error(e)
+            return
+    
+        sock = create_raw_socket(ifname)
+
+        output_filename = new_file_path(filename=output_filename) if output_filename else new_file_path(base="framesniff-capture", ext=".json")
+
+        captured_frames = []
+        frame_counter = 0
+        last_display_time = 0.0
+    
+        try:
+            logger.info(f'''
+    Starting capture on {ifname}... (Press Ctrl+C to stop)\n
+    Store filter: {store_filter}"\n
+    Display filter: {display_filter}\n
+    Output path: {output_filename}
+    Timeout: {timeout} seconds
+            ''')
+    
+            start_time = time.time()
+    
+            while True:
+                if stop_event and stop_event.is_set():
+                    logger.info("Stop event received, finishing capture...")
+                    break
+                
+                if timeout and (time.time() - start_time) >= timeout:
+                    logger.info(f"Capture timeout reached after {timeout} seconds")
+                    break
+                
+                try:
+                    parsed_frame = {}
+                    frame, _ = sock.recvfrom(65535)
+                    hex_frame = frame.hex()
+                    
+                    try:
+                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}")
+                        parsed_frame = parser(frame)
+                    except Exception as e:
+                        logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
+                    parsed_frame["counter"] = frame_counter
+                    parsed_frame["raw"] = hex_frame
+
+                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+                    
+                    if store_result:
+                        frame_counter += 1
+                        captured_frames.append(parsed_frame)
+                        if store_callback:
+                            store_callback(parsed_frame)
+                    if display_result and display_callback:
+                        display_callback(display_result)
+                    if display_result and not display_callback:
+                        current_time = time.time()
+                        if store_result and current_time - last_display_time >= display_interval:
+                            try:
+                                logger.info(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
+                            except Exception:
+                                logger.warning(f"[{frame_counter}] {display_result}")
+                            last_display_time = current_time
+                    if count is not None and frame_counter >= count:
+                        break
+                        
+                except KeyboardInterrupt:
+                    logger.info("Capture interrupted by user")
+                    break
+                except Exception as e:
+                    logger.error(f"Error receiving frame: {e}")
+                    continue
+
+        except Exception as e:
+            logger.critical(f"Unexpected error in sniff: {e}")
+
+        finally:
+            logger.info(f"Finishing capture, saving {len(captured_frames)} frames...")
+            if stop_event:
+                stop_event.set()
+            finish_capture(sock, start_time, captured_frames, output_filename)
+
+    @staticmethod
+    def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
+        linktype = get_dlt_value(dlt) 
+        output_filename = new_file_path("packets", ".pcap", output_filename)
+        with open(output_filename, "wb") as out:
+            writer = dpkt.pcap.Writer(out, linktype=linktype)
+            count = 0
+            for hexstr, b in iter_packets_from_json(input_filename):
+                writer.writepkt(b, ts=time.time())
+                count += 1
+                logger.info(f"{count} packet writed: {b[:50]}...")
+            writer.close()
+            logger.info(f"Output file: {output_filename}")
+
+    @staticmethod
+    def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
+        sock = create_raw_socket(ifname)
+        if timeout is not None:
+            sock.settimeout(timeout)
+        try:
+            for cleaned, raw_bytes in iter_packets_from_json(input_filename):
+                for i in range(count):
+                    try:
+                        bytes_sent = sock.send(raw_bytes)
+                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
+                        if i < count - 1:
+                            time.sleep(interval)
+                    except socket.error as e:
+                        logger.error(f"Failed to send frame: {e}")
+                        break
+                    except Exception as e:
+                        logger.critical(f"Unexpected error: {e}")
+                        break
+        finally:
+            sock.close()
+
+    @staticmethod
+    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
+        from core.tui.scan_monitor import scan_monitor
+        logger.info("press ctrl+s or <F12> to save tui information!")
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
+
+    @staticmethod
+    def set_frequency(ifname: str, frequency_mhz: int = None, channel: int = None, channel_width: int = None) -> bool:
+        attempts = []
+    
+        if channel is not None:
+            attempts.append(["sudo", "iw", ifname, "set", "channel", str(channel)])
+    
+        elif frequency_mhz is not None:
+            if channel_width:
+                attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
+            attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz)])
+    
+        last_err = None
+    
+        for cmd in attempts:
+            try:
+                proc = subprocess.run(cmd, capture_output=True, text=True)
+                if proc.returncode != 0:
+                    last_err = f"{' '.join(cmd)} -> returncode {proc.returncode} stderr:{proc.stderr.strip()}"
+                    logger.error(last_err)
+                    continue
+                return True
+            except Exception as e:
+                last_err = f"Unexpected error running {' '.join(cmd)}: {e}"
+                logger.error(last_err)
+    
+        return False
+
+    @staticmethod
+    def get_channels(bands: list[int | float] = [2.4]) -> dict:
+        channel_map = {}
+        normalized_bands = []
+        for b in bands:
+            try:
+                if b > 1000:
+                    b = round(b / 1000, 1)
+                normalized_bands.append(b)
+            except Exception as e:
+                logger.warning(f"Ignoring invalid band value {b}: {e}")
+        if 2.4 in normalized_bands:
+            channel_map[2.4] = [(ch, 2407 + ch * 5) for ch in range(1, 14)]
+        if 5 in normalized_bands:
+            channel_map[5] = [
+                (36, 5180), (40, 5200), (44, 5220), (48, 5240),
+                (52, 5260), (56, 5280), (60, 5300), (64, 5320),
+                (100, 5500), (104, 5520), (108, 5540), (112, 5560),
+                (116, 5580), (120, 5600), (124, 5620), (128, 5640),
+                (132, 5660), (136, 5680), (140, 5700), (144, 5720),
+                (149, 5745), (153, 5765), (157, 5785), (161, 5805), (165, 5825)
+            ]
+        if 6 in normalized_bands:
+            base_freq = 5955
+            channel_map[6] = [(ch, base_freq + 5 * (ch - 1)) for ch in range(1, 234)]
+        return channel_map
+
+    @staticmethod
+    def generate_channel_hopping_config(
+        bands,
+        channel_width: int = 20,
+        dwell: float = 4.0,
+        output_filename: str = None
+    ) -> dict:
+        try:
+            logger.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}s)...")
+            channel_map = Operations.get_channels(bands)
+            config = {}
+            for band, entries in channel_map.items():
+                config[str(band)] = {}
+                for ch, freq in entries:
+                    config[str(band)][str(ch)] = {
+                        "frequency": freq,
+                        "dwell": dwell,
+                        "channel_width": channel_width
+                    }
+            if output_filename:
+                output_filename = str(new_file_path(filename=output_filename))
+                with open(output_filename, "w", encoding="utf-8") as file:
+                    json.dump(config, file, indent=4)
+                logger.info(f"Config file saved to: {output_filename}")
+            else:
+                return config
+        except Exception as e:
+            logger.error(f"Failed to generate channel hopping config: {e}")
+            return {}
+
+    @staticmethod
+    def channel_hopper(
+        ifname: str,
+        channel_hopping_config_path: str = None,
+        channel_hopping_config: dict = None,
+        allowed: list[int] = None,
+        disallowed: list[int] = None,
+        callback: callable = None,
+        stop_event=None,
+        timeout: float = None,
+    ):
+        config = None
+        if channel_hopping_config_path:
+            try:
+                with open(channel_hopping_config_path, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load channel hopping config: {e}")
+                return
+        elif channel_hopping_config:
+            config = channel_hopping_config
+        else:
+            logger.error("Either 'channel_hopping_config_path' or 'channel_hopping_config' must be provided.")
+            return
+        channels_to_scan: list[tuple[int, int, float, int, int]] = []
+        for band_str, channels in config.items():
+            try:
+                band = float(band_str)
+            except Exception as e:
+                logger.warning(f"Ignoring invalid band key '{band_str}': {e}")
+                continue
+            for ch_str, params in channels.items():
+                try:
+                    ch = int(ch_str)
+                    freq = params.get("frequency")
+                    dwell = params.get("dwell", 4.0) # seconds
+                    width = int(params.get("channel_width", 20))
+                    if allowed and ch not in allowed:
+                        continue
+                    if disallowed and ch in disallowed:
+                        continue
+                    channels_to_scan.append((ch, freq, band, dwell, width))
+                except Exception as e:
+                    logger.warning(f"Skipping invalid channel entry '{ch_str}': {e}")
+        if not channels_to_scan:
+            logger.warning("No valid channels to scan.")
+            return
+        idx = 0
+        start_time = time.time()
+        try:
+            while True:
+                if timeout is not None and (time.time() - start_time) >= timeout:
+                    logger.info(f"Channel hopping timed out after {timeout} seconds.")
+                    break
+                if stop_event and stop_event.is_set():
+                    logger.info("Stop event detected, stopping channel hopper.")
+                    break
+                ch, freq, band, dwell, width = channels_to_scan[idx]
+                success = Operations.set_frequency(ifname, freq, channel=ch, channel_width=width)
+                if success:
+                    logger.info(
+                        f"Channel set -> ch={ch} freq={freq}MHz band={band}GHz width={width} dwell={dwell}s"
+                    )
+                else:
+                    logger.error(f"Failed to set channel {ch} ({freq}MHz)")
+                if callback:
+                    try:
+                        callback(channel=ch, band=band)
+                    except Exception as e:
+                        logger.error(f"Channel hopper callback error: {e}")
+                idx = (idx + 1) % len(channels_to_scan)
+                time.sleep(dwell)
+        except KeyboardInterrupt:
+            logger.info("Channel hopping interrupted by user.")
+        except Exception as e:
+            logger.error(f"Unexpected error in channel hopper: {e}")
+            logger.error(traceback.format_exc())
+        finally:
+            logger.info("Channel hopper finished.")
 

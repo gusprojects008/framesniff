@@ -78,14 +78,17 @@ class Hashcat:
             msg1 = parser(bytes.fromhex(eapol_msg1_hex)) 
             msg2 = parser(bytes.fromhex(eapol_msg2_hex))
     
-            msg2_mac_hdr = msg2.get("mac_hdr")
+            msg2_mac = msg2["mac_hdr"]["parsed"]
+            
+            ap_mac = msg2_mac.get("bssid", {}).get("parsed", {}).get("mac") \
+                or msg2_mac.get("da", {}).get("parsed", {}).get("mac")
+            
+            sta_mac = msg2_mac.get("sa", {}).get("parsed", {}).get("mac") \
+                or msg2_mac.get("ta", {}).get("parsed", {}).get("mac")
 
-            ap_mac = msg2_mac_hdr.get("bssid").get("mac") or msg2_mac_hdr.get("da").get("mac")
-            sta_mac = msg2_mac_hdr.get("sa").get("mac") or msg2_mac_hdr.get("ta").get("mac")
-    
-            msg1_eapol = msg1.get("body").get("llc").get("eapol")
-            msg2_eapol = msg2.get("body").get("llc").get("eapol")
-    
+            msg1_eapol = msg1["body"]["llc"]["parsed"]["payload"]["parsed"]
+            msg2_eapol = msg2["body"]["llc"]["parsed"]["payload"]["parsed"]
+
             anonce = msg1_eapol.get("key_nonce", "")
             mic = msg2_eapol.get("key_mic", "")
 
@@ -98,13 +101,16 @@ class Hashcat:
     
             mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_REPLAY_COUNTER_LENGTH}s{EAPOL_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
 
-            mic_bytes = msg2[mic_offset:mic_offset + struct.calcsize(f"{EAPOL_MIC_LENGTH}s")]
-            zero_mic = b"\x00" * len(mic_bytes)
-    
-            eapol_zero_mic = (msg2[:mic_offset] + zero_mic + msg2[mic_offset + len(mic_bytes):]).hex()
-    
+            msg2_eapol_raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
+
+            eapol_bytes = bytes.fromhex(msg2_eapol_raw)
+
+            mic = msg2_eapol["key_mic"]
+            raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
+            
+            eapol_zero_mic = raw.replace(mic, "0" * len(mic))
+
             line = f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair:02x}"
-    
         else:
             raise ValueError("Unsupported bitmask_message_pair!")
 
@@ -311,6 +317,7 @@ class Operations:
                     break
                 
                 try:
+                    parsed_frame = {}
                     frame, _ = sock.recvfrom(65535)
                     hex_frame = frame.hex()
                     
@@ -319,11 +326,6 @@ class Operations:
                         parsed_frame = parser(frame)
                     except Exception as e:
                         logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
-                        continue
-                    
-                    if not parsed_frame:
-                        continue
-                    
                     parsed_frame["counter"] = frame_counter
                     parsed_frame["raw"] = hex_frame
 
@@ -406,18 +408,19 @@ class Operations:
         scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
 
     @staticmethod
-    def set_frequency(ifname: str, frequency_mhz: int, channel: int, channel_width: int = None) -> bool:
+    def set_frequency(ifname: str, frequency_mhz: int = None, channel: int = None, channel_width: int = None) -> bool:
         attempts = []
-        if channel_width:
-            attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
-        attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz)])
-        if channel:
-            try:
-                attempts.insert(0, ["sudo", "iw", ifname, "set", "channel", str(channel)])
-            except Exception as e:
-                logger.error(f"Invalid channel value: {channel} ({e})")
-                return False
+    
+        if channel is not None:
+            attempts.append(["sudo", "iw", ifname, "set", "channel", str(channel)])
+    
+        elif frequency_mhz is not None:
+            if channel_width:
+                attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
+            attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz)])
+    
         last_err = None
+    
         for cmd in attempts:
             try:
                 proc = subprocess.run(cmd, capture_output=True, text=True)
@@ -429,6 +432,7 @@ class Operations:
             except Exception as e:
                 last_err = f"Unexpected error running {' '.join(cmd)}: {e}"
                 logger.error(last_err)
+    
         return False
 
     @staticmethod

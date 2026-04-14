@@ -2,10 +2,7 @@ import sys
 import logging
 import argparse
 from pathlib import Path
-from logging import FileHandler, Formatter
 from core.common.function_utils import (import_module, new_file_path, setup_logging)
-import_module("rich")
-from rich.logging import RichHandler
 from core.common.constants.hashcat import *
 from core.user_operations import Operations
 
@@ -40,11 +37,32 @@ def main():
     scan_parser.add_argument("ifname", type=str, default=None, help="Network Interface Name")
     scan_parser.add_argument("--output", "-o", type=str, default=None, help="Output filename")
 
-    set_frequency_parser = subparsers.add_parser("set-frequency", help="Set frequency on a given phy or ifname")
-    set_frequency_parser.add_argument("ifname", type=str, help="Network Interface Name")
-    set_frequency_parser.add_argument("--frequency", "-f", type=str, default="2437", help="Frequency in MHz")
-    set_frequency_parser.add_argument("--channel", "-c", type=str, default="1", help="Channel")
-    set_frequency_parser.add_argument("--width", type=int, default=20, help="Channel width")
+    set_frequency_parser = subparsers.add_parser(
+        "set-frequency",
+        help="Set frequency or channel on a given interface"
+    )
+    set_frequency_parser.add_argument(
+        "ifname",
+        type=str,
+        help="Network Interface Name"
+    )
+    group = set_frequency_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--frequency", "-f",
+        type=int,
+        help="Frequency in MHz"
+    )
+    group.add_argument(
+        "--channel", "-c",
+        type=int,
+        help="Channel"
+    )
+    set_frequency_parser.add_argument(
+        "--width",
+        type=int,
+        help="Channel width"
+    )
+
 
     sniff_parser = subparsers.add_parser("sniff", help="Sniff Wi-Fi, Bluetooth or Ethernet frames")
     sniff_parser.add_argument("ifname", type=str, help="Network interface name")
@@ -112,7 +130,7 @@ def main():
 
     scan_monitor_parser = subparsers.add_parser("scan-monitor", help="scans nearby APs and devices.")
     scan_monitor_parser.add_argument("ifname", type=str, help="Network interface name")
-    scan_monitor_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format captured.")
+    scan_monitor_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "DLT_EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format captured.")
     scan_monitor_parser.add_argument("--no-channel-hopping", dest="channel_hopping", action="store_false", help="Disable channel hopping (enabled by default).")
     scan_monitor_parser.add_argument("--dwell", type=float, default=4.0, help="Channel hopping interval (dwell time in channel), default 4 seconds.")
     scan_monitor_parser.add_argument("--timeout", type=float, default=None, help="Time to capture frames (seconds), default None.")
@@ -135,7 +153,7 @@ def main():
     log_file_path = str(setup_logging(args.verbose))
     logger = logging.getLogger(__name__)
 
-    if log_file_path is None:
+    if not log_file_path:
         logger.info(f"log file created at: {log_file_path} {type(log_file_path)}")
 
     if args.command == "list-interfaces":
@@ -149,7 +167,7 @@ def main():
     elif args.command == "scan-station":
        operations.scan_station_mode(args.ifname, args.output)
     elif args.command == "set-frequency":
-       operations.set_frequency(args.ifname, args.frequency_mhz, args.width)
+       operations.set_frequency(args.ifname, args.frequency, args.channel, args.width)
     elif args.command == "generate-channel-hopping-config":
         operations.generate_channel_hopping_config(bands=args.bands, channel_width=args.width, dwell=args.dwell, output_filename=args.output)
     elif args.command == "channel-hopping":

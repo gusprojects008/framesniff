@@ -1,20 +1,9 @@
 from logging import getLogger
-from core.common.parser_utils import (ParseContext, unpack, bitmap_dict_to_hex, bitmap_value_for_dict, freq_to_channel)
-
-logger = getLogger(__name__)
-
-from logging import getLogger
 from core.common.parser_utils import (
     ParseContext, unpack, bitmap_value_for_dict, freq_to_channel
 )
 
 logger = getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Radiotap bit-field definitions
-# Each entry: (bit_index, name, struct_fmt, alignment, parser_func_or_None)
-# alignment = natural alignment of the field in bytes (per radiotap spec)
-# ---------------------------------------------------------------------------
 
 def _parse_flags(value):
     return {'flags': bitmap_value_for_dict(value, [
@@ -102,13 +91,11 @@ def _parse_vht(value):
         None, None, None, None, None, None, None
     ])
 
-    # decode per-user MCS+NSS
     def _decode_mcs_nss(raw):
         if raw == 0:
             return None
         return {'nss': raw & 0x0F, 'mcs': (raw >> 4) & 0x0F}
 
-    # coding bits: one per space-time stream (up to 4)
     coding_streams = [
         'ldpc' if (coding >> i) & 1 else 'bcc'
         for i in range(4)
@@ -205,6 +192,13 @@ _FIELD_BY_BIT = {bit: (name, fmt, align, pfunc) for bit, name, fmt, align, pfunc
 def parser(**kwargs) -> dict:
     def _parser(value: tuple, **kwargs) -> dict:
         rth_version, rth_pad, rth_length = value
+
+        if rth_version != 0:
+            raise ValueError(
+                "Radiotap parser error: malformed frame — possibly an "
+                "Ethernet frame captured on an 802.11 monitor interface."
+            )
+
         result = {
             "version": rth_version,
             "pad": rth_pad,
@@ -212,64 +206,74 @@ def parser(**kwargs) -> dict:
         }
 
         ctx = ParseContext.current()
-
         frame_len = len(ctx.frame)
 
         if rth_length > frame_len:
-            logger.debug("Radiotap length exceeds frame size rth_length={rth_length} len(ctx.frame)=frame_len")
-            raise
-            #ctx.offset = frame_len
+            logger.warning(
+                f"Radiotap length exceeds frame size: "
+                f"rth_length={rth_length} frame_len={frame_len}"
+            )
+            raise ValueError(
+                "Radiotap parser error: malformed frame — possibly an "
+                "Ethernet frame captured on an 802.11 monitor interface."
+            )
 
         present_bitmaps = {}
-        combined_present = 0  # only standard namespace (word 0)
+        combined_present = 0
 
-        for word_index in range(32):
-            present_data = unpack("<I", parser=lambda v, **kw: v, metadata=False)
-            word_val = present_data["parsed"]
-            present_bitmaps[word_index] = hex(word_val)
+        try:
+            for word_index in range(32):
+                present_data = unpack("<I", parser=lambda v, **kw: v, metadata=False)
+                word_val = present_data["parsed"]
+                present_bitmaps[word_index] = hex(word_val)
 
-            # Standard namespace is word 0 only
-            if word_index == 0:
-                combined_present = word_val
+                if word_index == 0:
+                    combined_present = word_val
 
-            if not (word_val & (1 << 31)):
-                break  # no more present words
+                if not (word_val & (1 << 31)):
+                    break
+        except Exception as e:
+            logger.debug(f"Radiotap: error reading present bitmaps: {e} — trusting rth_length")
+            result["present_bitmaps"] = present_bitmaps
+            result["parse_error"] = f"present_bitmap read failed: {e}"
+            ctx.offset = rth_length
+            return result
 
         result["present_bitmaps"] = present_bitmaps
 
-        # ------------------------------------------------------------------
-        # 2. Parse each field whose bit is set in combined_present.
-        #    Fields must be processed in bit-index order (ascending) and
-        #    each field must be aligned to its natural boundary.
-        #    ctx.offset is relative to the start of the *full frame*,
-        #    so alignment padding is computed from ctx.offset directly.
-        # ------------------------------------------------------------------
-        for bit_index in range(29):          # bits 29/30 are namespace/vendor EXT
+        for bit_index in range(29):
             if not (combined_present & (1 << bit_index)):
                 continue
             if bit_index not in _FIELD_BY_BIT:
-                logger.debug(f"Radiotap: unknown bit {bit_index} set, cannot parse remaining fields reliably")
+                logger.debug(
+                    f"Radiotap: unknown bit {bit_index} set — "
+                    f"cannot parse remaining fields reliably"
+                )
                 break
 
             name, fmt, alignment, pfunc = _FIELD_BY_BIT[bit_index]
 
-            # Apply alignment padding
-            if alignment > 1:
-                pad = (alignment - (ctx.offset % alignment)) % alignment
-                ctx.offset += pad
+            try:
+                if alignment > 1:
+                    pad = (alignment - (ctx.offset % alignment)) % alignment
+                    ctx.offset += pad
 
-            field_result = unpack(fmt, parser=pfunc, metadata=False)
+                field_result = unpack(fmt, parser=pfunc, metadata=False)
 
-            if pfunc is None:
-                result[name] = field_result["value"]
-            else:
-                result.update(field_result["parsed"])
+                if pfunc is None:
+                    result[name] = field_result["value"]
+                else:
+                    result.update(field_result["parsed"])
+            except Exception as e:
+                logger.debug(
+                    f"Radiotap: error parsing field bit={bit_index} "
+                    f"name={name}: {e} — trusting rth_length to continue"
+                )
+                result.setdefault("field_errors", {})[name] = str(e)
+                break
 
         ctx.offset = rth_length
+
         return result
 
-    try:
-        return unpack("<BBH", parser=_parser)
-    except Exception as e:
-        logger.debug(f"Radiotap parser error, malformed frame, possibly a frame without a radiotap header and/or in Ethernet frame format: {e}", exc_info=True)
-        #return ctx.result
+    return unpack("<BBH", parser=_parser)

@@ -1,9 +1,24 @@
-import os
 import sys
+
+def import_module(module_name):
+    try:
+        __import__(module_name)
+    except ImportError:
+        raise ImportError(f'''\n
+    Error when trying to import {module_name}, run the following commands:\n
+    python -m venv venv
+    source venv/bin/activate
+    pip install {module_name}
+    ./venv/bin/python {' '.join(sys.argv)}
+''')
+
+import os
 import subprocess
 import re
 import logging
-from logging import getLogger
+from logging import FileHandler, Formatter, getLogger
+import_module("rich")
+from rich.logging import RichHandler
 import time
 from pathlib import Path
 import json
@@ -62,18 +77,6 @@ def finish_capture(sock, start_time: int, captured_frames: list, output_file_pat
             logger.error(f"Error saving file: {e}")
     else:
         logger.info("No frames captured")
-
-def import_module(module_name):
-    try:
-        __import__(module_name)
-    except ImportError:
-        raise ImportError(f'''\n
-    Error when trying to import {module_name}, run the following commands:\n
-    python -m venv venv
-    source venv/bin/activate
-    pip install {module_name}
-    ./venv/bin/python {' '.join(sys.argv)}
-''')
 
 ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
 

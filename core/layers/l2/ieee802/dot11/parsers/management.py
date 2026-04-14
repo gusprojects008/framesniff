@@ -30,15 +30,20 @@ def mgmt_deauthentication(**kwargs) -> dict:
 def mgmt_authentication(**kwargs) -> dict:
     def _parser(value: tuple, **k) -> dict:
         alg, seq, status = value
-        fp = fixed_parameters()
-        tp = tagged_parameters()
-        return {
+        
+        ctx = ParseContext.current()
+
+        res = {
             "auth_algorithm": alg,
             "auth_sequence": seq,
             "status_code": status,
-            "fixed_parameters": fp,
-            "tagged_parameters": tp
         }
+
+        if ctx.offset < len(ctx.frame):
+            res["tagged_parameters"] = tagged_parameters()
+            
+        return res
+
     return unpack("<HHH", parser=_parser)
 
 def mgmt_action(**kwargs) -> dict:
@@ -48,10 +53,10 @@ def mgmt_action(**kwargs) -> dict:
         
         res = {"category": cat, "action": act}
         
-        if ctx.offset < len(ctx.frame):
-            tp = tagged_parameters()
-            res["tagged_parameters"] = tp
-            
+        remaining = len(ctx.frame) - ctx.offset
+        if remaining > 0:
+            res["body"] = unpack(f"{remaining}s")
+        
         return res
     return unpack("BB", parser=_parser)
 

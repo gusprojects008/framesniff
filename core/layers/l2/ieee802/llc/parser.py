@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (unpack, bytes_for_mac) 
+from core.common.parser_utils import (unpack, run_dispatch, bytes_for_oui) 
 from core.layers.l2.constants import *
 from core.layers.l2.ieee802.dot1x.parsers.eapol import parser as eapol
 from core.layers.l3.parsers import (ip, arp, ipv6)
