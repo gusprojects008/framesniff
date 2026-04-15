@@ -5,11 +5,12 @@ import time
 import json
 import socket
 import threading
+import struct
 import os
 from logging import getLogger
 from typing import Optional, Tuple, List
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, check_interface_mode)
-from core.common.parser_utils import iter_packets_from_json, bytes_encoder
+from core.common.parser_utils import iter_packets_from_json, bytes_encoder, normalize_bytes
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 from core.common.constants.hashcat import *
@@ -76,7 +77,11 @@ class Hashcat:
 
             parser = get_parser("DLT_IEEE802_11_RADIO")
 
-            msg1 = parser(bytes.fromhex(eapol_msg1_hex)) 
+            """
+            msg1 = normalize_bytes(parser(bytes.fromhex(eapol_msg1_hex)))
+            msg2 = normalize_bytes(parser(bytes.fromhex(eapol_msg2_hex)))
+            """
+            msg1 = parser(bytes.fromhex(eapol_msg1_hex))
             msg2 = parser(bytes.fromhex(eapol_msg2_hex))
     
             msg2_mac = msg2["mac_hdr"]["parsed"]
@@ -96,17 +101,18 @@ class Hashcat:
             if not all([ap_mac, sta_mac, anonce, mic]):
                 raise ValueError("Missing essential EAPOL data")
             if len(mic) != EAPOL_KEY_MIC_LENGTH:
-                raise ValueError(f"Invalid MIC length: {len(mic)}")
-            if len(anonce) != EAPOL_NONCE_LENGTH:
+                raise ValueError(f"Invalid MIC length: {len(mic)}  EAPOL_KEY_MIC_LENGTH={EAPOL_KEY_MIC_LENGTH}")
+            if len(anonce) != EAPOL_KEY_NONCE_LENGTH:
                 raise ValueError(f"Invalid ANonce length: {len(anonce)}")
     
-            mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_REPLAY_COUNTER_LENGTH}s{EAPOL_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
+            mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_KEY_REPLAY_COUNTER_LENGTH}s{EAPOL_KEY_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
 
             msg2_eapol_raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
 
-            eapol_bytes = bytes.fromhex(msg2_eapol_raw)
+            #eapol_bytes = bytes.fromhex(msg2_eapol_raw)
 
-            mic = msg2_eapol["key_mic"]
+            mic = msg2_eapol["key_mic"].hex()
+            anonce = anonce.hex()
             raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
             
             eapol_zero_mic = raw.replace(mic, "0" * len(mic))

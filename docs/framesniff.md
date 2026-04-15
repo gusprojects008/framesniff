@@ -2,7 +2,9 @@
 
 Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma está garantida para ser implementada. Elas exigem revisão e pesquisa adicional.
 
+* Permitir com que a função sniff possa ser utilizada por outros parsers, a fim de permitir com que eles façam suas próprias analises, por isso que o resultado original retornado pela função de "parse" contém bytes não convertidos em hexadecimal.
 * Tornar toda a aplicação TUI.
+* Permitir o usuário cerregar arquivo com padrões de filtro de frames.
 * Desenvolver uma TUI para sniffing (semelhante ao termshark).
 * Desenvolver uma TUI para edição de frames de forma semelhante ao mitmproxy.
 * Implementar um módulo para geração/edição de frames/pacotes.
@@ -54,7 +56,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ## Padrões a serem seguidos
 * Sempre montar dict ou fazer operações com valores, em memória, armazenando em variáveis antes de seres passada para o dict final, ou seja, não realizar lógica inline no dict. Isso se aplica principalmente para parsers internos usados como argumento de callback para a função unpack.
 * Seguir padrão da função unpack, ou seja, sempre que precisa interpretar um valor desempacotado por struct.unpack ou srtuct.unpack_from passar o parser interno que irá receber os valores binários desempacotados, e irá interpretar eles.
-* Não realizar conversões ou transformações hexadecimais nos resultados de parsed, só _add_metadata faz isso. O encoder json em finish_capture já faz esse trabalho, e filter_engine detecta se o valor é bytes, se for, faz apenas uma conversão local para ser utilizada em operações de comparação.
+* Não realizar conversões ou transformações hexadecimais nos resultados de parsed, só _add_metadata faz isso. O encoder json em finish_capture já faz esse trabalho, e filter_engine detecta se o valor é bytes, se for, faz apenas uma conversão local para ser utilizada em operações de comparação. Com exceção de conversão bytes_for_mac ou bytes_for_oui.
 
 # Decisões de arquitetura pendentes:
 Minha arquitetura atualmente: ...

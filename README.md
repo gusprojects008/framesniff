@@ -103,7 +103,7 @@ sudo .venv/bin/python framesniff.py set-frequency wlan0 2417
 Capture EAPOL frames:
 
 ```bash
-sudo .venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and body.llc.name == 'eapol'" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
+sudo .venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter  "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'" --display-filter "body.llc.payload" -o eapol-frames-attack.json
 ```
 
 Generate hashcat 22000 file:

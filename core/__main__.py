@@ -126,7 +126,7 @@ def run_test(name: str, func, *args, **kwargs):
     logger.info(f"\n[TEST START] {name}")
     try:
         result = func(*args, **kwargs)
-        logger.info(f"[TEST OK] {name}")
+        logger.info(f"[TEST OK] {name} {result}")
         return result
     except Exception as e:
         logger.error(f"[TEST FAIL] {name}: {e}", exc_info=True)
@@ -191,13 +191,16 @@ def run_tests():
         #count=5
     )
 
+    store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
+    display_filter = "body.llc.payload"
+
     run_test(
         "sniff_offline filter eapol",
         sniff_offline,
         dlt="DLT_IEEE802_11_RADIO",
         input_fullpath=test_input,
-        store_filter="body.llc.name == 'eapol'",
-        display_filter="body.llc.payload.key_mic",
+        store_filter=store_filter,
+        display_filter=display_filter,
     )
 
     run_test(
@@ -211,7 +214,7 @@ def run_tests():
     run_test(
         "generate hashcat format",
         Hashcat.generate_22000,
-        ssid="TestNetwork",
+        ssid="LOPES",
         input_fullpath=test_input
     )
 

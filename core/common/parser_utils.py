@@ -367,3 +367,12 @@ def bytes_encoder(obj):
     if isinstance(obj, bytes):
         return obj.hex()
     raise TypeError(f"Type {type(obj)} not serializable")
+
+def normalize_bytes(obj):
+    if isinstance(obj, dict):
+        return {k: normalize_bytes(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [normalize_bytes(v) for v in obj]
+    elif isinstance(obj, bytes):
+        return obj.hex()
+    return obj
