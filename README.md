@@ -23,7 +23,7 @@ framesniff allows you to:
 * `set-monitor <ifname>` / `set-station <ifname>` — switch interface mode.
 * `scan-monitor` — real-time monitor-mode scanning with channel hopping support.
 * `sniff <ifname>` — capture frames with options for DLT, filters, count, timeout, JSON output, and more.
-* `generate-22000` — convert JSON (EAPOL/PMKID) into a `hashcat.22000` file.
+* `generate-hashcat` — convert JSON (EAPOL/PMKID) into a `hashcat.22000` file.
 * `hextopcap` — generate a pcap file from JSON containing raw hexadecimal packets.
 * `send-raw <ifname>` — transmit raw (hex) frames/packets through an interface.
 
@@ -84,7 +84,7 @@ Check vendor-specific information for additional AP details such as version numb
 Switch to monitor mode:
 
 ```bash
-sudo venv/bin/python framesniff.py set-monitor wlan0
+sudo .venv/bin/python framesniff.py set-monitor wlan0
 ```
 
 **This will display all nearby APs and devices, updated in real time, including their associations. To inspect devices not associated with any AP, analyze the `scan-monitor` output file (generated after the operation), which contains all frames captured during the scan.**
@@ -92,18 +92,18 @@ sudo venv/bin/python framesniff.py set-monitor wlan0
 ***Pay close attention to the WPS status. If enabled (YES), check the WPS configuration in the scan output file saved after stopping the program. Press Ctrl+S or F12 to save the TUI-captured data. Depending on the WPS modes supported, brute-force and Pixie Dust attacks may be possible. Tools like [bully](https://github.com/kimocoder/bully) can perform these attacks, though the AP may lock WPS authentication temporarily.***
 
 ```bash
-sudo venv/bin/python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO
+sudo .venv/bin/python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO
 ```
 After detecting the target AP and device, set your monitor interface to their frequency or channel:
 
 ```bash
-sudo venv/bin/python framesniff.py set-frequency wlan0 2417
+sudo .venv/bin/python framesniff.py set-frequency wlan0 2417
 ```
 
 Capture EAPOL frames:
 
 ```bash
-sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and body.llc.name == 'eapol'" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
+sudo .venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and body.llc.name == 'eapol'" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
 ```
 
 Generate hashcat 22000 file:
@@ -112,13 +112,13 @@ Generate hashcat 22000 file:
 
 Example 1:
 ```bash
-venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
+.venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
 hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 
 Example 2:
 ```bash
-venv/bin/python framesniff.py generate-hashcat --bitmask 1 --ssid MyNetwork --input docs/eapol-attack-hashcat-22001-example.json --output hashcat.22001
+.venv/bin/python framesniff.py generate-hashcat --bitmask 1 --ssid MyNetwork --input docs/eapol-attack-hashcat-22001-example.json --output hashcat.22001
 hashcat -m 22001 hashcat.22001 wordlist.txt --show
 ```
 ---
@@ -128,13 +128,13 @@ Other usage modes:
 Convert raw hexadecimal frames/packets to pcap:
 
 ```bash
-venv/bin/python framesniff.py hextopcap --dlt DLT_IEEE802_11_RADIO -i raw_packets.json -o output.pcap
+.venv/bin/python framesniff.py hextopcap --dlt DLT_IEEE802_11_RADIO -i raw_packets.json -o output.pcap
 ```
 
 Send raw frames:
 
 ```bash
-sudo venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interval 0.5
+sudo .venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 10 --interval 0.5
 ```
 
 ## JSON file structure — input format examples

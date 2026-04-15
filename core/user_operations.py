@@ -147,7 +147,7 @@ class Operations:
             frame_counter = 0
             last_display_time = 0.0
             start_time = time.time()
-    
+
             try:
                 logger.info(
                     f"Starting capture on {ifname}... (Press Ctrl+C to stop)\n"
@@ -158,18 +158,18 @@ class Operations:
                 )
         
                 with open(output_fullpath, "a") as f:
-                    while True:
+                    while True:    
                         if stop_event and stop_event.is_set():
-                            logger.info("Stop event received, finishing capture...")
+                            logger.info("Stop event received, finishing...")
                             break
         
                         if timeout and (time.time() - start_time) >= timeout:
-                            logger.info(f"Capture timeout reached after {timeout} seconds")
+                            logger.info(f"Timeout of {timeout}s reached.")
                             break
         
                         try:
                             frame, _ = sock.recvfrom(65535)
-                            hex_frame = frame.hex()
+                            frame_hex = frame.hex()
         
                             try:
                                 parsed_frame = parser(frame)
@@ -181,43 +181,42 @@ class Operations:
                                 continue
         
                             parsed_frame["counter"] = frame_counter
-                            parsed_frame["raw"] = hex_frame
-                            frame_counter += 1
-                
-                            store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+                            parsed_frame["raw"] = frame_hex
                             
+                            store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+        
                             if store_result:
                                 if simple_output:
                                     dump = json.dumps(parsed_frame, default=bytes_encoder, separators=(",", ":"))
                                 else:
                                     dump = json.dumps(parsed_frame, default=bytes_encoder, indent=2)
-                                
+        
                                 f.write(dump + "\n")
-                
+                                
                                 if frame_counter % 100 == 0:
                                     f.flush()
-                
+        
+                                frame_counter += 1
+
                                 if store_callback:
                                     store_callback(parsed_frame)
-    
+        
                             if display_result:
                                 if display_callback:
                                     display_callback(display_result)
                                 else:
                                     current_time = time.time()
-                                    if store_result and (current_time - last_display_time >= display_interval):
+                                    if current_time - last_display_time >= display_interval:
                                         try:
                                             log_out = json.dumps(display_result, default=bytes_encoder, ensure_ascii=False)
                                             logger.info(f"[{frame_counter}] {log_out}")
                                         except Exception as log_err:
-                                            logger.debug(f"Display JSON error: {log_err}")
                                             logger.warning(f"[{frame_counter}] {display_result}")
                                         
                                         last_display_time = current_time
-    
+        
                             if count is not None and frame_counter >= count:
                                 break
-    
                         except KeyboardInterrupt:
                             logger.info("Capture interrupted by user")
                             break

@@ -307,169 +307,63 @@ def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
     return re.sub(r'[^0-9a-fA-F]', '', s).lower()
 
-def iter_packets_from_json(path: str):
-    try:
-        with open(path, "r") as file:
-            content = file.read()
-    except Exception as error:
-        raise RuntimeError(f"Could not open file {path}: {error}")
-    key = "raw"
-    try:
-        data = json.loads(content)
+import json
 
-        if isinstance(data, list):
-            for obj in data:
-                if not isinstance(obj, dict):
-                    continue
-                value = obj.get(key)
-                if isinstance(value, str):
-                    cleaned = clean_hex_string(value)
-                    if cleaned:
-                        yield (cleaned, bytes.fromhex(cleaned))
-                elif isinstance(value, list):
-                    for entry in value:
-                        if not isinstance(entry, str):
-                            continue
-                        cleaned = clean_hex_string(entry)
-                        if cleaned:
-                            yield (cleaned, bytes.fromhex(cleaned))
-        elif isinstance(data, dict):
-            value = data.get(key)
+def iter_packets_from_json(path: str):
+    key = "raw"
+
+    def _extract_values(data_obj):
+        if isinstance(data_obj, dict):
+            value = data_obj.get(key)
             if isinstance(value, str):
                 cleaned = clean_hex_string(value)
                 if cleaned:
                     yield (cleaned, bytes.fromhex(cleaned))
             elif isinstance(value, list):
                 for entry in value:
-                    if not isinstance(entry, str):
+                    if isinstance(entry, str):
+                        cleaned = clean_hex_string(entry)
+                        if cleaned:
+                            yield (cleaned, bytes.fromhex(cleaned))
+        elif isinstance(data_obj, list):
+            for item in data_obj:
+                yield from _extract_values(item)
+
+    is_jsonl = str(path).lower().endswith(".jsonl")
+
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            if is_jsonl:
+                for line_num, line in enumerate(file, start=1):
+                    line = line.strip()
+                    if not line:
                         continue
-                    cleaned = clean_hex_string(entry)
-                    if cleaned:
-                        yield (cleaned, bytes.fromhex(cleaned))
+                    try:
+                        data = json.loads(line)
+                        yield from _extract_values(data)
+                    except json.JSONDecodeError as error:
+                        raise ValueError(f"Erro decodificando JSONL na linha {line_num}: {error}")
+            else:
+                content = file.read()
+                try:
+                    data = json.loads(content)
+                    yield from _extract_values(data)
+                except json.JSONDecodeError as original_error:
+                    file.seek(0)
+                    for line_num, line in enumerate(file, start=1):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            data = json.loads(line)
+                            yield from _extract_values(data)
+                        except json.JSONDecodeError:
+                            raise ValueError(f"Error trying to load json file: {original_error}")
 
-        else:
-            raise ValueError("JSON file must contain a dict or list of dicts")
-
-    except json.JSONDecodeError as error:
-        raise ValueError(f"Error trying to load json file: {error}")
-
+    except Exception as error:
+        raise RuntimeError(f"Could not open or process file {path}: {error}")
 
 def bytes_encoder(obj):
     if isinstance(obj, bytes):
         return obj.hex()
     raise TypeError(f"Type {type(obj)} not serializable")
-
-
-"""
-def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
-    def _encode_bytes(obj):
-        if isinstance(obj, dict):
-            return {k: _encode_bytes(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [_encode_bytes(v) for v in obj]
-        elif isinstance(obj, tuple):
-            return tuple(_encode_bytes(obj) for obj in obj)
-        if isinstance(obj, bytes):
-            return obj.hex()
-        elif isinstance(obj, int):
-            return hex(obj)
-        return obj
-
-    def value_to_dict(value):
-        return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
-
-    ctx = ParseContext.current()
-    raw = ctx.frame
-    offset = ctx.offset
-    start = offset
-    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
-    sizes, tokens, s = _parse_fmt_tokens(fmt)
-    size = s.size
-
-    if offset + size > len(raw):
-        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
-
-    value = s.unpack_from(raw, offset)
-
-    offset += s.size
-
-    value = value[0] if len(value) == 1 else value
-
-    ctx.offset = offset
-
-    result = {"value": value}
-
-    if parser:
-        result["parsed"] = parser(value, **kwargs)
-
-    result["value"] = value_to_dict(value)
-    fmt = value_to_dict(fmt)
-    size = value_to_dict(size)
-    sizes = value_to_dict(sizes)
-
-    if metadata:
-        result.update(
-            _add_metadata(
-                raw,
-                start,
-                offset,
-                fmt=fmt,
-                size=size,
-                sizes=sizes,
-                tokens=tokens
-            )
-        )
-
-    result = _encode_bytes(result)
-
-    return result
-
-
-def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
-    def value_to_dict(value):
-        return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
-
-    ctx = ParseContext.current()
-    raw = ctx.frame
-    offset = ctx.offset
-    start = offset
-    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
-    sizes, tokens, s = _parse_fmt_tokens(fmt)
-    size = s.size
-
-    if offset + size > len(raw):
-        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
-
-    value = s.unpack_from(raw, offset)
-
-    offset += s.size
-
-    value = value[0] if len(value) == 1 else value
-
-    ctx.offset = offset
-
-    result = {"value": value}
-
-    if parser:
-        result["parsed"] = parser(value, **kwargs)
-
-    result["value"] = value_to_dict(value)
-    fmt = value_to_dict(fmt)
-    size = value_to_dict(size) 
-    sizes = value_to_dict(sizes) 
-
-    if metadata:
-        result.update(
-            _add_metadata(
-                raw,
-                start,
-                offset,
-                fmt=fmt,
-                size=size,
-                sizes=sizes,
-                tokens=tokens
-            )
-        )
-
-    return result
-"""

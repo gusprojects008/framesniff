@@ -86,6 +86,8 @@ def sniff_offline(
                     
                     if frame_counter % 100 == 0:
                         f.flush()
+  
+                    frame_counter += 1
 
                     if store_callback:
                         store_callback(parsed_frame)
@@ -103,8 +105,6 @@ def sniff_offline(
                                 logger.warning(f"[{frame_counter}] {display_result}")
                             
                             last_display_time = current_time
-
-                frame_counter += 1
 
                 if count is not None and frame_counter >= count:
                     break
