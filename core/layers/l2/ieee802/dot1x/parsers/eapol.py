@@ -14,13 +14,6 @@ def parser(**kwargs) -> dict:
         logger.debug("EAPOL _parser")
         auth_ver, eapol_type, length, desc_type, key_info, key_len, replay, nonce, iv, rsc, key_id, mic, key_data_len = value
 
-        replay = replay.hex()
-        nonce = nonce.hex()
-        iv = iv.hex()
-        rsc = rsc.hex()
-        key_id = key_id.hex()
-        mic = mic.hex()
-
         version_map = {
             0: "reserved(0)",
             1: "HMAC_MD5_ARC4_WPA1",
@@ -72,7 +65,8 @@ def parser(**kwargs) -> dict:
         }
 
         if key_data_len > 0:
-            result["key_data"] = tagged_parameters(max_length=key_data_len)
+            if not encrypted_key_data:
+                result["key_data"] = tagged_parameters(max_length=key_data_len) if not encrypted_key_data else unpack(f"{key_data_len}s")
 
         return result
 

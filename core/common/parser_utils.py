@@ -142,6 +142,9 @@ def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
     }
 
 def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+    def value_to_dict(value):
+        return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
+
     ctx = ParseContext.current()
     raw = ctx.frame
     offset = ctx.offset
@@ -166,20 +169,12 @@ def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kw
     if parser:
         result["parsed"] = parser(value, **kwargs)
 
-    if isinstance(value, bytes):
-        value = value.hex()
-    elif isinstance(value, int):
-        value = hex(value)
-    elif isinstance(value, tuple):
-        value = tuple(
-            v.hex() if isinstance(v, bytes)
-            else hex(v) if isinstance(v, int)
-            else v
-            for v in value
-        )
-    
-    result["value"] = value
-    
+    result["value"] = value_to_dict(value)
+    fmt = value_to_dict(fmt)
+    size = value_to_dict(size)
+    sizes = value_to_dict(sizes)
+    tokens = value_to_dict(tokens)
+
     if metadata:
         result.update(
             _add_metadata(
@@ -221,7 +216,7 @@ def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, *
     if fallback:
         return fallback(**kwargs)
 
-    logger.warning(f"No handler for dispatch_id={dispatch_id}, using unpack fallback")
+    logger.debug(f"No handler for dispatch_id={dispatch_id}, using unpack fallback")
 
     return unpack(**kwargs)
 
@@ -357,3 +352,124 @@ def iter_packets_from_json(path: str):
 
     except json.JSONDecodeError as error:
         raise ValueError(f"Error trying to load json file: {error}")
+
+
+def bytes_encoder(obj):
+    if isinstance(obj, bytes):
+        return obj.hex()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
+"""
+def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+    def _encode_bytes(obj):
+        if isinstance(obj, dict):
+            return {k: _encode_bytes(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [_encode_bytes(v) for v in obj]
+        elif isinstance(obj, tuple):
+            return tuple(_encode_bytes(obj) for obj in obj)
+        if isinstance(obj, bytes):
+            return obj.hex()
+        elif isinstance(obj, int):
+            return hex(obj)
+        return obj
+
+    def value_to_dict(value):
+        return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
+
+    ctx = ParseContext.current()
+    raw = ctx.frame
+    offset = ctx.offset
+    start = offset
+    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
+    sizes, tokens, s = _parse_fmt_tokens(fmt)
+    size = s.size
+
+    if offset + size > len(raw):
+        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
+
+    value = s.unpack_from(raw, offset)
+
+    offset += s.size
+
+    value = value[0] if len(value) == 1 else value
+
+    ctx.offset = offset
+
+    result = {"value": value}
+
+    if parser:
+        result["parsed"] = parser(value, **kwargs)
+
+    result["value"] = value_to_dict(value)
+    fmt = value_to_dict(fmt)
+    size = value_to_dict(size)
+    sizes = value_to_dict(sizes)
+
+    if metadata:
+        result.update(
+            _add_metadata(
+                raw,
+                start,
+                offset,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens
+            )
+        )
+
+    result = _encode_bytes(result)
+
+    return result
+
+
+def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+    def value_to_dict(value):
+        return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
+
+    ctx = ParseContext.current()
+    raw = ctx.frame
+    offset = ctx.offset
+    start = offset
+    fmt = (fmt or f"{len(raw) - start}s").replace(" ", "")
+    sizes, tokens, s = _parse_fmt_tokens(fmt)
+    size = s.size
+
+    if offset + size > len(raw):
+        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
+
+    value = s.unpack_from(raw, offset)
+
+    offset += s.size
+
+    value = value[0] if len(value) == 1 else value
+
+    ctx.offset = offset
+
+    result = {"value": value}
+
+    if parser:
+        result["parsed"] = parser(value, **kwargs)
+
+    result["value"] = value_to_dict(value)
+    fmt = value_to_dict(fmt)
+    size = value_to_dict(size) 
+    sizes = value_to_dict(sizes) 
+
+    if metadata:
+        result.update(
+            _add_metadata(
+                raw,
+                start,
+                offset,
+                fmt=fmt,
+                size=size,
+                sizes=sizes,
+                tokens=tokens
+            )
+        )
+
+    return result
+"""

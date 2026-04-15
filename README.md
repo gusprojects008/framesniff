@@ -1,6 +1,6 @@
 # framesniff
 
-A command-line tool for network exploration and analysis, focused on capturing and manipulating frames across different layers and communication standards (Wi-Fi (IEEE 802.11 / DLT_IEEE802_11_RADIO), Ethernet (IEEE 802.3 / EN10MB), Bluetooth HCI / DLT_BLUETOOTH_HCI_H4). Designed to enable in-depth analysis of wireless network protocols, as well as exploration of devices and the frames they transmit.
+A simple tool for network exploration and analysis, focused on capturing and manipulating frames across different layers and communication standards (Wi-Fi (IEEE 802.11 / DLT_IEEE802_11_RADIO), Ethernet (IEEE 802.3 / DLT_EN10MB), Bluetooth (Bluetooth HCI / DLT_BLUETOOTH_HCI_H4). Designed to enable in-depth analysis of network protocols, as well as exploration of devices and the frames they transmit.
 
 The current focus is on developing support for the IEEE 802.11 standard. Bluetooth and Ethernet are not yet supported.
 
@@ -30,7 +30,7 @@ framesniff allows you to:
 ## Supported formats / DLTs
 
 * `DLT_IEEE802_11_RADIO` — 802.11 frames with radiotap headers.
-* `EN10MB` — Ethernet (pcap linktype EN10MB).
+* `DLT_EN10MB` — Ethernet (pcap linktype EN10MB).
 * `DLT_BLUETOOTH_HCI_H4` — Bluetooth HCI (H4).
 
 ## Requirements
@@ -57,7 +57,7 @@ sudo .venv/bin/python framesniff.py --help
 ```
 > [!IMPORTANT]
 > It is recommended to run the program using the Python binary from the .venv file.
-> It is important to use: ```bash.venv/bin/python```
+> It is important to use: ```bash .venv/bin/python```
 
 2. Example of an offline brute-force attack on EAPOL frame MICs from WPA2-Personal networks.
 
@@ -69,8 +69,8 @@ sudo .venv/bin/python framesniff.py --help
 
 * ### 🧠 Check out my blog explaining how Wi-Fi networks work and my mind map of common Wi-Fi attack techniques:
 
-  * [How wireless communications work](https://gustavoaraujo.pages.dev/blogs/como-funcionam-as-comunica%C3%A7%C3%B5es-sem-fio)
-  * [Wi-Fi mind maps](https://github.com/gusprojects008/mapas-mentais/blob/main/markdowns/ataques-redes-wifi.md)
+  * [How wireless communications work](https://gusprojects008.github.io/mindmaps/como-funcionam-as-comunicacoes-sem-fio)
+  * [Wi-Fi mind maps](https://gusprojects008.github.io/mindmaps/ataques-redes-wifi)
 
 **After starting the sniff on the target frequency, it is recommended to send deauthentication frames to APs or devices without PMF (Protected Management Frames) enabled. To do this, first capture a deauth frame using this program or Wireshark, open its raw hexadecimal content in a text or hex editor, then use `hextopcap` to convert it into a pcap. Open the pcap in Wireshark, inspect the hexdump, and adjust the hexadecimal fields accordingly to match the target AP’s BSSID and the device’s MAC address.**
 
@@ -94,7 +94,6 @@ sudo venv/bin/python framesniff.py set-monitor wlan0
 ```bash
 sudo venv/bin/python framesniff.py scan-monitor wlan0 --dlt DLT_IEEE802_11_RADIO
 ```
-
 After detecting the target AP and device, set your monitor interface to their frequency or channel:
 
 ```bash
@@ -104,18 +103,24 @@ sudo venv/bin/python framesniff.py set-frequency wlan0 2417
 Capture EAPOL frames:
 
 ```bash
-sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and llc.type == 0x888e and body.eapol" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
+sudo venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.da.mac in ('aa:bb:cc:dd:ee:ff', 'ab:cd:ef:ab:cd:ef') and mac_hdr.bssid == 'aa:bb:cc:dd:ee:ff' and body.llc.name == 'eapol'" --display-filter "mac_hdr, body" -o eapol-frames-attack.json
 ```
 
 Generate hashcat 22000 file:
 
 ***If the captured EAPOL frames include a PMKID (usually in message 1), you can perform a faster brute-force attack. See the `generate-hashcat help for details.***
 
+Example 1:
 ```bash
-venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input eapol-frames-attack-msg1-msg2.json --output hashcat.22000
+venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
 hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 
+Example 2:
+```bash
+venv/bin/python framesniff.py generate-hashcat --bitmask 1 --ssid MyNetwork --input docs/eapol-attack-hashcat-22001-example.json --output hashcat.22001
+hashcat -m 22001 hashcat.22001 wordlist.txt --show
+```
 ---
 
 Other usage modes:

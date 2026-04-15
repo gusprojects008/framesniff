@@ -143,14 +143,14 @@ def _parse_timestamp(value):
 def _parse_he(value):
     d1, d2, d3, d4, d5, d6 = value
     return {'he': {
-        'data1': hex(d1), 'data2': hex(d2), 'data3': hex(d3),
-        'data4': hex(d4), 'data5': hex(d5), 'data6': hex(d6),
+        'data1': d1, 'data2': d2, 'data3': d3,
+        'data4': d4, 'data5': d5, 'data6': d6,
     }}
 
 def _parse_he_mu(value):
     flags1, flags2, ru_ch1_0, ru_ch1_1, ru_ch1_2, ru_ch1_3, ru_ch2_0, ru_ch2_1, ru_ch2_2, ru_ch2_3 = value
     return {'he_mu': {
-        'flags1': hex(flags1), 'flags2': hex(flags2),
+        'flags1': flags1, 'flags2': flags2,
         'ru_channel1': [ru_ch1_0, ru_ch1_1, ru_ch1_2, ru_ch1_3],
         'ru_channel2': [ru_ch2_0, ru_ch2_1, ru_ch2_2, ru_ch2_3],
     }}
@@ -225,7 +225,7 @@ def parser(**kwargs) -> dict:
             for word_index in range(32):
                 present_data = unpack("<I", parser=lambda v, **kw: v, metadata=False)
                 word_val = present_data["parsed"]
-                present_bitmaps[word_index] = hex(word_val)
+                present_bitmaps[word_index] = word_val
 
                 if word_index == 0:
                     combined_present = word_val

@@ -22,8 +22,11 @@ from rich.logging import RichHandler
 import time
 from pathlib import Path
 import json
+import tempfile
 
 logger = getLogger(__name__)
+
+ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
 
 def check_root():
     if os.geteuid() != 0:
@@ -58,39 +61,12 @@ def verify_supported_dlts(dlt: str = None):
     if dlt not in linktypes:
         raise ValueError(f"Unsupported DLT: {dlt}\nSupported DLTs:\n{', '.join(linktypes)}")
 
-def finish_capture(sock, start_time: int, captured_frames: list, output_file_path: str):
-    def _bytes_encoder(obj):
-        if isinstance(obj, bytes):
-            return obj.hex()
-        raise TypeError(f"Type {type(obj)} not serializable")
-    sock.close()
-    capture_duration = time.time() - start_time
-    logger.info(f"Finish capture called with {len(captured_frames)} frames")
-    logger.info(f"Output path: {output_file_path}")
-    if captured_frames:
-        try:
-            with open(output_file_path, "w") as file:
-                json.dump(captured_frames, file, indent=2, default=_bytes_encoder)
-            logger.info(f"Captured {len(captured_frames)} frames in {capture_duration:.2f}s")
-            logger.info(f"Saved to: {output_file_path}")
-        except Exception as e:
-            logger.error(f"Error saving file: {e}")
-    else:
-        logger.info("No frames captured")
-
-ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
-
-def new_file_path(base: str = None, ext: str = None, filename: str = None) -> Path:
+def new_file_path(fullpath: str = None, fullpath_fallback: str = "framesniff") -> Path:
     timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-    if not filename:
-        if base and ext:
-            return Path(f"{base}-{timestamp}{ext}")
-        elif base:
-            return Path(f"{base}-{timestamp}")
-        else:
-            return Path(f"{timestamp}")
-    else:
-        return Path(f"{timestamp}-{filename}")
+    p = Path(fullpath if fullpath else fullpath_fallback)
+    suffix = p.suffix
+    stem = p.with_suffix("")
+    return Path(f"{stem}-{timestamp}{suffix}")
 
 def setup_logging(verbose: bool) -> Path | None:
     logger = logging.getLogger()
@@ -105,13 +81,14 @@ def setup_logging(verbose: bool) -> Path | None:
         show_path=False
     )
 
-    console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    #console_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
+    console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(Formatter("%(asctime)s %(message)s"))
 
     logger.addHandler(console_handler)
 
     if verbose:
-        log_file_path = str(new_file_path("framesniff", ".log"))
+        log_file_path = str(new_file_path("framesniff.log"))
 
         file_handler = FileHandler(log_file_path)
         file_handler.setLevel(logging.DEBUG)

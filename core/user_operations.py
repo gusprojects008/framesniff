@@ -8,11 +8,12 @@ import threading
 import os
 from logging import getLogger
 from typing import Optional, Tuple, List
-from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, finish_capture, check_interface_mode)
-from core.common.parser_utils import iter_packets_from_json
+from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, check_interface_mode)
+from core.common.parser_utils import iter_packets_from_json, bytes_encoder
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 from core.common.constants.hashcat import *
+from core.layers.l2.ieee802.dot1x.constants import *
 from core.layers.registry import (get_parser, get_dlt_value)
 import dpkt
 
@@ -34,16 +35,16 @@ class Hashcat:
         return generator(**kwargs)
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M1_M2, ssid: str = None, input_filename: str = None):
-        if not input_filename:
+    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M1_M2, ssid: str = None, input_fullpath: str = None, output_fullpath: str = None):
+        if not input_fullpath:
             raise ValueError("Input file must be provided.")
     
-        output_filename = str(new_file_path("hashcat", ".22000", output_filename))
+        output_fullpath = str(new_file_path(output_fullpath, f"hashcat.2200{bitmask_message_pair}"))
         essid = ssid.encode("utf-8", errors="ignore").hex()
         message_pair = 0
         line = None
     
-        with open(input_filename, "r") as f:
+        with open(input_fullpath, "r") as f:
             data = json.load(f)
 
         if bitmask_message_pair == MESSAGE_PAIR_M1_M4:
@@ -60,7 +61,7 @@ class Hashcat:
             eapol_msg2_hex = None
             seen = 0
     
-            for hexstr, _ in iter_packets_from_json(input_filename):
+            for hexstr, _ in iter_packets_from_json(input_fullpath):
                 if seen == 0:
                     eapol_msg1_hex = hexstr
                 elif seen == 1:
@@ -94,7 +95,7 @@ class Hashcat:
 
             if not all([ap_mac, sta_mac, anonce, mic]):
                 raise ValueError("Missing essential EAPOL data")
-            if len(mic) != EAPOL_MIC_LENGTH:
+            if len(mic) != EAPOL_KEY_MIC_LENGTH:
                 raise ValueError(f"Invalid MIC length: {len(mic)}")
             if len(anonce) != EAPOL_NONCE_LENGTH:
                 raise ValueError(f"Invalid ANonce length: {len(anonce)}")
@@ -117,6 +118,163 @@ class Hashcat:
         return line
 
 class Operations:
+    @staticmethod
+    def sniff(
+            dlt: str = "DLT_IEEE802_11_RADIO",
+            ifname: str = None,
+            store_filter: str = None,
+            display_filter: str = None,
+            count: int = None,
+            timeout: float = None,
+            display_interval: float = 0.0,
+            store_callback: callable = None,
+            display_callback: callable = None,
+            stop_event: threading.Event = None,
+            simple_output: bool = False,
+            output_fullpath: str = None,
+        ):
+            check_root()
+            check_interface_mode(ifname, "monitor")
+        
+            try:
+                parser = get_parser(dlt)
+            except ValueError as e:
+                logger.error(e)
+                return
+        
+            sock = create_raw_socket(ifname)
+            output_fullpath = new_file_path(output_fullpath, "framesniff-capture.json")
+            frame_counter = 0
+            last_display_time = 0.0
+            start_time = time.time()
+    
+            try:
+                logger.info(
+                    f"Starting capture on {ifname}... (Press Ctrl+C to stop)\n"
+                    f"Store filter: {store_filter}\n"
+                    f"Display filter: {display_filter}\n"
+                    f"Output path: {output_fullpath}\n"
+                    f"Timeout: {timeout} seconds"
+                )
+        
+                with open(output_fullpath, "a") as f:
+                    while True:
+                        if stop_event and stop_event.is_set():
+                            logger.info("Stop event received, finishing capture...")
+                            break
+        
+                        if timeout and (time.time() - start_time) >= timeout:
+                            logger.info(f"Capture timeout reached after {timeout} seconds")
+                            break
+        
+                        try:
+                            frame, _ = sock.recvfrom(65535)
+                            hex_frame = frame.hex()
+        
+                            try:
+                                parsed_frame = parser(frame)
+                            except Exception as e:
+                                logger.debug(
+                                    f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}",
+                                    exc_info=True,
+                                )
+                                continue
+        
+                            parsed_frame["counter"] = frame_counter
+                            parsed_frame["raw"] = hex_frame
+                            frame_counter += 1
+                
+                            store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
+                            
+                            if store_result:
+                                if simple_output:
+                                    dump = json.dumps(parsed_frame, default=bytes_encoder, separators=(",", ":"))
+                                else:
+                                    dump = json.dumps(parsed_frame, default=bytes_encoder, indent=2)
+                                
+                                f.write(dump + "\n")
+                
+                                if frame_counter % 100 == 0:
+                                    f.flush()
+                
+                                if store_callback:
+                                    store_callback(parsed_frame)
+    
+                            if display_result:
+                                if display_callback:
+                                    display_callback(display_result)
+                                else:
+                                    current_time = time.time()
+                                    if store_result and (current_time - last_display_time >= display_interval):
+                                        try:
+                                            log_out = json.dumps(display_result, default=bytes_encoder, ensure_ascii=False)
+                                            logger.info(f"[{frame_counter}] {log_out}")
+                                        except Exception as log_err:
+                                            logger.debug(f"Display JSON error: {log_err}")
+                                            logger.warning(f"[{frame_counter}] {display_result}")
+                                        
+                                        last_display_time = current_time
+    
+                            if count is not None and frame_counter >= count:
+                                break
+    
+                        except KeyboardInterrupt:
+                            logger.info("Capture interrupted by user")
+                            break
+                        except Exception as e:
+                            logger.error(f"Error processing frame: {e}")
+                            continue
+            except Exception as e:
+                logger.critical(f"Unexpected error in sniff: {e}")
+        
+            finally:
+                logger.info(f"Finishing capture, saving {frame_counter} frames...")
+                sock.close()
+                if stop_event:
+                    stop_event.set()
+
+    @staticmethod
+    def write_pcap_from_json(dlt: str, input_fullpath: str, output_fullpath: str):
+        linktype = get_dlt_value(dlt) 
+        output_fullpath = new_file_path(output_fullpath, "packets.pcap")
+        with open(output_fullpath, "wb") as out:
+            writer = dpkt.pcap.Writer(out, linktype=linktype)
+            count = 0
+            for hexstr, b in iter_packets_from_json(input_fullpath):
+                writer.writepkt(b, ts=time.time())
+                count += 1
+                logger.info(f"{count} packet writed: {b[:50]}...")
+            writer.close()
+            logger.info(f"Output file: {output_fullpath}")
+
+    @staticmethod
+    def send_raw(ifname: str, input_fullpath: str, count: int = 1, interval: float = 1.0, timeout: float = None):
+        sock = create_raw_socket(ifname)
+        if timeout is not None:
+            sock.settimeout(timeout)
+        try:
+            for cleaned, raw_bytes in iter_packets_from_json(input_fullpath):
+                for i in range(count):
+                    try:
+                        bytes_sent = sock.send(raw_bytes)
+                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
+                        if i < count - 1:
+                            time.sleep(interval)
+                    except socket.error as e:
+                        logger.error(f"Failed to send frame: {e}")
+                        break
+                    except Exception as e:
+                        logger.critical(f"Unexpected error: {e}")
+                        break
+        finally:
+            sock.close()
+
+    @staticmethod
+    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
+        from core.tui.scan_monitor import scan_monitor
+        logger.info("press ctrl+s or <F12> to save tui information!")
+        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
+
     @staticmethod
     def list_network_interfaces() -> str:
         logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
@@ -164,7 +322,7 @@ class Operations:
             logger.error(f"error configure {ifname} to station mode: {e}")
 
     @staticmethod
-    def scan_station_mode(ifname: str = None, output_filename: str = None):
+    def scan_station_mode(ifname: str = None, output_fullpath: str = None):
         logger.info(" In development, see https://github.com/gusprojects008/wnlpy\n")
     
         logger.info(f" Scanning WiFi networks on {ifname}...\n")
@@ -255,10 +413,10 @@ class Operations:
             
             print(f"└{'─' * 60}")
     
-        output_filename = str(new_file_path("station-scan-result", ".txt", output_filename))
+        output_fullpath = str(new_file_path(output_fullpath, "station-scan-result.txt"))
     
         if result.stdout:
-            with open(output_filename, "w") as file:
+            with open(output_fullpath, "w") as file:
                 file.write(result.stdout)
         
             blocks = result.stdout.strip().split("\nBSS ")
@@ -271,153 +429,16 @@ class Operations:
             logger.info(f"\nTotal networks found: {network_count}")
 
     @staticmethod
-    def sniff(dlt: str = "DLT_IEEE802_11_RADIO", ifname: str = None,
-            store_filter: str = None, display_filter: str = None, 
-            count: int = None, timeout: float = None, 
-            display_interval: float = 0.0, store_callback: callable = None,
-            display_callback: callable = None, stop_event: threading.Event = None,
-            output_filename: str = None
-        ):
-    
-        check_root()
-        check_interface_mode(ifname, "monitor")
-    
-        try:
-            parser = get_parser(dlt)
-        except ValueError as e:
-            logger.error(e)
-            return
-    
-        sock = create_raw_socket(ifname)
-
-        output_filename = new_file_path(filename=output_filename) if output_filename else new_file_path(base="framesniff-capture", ext=".json")
-
-        captured_frames = []
-        frame_counter = 0
-        last_display_time = 0.0
-    
-        try:
-            logger.info(f'''
-    Starting capture on {ifname}... (Press Ctrl+C to stop)\n
-    Store filter: {store_filter}"\n
-    Display filter: {display_filter}\n
-    Output path: {output_filename}
-    Timeout: {timeout} seconds
-            ''')
-    
-            start_time = time.time()
-    
-            while True:
-                if stop_event and stop_event.is_set():
-                    logger.info("Stop event received, finishing capture...")
-                    break
-                
-                if timeout and (time.time() - start_time) >= timeout:
-                    logger.info(f"Capture timeout reached after {timeout} seconds")
-                    break
-                
-                try:
-                    parsed_frame = {}
-                    frame, _ = sock.recvfrom(65535)
-                    hex_frame = frame.hex()
-                    
-                    try:
-                        logger.debug(f"Sniff: Parsing frame: {hex_frame}\nframe counter: {frame_counter}")
-                        parsed_frame = parser(frame)
-                    except Exception as e:
-                        logger.debug(f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}", exc_info=True)
-                    parsed_frame["counter"] = frame_counter
-                    parsed_frame["raw"] = hex_frame
-
-                    store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
-                    
-                    if store_result:
-                        frame_counter += 1
-                        captured_frames.append(parsed_frame)
-                        if store_callback:
-                            store_callback(parsed_frame)
-                    if display_result and display_callback:
-                        display_callback(display_result)
-                    if display_result and not display_callback:
-                        current_time = time.time()
-                        if store_result and current_time - last_display_time >= display_interval:
-                            try:
-                                logger.info(f"[{frame_counter}] {json.dumps(display_result, ensure_ascii=False)}")
-                            except Exception:
-                                logger.warning(f"[{frame_counter}] {display_result}")
-                            last_display_time = current_time
-                    if count is not None and frame_counter >= count:
-                        break
-                        
-                except KeyboardInterrupt:
-                    logger.info("Capture interrupted by user")
-                    break
-                except Exception as e:
-                    logger.error(f"Error receiving frame: {e}")
-                    continue
-
-        except Exception as e:
-            logger.critical(f"Unexpected error in sniff: {e}")
-
-        finally:
-            logger.info(f"Finishing capture, saving {len(captured_frames)} frames...")
-            if stop_event:
-                stop_event.set()
-            finish_capture(sock, start_time, captured_frames, output_filename)
-
-    @staticmethod
-    def write_pcap_from_json(dlt: str, input_filename: str, output_filename: str):
-        linktype = get_dlt_value(dlt) 
-        output_filename = new_file_path("packets", ".pcap", output_filename)
-        with open(output_filename, "wb") as out:
-            writer = dpkt.pcap.Writer(out, linktype=linktype)
-            count = 0
-            for hexstr, b in iter_packets_from_json(input_filename):
-                writer.writepkt(b, ts=time.time())
-                count += 1
-                logger.info(f"{count} packet writed: {b[:50]}...")
-            writer.close()
-            logger.info(f"Output file: {output_filename}")
-
-    @staticmethod
-    def send_raw(ifname: str, input_filename: str, count: int = 1, interval: float = 1.0, timeout: float = None):
-        sock = create_raw_socket(ifname)
-        if timeout is not None:
-            sock.settimeout(timeout)
-        try:
-            for cleaned, raw_bytes in iter_packets_from_json(input_filename):
-                for i in range(count):
-                    try:
-                        bytes_sent = sock.send(raw_bytes)
-                        logger.info(f"Frame sent ({i+1}/{count}): {bytes_sent} bytes")
-                        if i < count - 1:
-                            time.sleep(interval)
-                    except socket.error as e:
-                        logger.error(f"Failed to send frame: {e}")
-                        break
-                    except Exception as e:
-                        logger.critical(f"Unexpected error: {e}")
-                        break
-        finally:
-            sock.close()
-
-    @staticmethod
-    def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
-        from core.tui.scan_monitor import scan_monitor
-        logger.info("press ctrl+s or <F12> to save tui information!")
-        scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping, channel_hopping_interval=channel_hopping_interval, timeout=timeout, Operations=Operations)
-
-    @staticmethod
     def set_frequency(ifname: str, frequency_mhz: int = None, channel: int = None, channel_width: int = None) -> bool:
         attempts = []
     
         if channel is not None:
-            attempts.append(["sudo", "iw", ifname, "set", "channel", str(channel)])
+            attempts.append(["iw", ifname, "set", "channel", str(channel)])
     
         elif frequency_mhz is not None:
             if channel_width:
-                attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
-            attempts.append(["sudo", "iw", ifname, "set", "freq", str(frequency_mhz)])
+                attempts.append(["iw", ifname, "set", "freq", str(frequency_mhz), str(channel_width)])
+            attempts.append(["iw", ifname, "set", "freq", str(frequency_mhz)])
     
         last_err = None
     
@@ -464,10 +485,10 @@ class Operations:
 
     @staticmethod
     def generate_channel_hopping_config(
-        bands,
+        bands: list[float] = [2.4],
         channel_width: int = 20,
-        dwell: float = 4.0,
-        output_filename: str = None
+        dwell: int | float = 4.0,
+        output_fullpath: str = None
     ) -> dict:
         try:
             logger.info(f"Generating channel hopping config for bands {bands} (dwell={dwell}s)...")
@@ -481,13 +502,10 @@ class Operations:
                         "dwell": dwell,
                         "channel_width": channel_width
                     }
-            if output_filename:
-                output_filename = str(new_file_path(filename=output_filename))
-                with open(output_filename, "w", encoding="utf-8") as file:
-                    json.dump(config, file, indent=4)
-                logger.info(f"Config file saved to: {output_filename}")
-            else:
-                return config
+            output_fullpath = str(new_file_path(output_fullpath, "channel-hopping-config.json"))
+            with open(output_fullpath, "w", encoding="utf-8") as file:
+                json.dump(config, file, indent=4)
+            logger.info(f"Config file saved to: {output_fullpath}")
         except Exception as e:
             logger.error(f"Failed to generate channel hopping config: {e}")
             return {}
@@ -525,17 +543,36 @@ class Operations:
                 continue
             for ch_str, params in channels.items():
                 try:
+                    if not isinstance(params, dict):
+                        raise ValueError(f"Invalid params type: {type(params)}")
+            
                     ch = int(ch_str)
+            
                     freq = params.get("frequency")
-                    dwell = params.get("dwell", 4.0) # seconds
-                    width = int(params.get("channel_width", 20))
+                    if freq is None:
+                        raise ValueError("Missing frequency")
+            
+                    dwell = params.get("dwell", 5.0)
+                    if dwell is None:
+                        dwell = 5.0
+            
+                    width_val = params.get("channel_width", 20)
+                    width = int(width_val) if width_val is not None else 20
+            
+                    logger.debug(f"Parsed channel: ch={ch}, allowed={allowed}, disallowed={disallowed}")
+            
                     if allowed and ch not in allowed:
                         continue
+            
                     if disallowed and ch in disallowed:
                         continue
+            
                     channels_to_scan.append((ch, freq, band, dwell, width))
+            
                 except Exception as e:
-                    logger.warning(f"Skipping invalid channel entry '{ch_str}': {e}")
+                    logger.warning(
+                        f"Skipping invalid channel entry '{ch_str}' (params={params}): {e}"
+                    )
         if not channels_to_scan:
             logger.warning("No valid channels to scan.")
             return
@@ -568,6 +605,5 @@ class Operations:
             logger.info("Channel hopping interrupted by user.")
         except Exception as e:
             logger.error(f"Unexpected error in channel hopper: {e}")
-            logger.error(traceback.format_exc())
         finally:
             logger.info("Channel hopper finished.")

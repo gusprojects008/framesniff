@@ -22,6 +22,7 @@ TAG_RSN_INFORMATION = 48
 TAG_EXTENDED_SUPPORTED_RATES = 50
 TAG_EXTENDED_CAPABILITIES = 127
 TAG_VENDOR_SPECIFIC = 221
+TAG_EXTENDED_HE = 255
 
 OUI_MICROSOFT = "00:50:f2"
 OUI_IEEE_80211 = "00:0f:ac"
@@ -422,75 +423,40 @@ def tim_info(tag_length: int, **kwargs) -> dict:
     return unpack("<BBB", parser=_parser)
 
 def country_code(tag_length: int, **kwargs) -> dict:
-    def _parser(values: tuple, **kwargs) -> dict:
-        country_code_str = values[0].decode(errors="ignore")
-        environment = values[1] if len(values) > 1 else 0
-        
+    def _parser(value: tuple, **kwargs) -> dict:
+        country_str, environment = value
+        country_str = country_str.decode(errors="ignore")
+
         ctx = ParseContext.current()
-        end = ctx.offset + (tag_length - 4) if tag_length > 4 else ctx.offset
-        
+        end = ctx.offset + (tag_length - 4)
+
         sub_elements = {}
         i = 0
         while ctx.offset + 3 <= end:
-            sub_result = unpack("<BBB")
-            first_channel, num_channels, max_tx_power = sub_result
-            
-            sub_elements[i] = {
-                "first_channel": first_channel,
-                "num_channels": num_channels,
-                "max_tx_power": max_tx_power
-            }
-            i += 1
-        
-        result = {
-            "country_code": country_code_str,
-        }
-        
-        if tag_length > 3:
-            result["environment"] = environment
-        
-        if sub_elements:
-            result["sub_elements"] = sub_elements
-        
-        return result
-    
-    # Parse country code (3 bytes)
-    ctx = ParseContext.current()
-    start_offset = ctx.offset
-    
-    if tag_length >= 3:
-        country_result = unpack("3s", parser=lambda v: v.decode(errors="ignore"))
-        
-        if tag_length == 3:
-            return {"country_code": country_result}
-        
-        environment = unpack("B")
-        
-        sub_elements = {}
-        end = start_offset + tag_length
-        i = 0
-        
-        while ctx.offset + 3 <= end:
-            sub_result = unpack("<BBB", parser=lambda v: {
+            sub_result = unpack("<BBB", parser=lambda v, **k: {
                 "first_channel": v[0],
                 "num_channels": v[1],
                 "max_tx_power": v[2]
             })
             sub_elements[i] = sub_result
             i += 1
-        
-        result = {
-            "country_code": country_code_str,
-            "environment": environment
-        }
-        
+
+        remaining = end - ctx.offset
+        if remaining > 0:
+            unpack(f"{remaining}s", metadata=False)
+
+        result = {"country_code": country_str, "environment": environment}
         if sub_elements:
             result["sub_elements"] = sub_elements
-        
         return result
-    
-    return {}
 
+    if tag_length < 4:
+        return unpack("3sB", parser=lambda v, **k: {
+            "country_code": v[0].decode(errors="ignore"),
+            "environment": v[1]
+        })
+
+    return unpack("3sB", parser=_parser)
 
 def erp_info(tag_length: int, **kwargs) -> dict:
     if tag_length < 1:
@@ -850,6 +816,31 @@ def _parse_rsn_capabilities(value: int, **kwargs) -> dict:
         "reserved": reserved
     }
 
+def _get_extension_name(ext_id: int) -> str:
+    extensions = {
+        35: "HE Capabilities",
+        36: "HE Operation",
+        39: "UORA Parameter Set",
+        59: "Short Beacon Interval",
+        108: "EHT Capabilities" # Wi-Fi 7
+    }
+    return extensions.get(ext_id)
+
+def tag_extended_he(tag_length: int, **kwargs) -> dict:
+    def _parser(value: tuple, **kwargs):
+        ext_tag_id, data = value
+        logger.debug(f"_parser tag_extended_he\n{value}")
+        return {
+            "extension_id": ext_tag_id,
+            "extension_name": _get_extension_name(ext_tag_id),
+            "data": data
+        }
+
+    if tag_length < 2:
+        return {}
+    
+    return unpack(f"B{tag_length -1}s", parser=_parser)
+    
 IE_DISPATCH = {
     TAG_SSID: {
         "name": "ssid",
@@ -925,6 +916,11 @@ IE_DISPATCH = {
         "name": "extended_capabilities",
         "description": "Extended Capabilities",
         "parser": extended_capabilities
+    },
+    TAG_EXTENDED_HE: {
+        "name": "tag_extended_he",
+        "description": "(Wifi 6) High Efficiency (HE)",
+        "parser": tag_extended_he
     }
 }
 
@@ -935,10 +931,11 @@ def ie_dispatch(value: tuple, **kwargs) -> dict:
     ie_result = {}
     tag_number, tag_length = value
 
-    try:
-        ctx = ParseContext.current()
-        start_offset = ctx.offset
+    ctx = ParseContext.current()
+    start_offset = ctx.offset
+    expected_end = start_offset + tag_length
 
+    try:
         entry = IE_DISPATCH.get(tag_number, {})
         ie_result = {
             "tag_number": tag_number,
@@ -954,8 +951,14 @@ def ie_dispatch(value: tuple, **kwargs) -> dict:
         )
 
     except Exception as e:
-        logger.debug(f"IE parser error for tag {tag_number}: {e}")
-        ctx = ParseContext.current()
-        ctx.offset = start_offset + tag_length
+        logger.debug(f"IE parser error for tag {tag_number} value={value} entry={entry} : {e}")
+
+    finally:
+        if ctx.offset != expected_end:
+            logger.debug(
+                f"IE tag {tag_number} offset drift: expected={expected_end} got={ctx.offset} "
+                f"(drift={ctx.offset - expected_end:+d})"
+            )
+            ctx.offset = min(expected_end, len(ctx.frame))
 
     return ie_result

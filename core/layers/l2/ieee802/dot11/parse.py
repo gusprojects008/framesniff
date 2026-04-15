@@ -19,11 +19,11 @@ def parse(frame: bytes, offset: int = 0) -> dict:
             ctx.set("rt_hdr", radiotap_parser.parser())
             rt_flags = ctx.get("rt_hdr", {}).get("parsed", {}).get("flags", {})
             if rt_flags.get("bad_fcs"):
-                logger.warning("Dropping frame: bad_fcs indicated by radiotap")
+                logger.debug("Dropping frame: bad_fcs indicated by radiotap")
                 return ctx.result
             ctx.set("fcs", detect_fcs())
             if ctx.offset >= len(ctx.frame):
-                logger.warning("Empty 802.11 frame after radiotap, skipping")
+                logger.debug("Empty 802.11 frame after radiotap, skipping")
                 return ctx.result
             ctx.set("mac_hdr", common.mac_header())
             fc = ctx.get("mac_hdr").get("parsed").get("fc")
@@ -40,5 +40,5 @@ def parse(frame: bytes, offset: int = 0) -> dict:
                 return ctx.result
             ctx.set("body", body_parser(subtype=frame_subtype))
     except Exception as e:
-        logger.error(f"Frames parser error: {e}", exc_info=True)
+        logger.warning(f"Frames parser error: {e}", exc_info=True)
     return ctx.result

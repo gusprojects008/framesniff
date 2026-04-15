@@ -13,7 +13,9 @@ operators = {
 def _get_nested(path: str, dct: dict):
     keys = path.split(".")
     current = dct
-    for key in keys:
+    i = 0
+    while i < len(keys):
+        key = keys[i]
         key_lower = key.lower()
         found = False
         for dct_key, dct_value in current.items():
@@ -23,6 +25,21 @@ def _get_nested(path: str, dct: dict):
                 break
         if not found:
             return None
+
+        if i + 1 < len(keys):
+            next_key = keys[i + 1]
+            next_key_lower = next_key.lower()
+            if (
+                isinstance(current, dict)
+                and "parsed" in current
+                and "value" in current
+                and next_key_lower not in ("parsed", "value", "_metadata_")
+            ):
+                current = current["parsed"]
+        i += 1
+
+    if isinstance(current, bytes):
+        return current.hex()
     return current
 
 def _to_value(val: str, parsed_frame: dict):
@@ -138,32 +155,19 @@ def _parse_filter_expression(expr: str, parsed_frame: dict) -> bool:
 def apply_filters(store_filter: str = None, display_filter: str = None, parsed_frame: dict = None):
     if parsed_frame is None:
         parsed_frame = {}
+        
     store_filter_result = True
     if store_filter:
         store_filter_result = _parse_filter_expression(store_filter, parsed_frame)
+        
     display_filter_result = None
     if display_filter:
         keys = [k.strip() for k in display_filter.split(",")]
         display_filter_result = {}
+        
         for key in keys:
             value = _get_nested(key, parsed_frame)
-            display_filter_result[key] = value
+            if value is not None:
+                display_filter_result[key] = value
+                
     return store_filter_result, display_filter_result
-
-def _to_value(val: str, parsed_frame: dict):
-    val = val.strip()
-    if val.lower() == "true":
-        return True
-    if val.lower() == "false":
-        return False
-    if re.fullmatch(r"[-+]?\d+", val):
-        return int(val)
-    if re.fullmatch(r"[-+]?\d*\.\d+", val):
-        return float(val)
-    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
-        return val[1:-1]
-    nested = _get_nested(val, parsed_frame)
-    if nested is not None:
-        return nested
-    return None
-

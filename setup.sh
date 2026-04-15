@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 RED_BOLD='\033[1;31m'
+YELLOW_BOLD='\033[1;33m'
+GREEN_BOLD='\033[1;32m'
 RESET='\033[0m'
 
 set -euo pipefail
@@ -59,9 +61,14 @@ fi
 print_step "Setup completed successfully!"
 
 echo
-echo -e "${RED_BOLD}Use the Python interpreter that is inside $VENV_PYTHON ${RESET}"
+echo -e "${YELLOW_BOLD}========================================${RESET}"
+echo -e "${RED_BOLD}IMPORTANT:${RESET}"
+echo -e "${RED_BOLD}Use the Python interpreter inside:${RESET}"
+echo -e "${GREEN_BOLD}$VENV_PYTHON${RESET}"
+echo -e "${YELLOW_BOLD}========================================${RESET}"
 echo
-echo "Run normally:"
-echo "  source $VENV_DIR/bin/activate"
-echo "  sudo $VENV_PYTHON framesniff.py --help"
+
+echo -e "${YELLOW_BOLD}Run normally:${RESET}"
+echo -e "  ${GREEN_BOLD}source $VENV_DIR/bin/activate${RESET}"
+echo -e "  ${GREEN_BOLD}sudo $VENV_PYTHON framesniff.py --help${RESET}"
 echo
