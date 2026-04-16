@@ -133,7 +133,7 @@ def main():
     scan_monitor_parser.add_argument("ifname", type=str, help="Network interface name")
     scan_monitor_parser.add_argument("--dlt", type=str, choices=["DLT_IEEE802_11_RADIO", "DLT_EN10MB", "DLT_BLUETOOTH_HCI_H4"], default="DLT_IEEE802_11_RADIO", help="Defines the communication standard and frame format captured.")
     scan_monitor_parser.add_argument("--no-channel-hopping", dest="channel_hopping", action="store_false", help="Disable channel hopping (enabled by default).")
-    scan_monitor_parser.add_argument("--dwell", type=float, help="Channel hopping interval (dwell time in channel), default 4 seconds.")
+    scan_monitor_parser.add_argument("--dwell", type=float, default=4.0, help="Channel hopping interval (dwell time in channel), default 4 seconds.")
     scan_monitor_parser.add_argument("--timeout", type=float, help="Time to capture frames (seconds), default None.")
 
     generate_channel_hopping_config = subparsers.add_parser("generate-channel-hopping-config", help="Generates a JSON file with all channels and their default settings based on the bands and dwell times.")
@@ -199,6 +199,7 @@ def main():
     elif args.command == "send-raw":
         operations.send_raw(args.ifname, args.input_fullpath, args.count, args.interval, args.timeout)
     elif args.command == "scan-monitor":
+        logger.debug(args)
         operations.scan_monitor(ifname=args.ifname, dlt=args.dlt, channel_hopping=args.channel_hopping, channel_hopping_interval=args.dwell, timeout=args.timeout)
 
 if __name__ == "__main__":

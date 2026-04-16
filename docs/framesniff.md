@@ -20,10 +20,15 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Documentação para expressões de filtro; recomendar que os usuários capturem frames com `sniff` e analisem a saída JSON.
 * Utilizar GitHub Docs.
 * Adicionar suporte a parse de: FTP, SSH,
+* Fazer com a que a função " _build_eapol_line" detecte os frames eapol (1, 2, 3 e 4) a partir das informações do payload eapol, e se caso houver um frame de management ou data que contenha o bssid e outras informações que indicam que são da mesma origem dos frames eapol, então extrair o ssid automaticamente para gerar o arquivo de hashcat formato 22000, e se houver pmkid no frame eapol, então gerar também o arquivo hashcat formato 22001. Adicionar funcionalidade que irá detectar vários frames eapol e gerar vários arquivos hashcat 22000 ou 220001 (caso detecte pmkid), se nesse arquivo de captura a função não detectar algumas informações básicas como ssid ou sta_mac, então retornar a linha com os valores faltando, mas no lugar deles haverá um texto simples pendindo para inserir o que falta (seja ssid ou sta_mac por exemplo).
 
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Criar componente de interface TUI padrão, semelahnte ao wireshark. Com uma estrutura: capture (parar, recomeçar), input para filtro de display, e outra para filtro de armazenamento, opção para selecionar interface, opção para selecionar banda e canal e largura, opção para parar ou começar channel hopper, esse channel hopper pode recebe a configuração de channel hopping de um arquivo json gerado por generate channel hopping config, ou o usuário pode gerar um localmente escolhendo a configuraçao (bandas, timeout do channel hopper, dwell time de cada canal, largura de canal).
+* Permitir o usuário encerrar automaticamente a captura após o arquivo de captura atingir um tamanho específico.
+* Corrigir fluxo e apresentação de error de scan_monitor.
+* Criar função em filter_engine que será utilizada por outros módulos para obter os valores de dicionário "parsed" diretamente, sem ter que digita-lo.
 * Estou preucupado em fazer funcionar, depois vou revisar tudo.
 * Revisar os resultados dos parsers, comparar com o resultado do wireshark, e corrigir os parsers se necessário.
 * Corrigir possíveis condições de corrida.

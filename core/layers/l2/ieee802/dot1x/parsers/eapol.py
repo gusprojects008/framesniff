@@ -65,8 +65,9 @@ def parser(**kwargs) -> dict:
         }
 
         if key_data_len > 0:
+            fmt = f"{key_data_len}s"
             if not encrypted_key_data:
-                result["key_data"] = tagged_parameters(max_length=key_data_len) if not encrypted_key_data else unpack(f"{key_data_len}s")
+                result["key_data"] = unpack(fmt, parser=tagged_parameters) if not encrypted_key_data else unpack(fmt)
 
         return result
 

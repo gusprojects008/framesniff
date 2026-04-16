@@ -100,29 +100,40 @@ def fixed_parameters(**kwargs) -> dict:
 
     return unpack("<QHH", parser=_parser)
 
-def tagged_parameters(max_length: int = None, **kwargs) -> tuple[dict, int]:
-    logger.debug(f"Tagged parameters parser")
+def tagged_parameters(value: bytes = None, **kwargs) -> dict:
+    logger.debug(f"Tagged parameters parser{' (callback mode)' if value is not None else ''}")
 
-    def _insert_ie(container: dict, key: str | int, value: dict | str | int):
+    def _insert_ie(container: dict, key: str | int, val: dict | str | int):
         if key not in container:
-            container[key] = value
+            container[key] = val
             return
         if not isinstance(container[key], dict) or not all(k.isdigit() for k in container[key]):
             container[key] = {"1": container[key]}
         idx = str(len(container[key]) + 1)
-        container[key][idx] = value
+        container[key][idx] = val
 
     ctx = ParseContext.current()
     ies_container = {}
-
-    limit = (ctx.offset + max_length) if max_length else len(ctx.frame)
+    
+    if value is not None:
+        limit = ctx.offset
+        ctx.offset -= len(value)
+    else:
+        max_length = kwargs.get('max_length', 0)
+        limit = (ctx.offset + max_length) if max_length else len(ctx.frame)
 
     while ctx.offset + MIN_IE_LEN <= limit:
-        ie_entry = unpack("<BB", parser=ie_dispatch, **kwargs)
-        
-        parsed_data = ie_entry.get("parsed")
-        tag_name = parsed_data.get("name") or parsed_data.get("tag_number")
-        
-        _insert_ie(ies_container, tag_name, ie_entry)
+        try:
+            ie_entry = unpack("<BB", parser=ie_dispatch, **kwargs)
+            
+            parsed_data = ie_entry.get("parsed", {})
+            tag_name = parsed_data.get("name") or parsed_data.get("tag_number")
+            
+            _insert_ie(ies_container, tag_name, ie_entry)
+        except Exception as e:
+            logger.error(f"Error parsing IE at offset {ctx.offset}: {e}")
+            break
 
+    ctx.offset = limit
+    
     return ies_container

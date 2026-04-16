@@ -10,37 +10,74 @@ operators = {
     "<": operator.lt,
 }
 
-def _get_nested(path: str, dct: dict):
+def get_nested(path: str, dct: dict, default=None):
     keys = path.split(".")
     current = dct
     i = 0
+
+    if isinstance(current, dict) and "parsed" in current:
+        current = current["parsed"]
+
     while i < len(keys):
+        if not isinstance(current, dict):
+            return default
+
         key = keys[i]
-        key_lower = key.lower()
+        key_lower = str(key).lower()
         found = False
+
         for dct_key, dct_value in current.items():
-            if dct_key.lower() == key_lower:
+            if str(dct_key).lower() == key_lower:
                 current = dct_value
                 found = True
                 break
-        if not found:
-            return None
 
-        if i + 1 < len(keys):
-            next_key = keys[i + 1]
-            next_key_lower = next_key.lower()
-            if (
-                isinstance(current, dict)
-                and "parsed" in current
-                and "value" in current
-                and next_key_lower not in ("parsed", "value", "_metadata_")
-            ):
+        if not found and _is_numeric_dict(current):
+            result = _search_in_numeric_dict(current, keys[i:])
+            return result if result is not None else default
+
+        if not found:
+            return default
+
+        if isinstance(current, dict) and "parsed" in current:
+            next_key = keys[i + 1] if i + 1 < len(keys) else None
+            if next_key is None or str(next_key).lower() not in ("parsed", "value", "_metadata_"):
                 current = current["parsed"]
+
         i += 1
 
     if isinstance(current, bytes):
         return current.hex()
-    return current
+
+    if isinstance(current, dict) and "parsed" in current:
+        if all(k in ('parsed', 'value', '_metadata_') for k in current.keys()):
+            return current.get('parsed', default)
+
+    return current if current is not None else default
+
+def _is_numeric_dict(d: dict) -> bool:
+    return (
+        isinstance(d, dict)
+        and len(d) > 0
+        and all(str(k).isdigit() for k in d.keys())
+    )
+
+def _search_in_numeric_dict(d: dict, remaining_keys: list[str]):
+    results = []
+    for entry in d.values():
+        candidate = entry
+        if isinstance(entry, dict) and "parsed" in entry and "value" in entry:
+            candidate = entry["parsed"]
+
+        result = get_nested(".".join(remaining_keys), candidate)
+        if result is not None:
+            results.append(result)
+
+    if not results:
+        return None
+    if len(results) == 1:
+        return results[0]
+    return results
 
 def _to_value(val: str, parsed_frame: dict):
     val = val.strip()
@@ -54,7 +91,7 @@ def _to_value(val: str, parsed_frame: dict):
         return float(val)
     if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
         return val[1:-1]
-    nested = _get_nested(val, parsed_frame)
+    nested = get_nested(val, parsed_frame)
     if nested is not None:
         return nested
     return None
@@ -73,12 +110,18 @@ def _evaluate_simple(expr: str, parsed_frame: dict):
         left, right = expr.split(" not in ", 1)
         left_val = _to_value(left, parsed_frame)
         options = _extract_tuple_values(right, parsed_frame)
+        if isinstance(left_val, list):
+            return not any(v in options for v in left_val)
         return left_val not in options
+
     if " in " in expr:
         left, right = expr.split(" in ", 1)
         left_val = _to_value(left, parsed_frame)
         options = _extract_tuple_values(right, parsed_frame)
+        if isinstance(left_val, list):
+            return any(v in options for v in left_val)
         return left_val in options
+
     for op_str, op_func in operators.items():
         if op_str in expr:
             parts = expr.split(op_str, 1)
@@ -86,8 +129,14 @@ def _evaluate_simple(expr: str, parsed_frame: dict):
                 left, right = parts
                 left_val = _to_value(left.strip(), parsed_frame)
                 right_val = _to_value(right.strip(), parsed_frame)
+                if isinstance(left_val, list):
+                    return any(op_func(v, right_val) for v in left_val)
                 return op_func(left_val, right_val)
-    return bool(_to_value(expr, parsed_frame))
+
+    val = _to_value(expr, parsed_frame)
+    if isinstance(val, list):
+        return len(val) > 0
+    return bool(val)
 
 def _split_by_operator(expr: str, operator: str):
     parts = []
@@ -166,7 +215,7 @@ def apply_filters(store_filter: str = None, display_filter: str = None, parsed_f
         display_filter_result = {}
         
         for key in keys:
-            value = _get_nested(key, parsed_frame)
+            value = get_nested(key, parsed_frame)
             if value is not None:
                 display_filter_result[key] = value
                 

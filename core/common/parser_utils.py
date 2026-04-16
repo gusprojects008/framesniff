@@ -332,7 +332,6 @@ def iter_packets_from_json(path: str):
     try:
         with open(path, "r", encoding="utf-8") as file:
             if is_jsonl:
-                # Trata strict JSONL
                 for line_num, line in enumerate(file, start=1):
                     line = line.strip()
                     if not line:
@@ -345,33 +344,27 @@ def iter_packets_from_json(path: str):
             else:
                 content = file.read()
                 try:
-                    # Tentativa 1: Arquivo JSON padrão (um único dicionário ou lista)
                     data = json.loads(content)
                     yield from _extract_values(data)
                 except json.JSONDecodeError as original_error:
-                    # Tentativa 2 (NOVO FALLBACK): Arquivo contém múltiplos blocos JSON concatenados
                     decoder = json.JSONDecoder()
                     idx = 0
                     length = len(content)
                     parsed_at_least_one = False
 
                     while idx < length:
-                        # Pula espaços em branco e quebras de linha entre os pacotes
                         while idx < length and content[idx].isspace():
                             idx += 1
                         if idx >= length:
                             break
 
                         try:
-                            # Decodifica o próximo objeto JSON válido e retorna o índice onde ele terminou
                             data, idx = decoder.raw_decode(content, idx)
                             yield from _extract_values(data)
                             parsed_at_least_one = True
                         except json.JSONDecodeError:
-                            # Se não for possível decodificar mais nada, quebra o loop
                             break
 
-                    # Se não leu absolutamente nada, levanta o erro original (o JSON é realmente inválido)
                     if not parsed_at_least_one:
                         raise ValueError(f"Error trying to load json file: {original_error}")
 
@@ -392,19 +385,16 @@ def normalize_bytes(obj):
         return obj.hex()
     return obj
 
-def _calc_offset_from_fmt(fmt: str, field_index: int) -> int:
-    tokens = re.findall(r'[!<>@=]?[0-9]*[a-zA-Z]', fmt)
+def calc_offset_from_fmt(tokens: dict, field_index: int) -> int:
     offset = 0
     for i in range(field_index):
         offset += struct.calcsize(tokens[i])
     return offset
 
-def clear_field(payload_meta: dict, field_index: int, field_length: int) -> str:
-    raw_hex = payload_meta["raw"]
-    raw_bytes = bytearray.fromhex(raw_hex)
-    
-    fmt = payload_meta["fmt"]
-    offset = _calc_offset_from_fmt(fmt, field_index)
-    
-    raw_bytes[offset:offset + field_length] = b"\x00" * field_length
-    return raw_bytes.hex()
+def clear_field(raw: bytes, metadata: dict, field_index: int, field_length: int) -> bytes:
+    tokens = metadata["tokens"]
+    offset = calc_offset_from_fmt(tokens, field_index)
+    buffer = bytearray(raw)
+    buffer[offset : offset + field_length] = b"\x00" * field_length
+    return bytes(buffer)
+

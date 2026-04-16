@@ -4,11 +4,14 @@ import queue
 import time
 import os
 from logging import getLogger
+from core.user_operations import Operations
 from core.common.tui_utils import export_tui_to_txt
 from core.common.parser_utils import freq_to_channel
 from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.ieee802.dot11.parsers.ies import OUI_MICROSOFT
 from core.common.function_utils import import_module
 import_module("textual")
+from core.common.filter_engine import get_nested
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
@@ -18,6 +21,8 @@ from textual.worker import Worker
 from textual import work
 
 logger = getLogger(__name__)
+
+operations = Operations()
 
 log_filepath = None
 
@@ -84,24 +89,25 @@ class Tui(App):
         "mac_hdr.bssid.vendor", 
         "mac_hdr.sa.mac",
         "mac_hdr.sa.vendor",
-        "body.tagged_parameters.ssid",
+        "body.tagged_parameters.ssid.data",
         "body.tagged_parameters.current_channel",
         "body.fixed_parameters.capabilities_information",
         "body.tagged_parameters.rsn_information",
         "body.tagged_parameters.vendor_specific"
     ]
     
-    def __init__(self, ifname: str = None, dlt: str = None, channel_hopping: bool = True, channel_hopping_interval: float = 4.0, timeout: float = None, Operations: object = None):
+    def __init__(self, ifname: str, dlt: str = "DLT_IEEE802_11_RADIO", channel_hopping: bool = True, bands: list[int | float] = [2.4], channel_hopping_interval: float = 4.0, channel_width: int = 20, timeout: float = None):
 
         super().__init__()
         self.ifname = ifname
         self.dlt = dlt
         self.channel_hopping = channel_hopping
         self.channel_hopping_interval = channel_hopping_interval
-        self.bands = [2.4]
-        self.channel_hopping_config = Operations.generate_channel_hopping_config(bands=self.bands, dwell=self.channel_hopping_interval)
+        self.bands = bands
+        self.channel_width = channel_width
+        self.channel_hopping_config = operations.generate_channel_hopping_config(bands=self.bands, dwell=self.channel_hopping_interval, channel_width=self.channel_width)
         self.timeout = timeout
-        self.Operations = Operations
+        self.operations = operations
         
         self.display_queue = queue.Queue()
         self.error_queue = queue.Queue()
@@ -118,6 +124,8 @@ class Tui(App):
         self.hopper_stop_event = None
 
         self.output_fullpath = "scan-monitor-tui-capture.txt"
+
+        logger.info(f"channel_hopping_config type: {type(self.channel_hopping_config)}, value: {self.channel_hopping_config}")
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -164,7 +172,7 @@ class Tui(App):
                         logger.error("Display callback error")
                 display_filter_str = ', '.join(self.DISPLAY_FIELDS)
                 logger.info(display_filter_str)
-                self.Operations.sniff(
+                self.operations.sniff(
                     ifname=self.ifname,
                     dlt=self.dlt,
                     store_filter=f"(mac_hdr.fc.type == {MGMT} and mac_hdr.fc.subtype in ({MGMT_PROBE_RESPONSE}, {MGMT_BEACON})) or mac_hdr.fc.type == {DATA}",
@@ -183,18 +191,21 @@ class Tui(App):
 
         self.sniff_thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
         self.sniff_thread.start()
+
         logger.info(f"Sniff thread started: {self.sniff_thread.name}")
 
     def start_channel_hopper_thread(self) -> None:
         def hopper_thread():
             logger.info("Channel hopper thread starting...")
             try:
-                self.Operations.channel_hopper(
+                self.operations.channel_hopper(
                     ifname=self.ifname,
                     channel_hopping_config=self.channel_hopping_config,
                     callback=self.update_current_channel,
-                    timeout=self.timeout
+                    timeout=self.timeout,
+                    stop_event=self.hopper_stop_event
                 )
+                logger.info(f"Channel hopping config: {self.channel_hopping_config}")
             except Exception as error:
                 logger.error(f"Channel hopper thread error: {error}")
         
@@ -207,6 +218,11 @@ class Tui(App):
         self.current_band = band
 
     def process_display_data(self, display_data):
+        if not display_data:
+            return
+        frame_type = display_data.get('mac_hdr.fc.type')
+        if frame_type is None:
+            return
         broadcast = "ff:ff:ff:ff:ff:ff"
         try:
             signal = display_data.get('rt_hdr.dbm_antenna_signal') or -100
@@ -216,7 +232,7 @@ class Tui(App):
             bssid_vendor = display_data.get('mac_hdr.bssid.vendor')
             src_mac = display_data.get('mac_hdr.sa.mac') or "N/A"
             src_vendor = display_data.get('mac_hdr.sa.vendor')
-            ssid = display_data.get('body.tagged_parameters.ssid') or 'N/A'
+            ssid = display_data.get('body.tagged_parameters.ssid.data') or 'N/A'
             capabilities = display_data.get('body.fixed_parameters.capabilities_information') or 0
             rsn_info = display_data.get('body.tagged_parameters.rsn_information')
             vendor_specific = display_data.get('body.tagged_parameters.vendor_specific', {})
@@ -251,14 +267,21 @@ class Tui(App):
                     net['ssid'] = ssid
                     net['channel'] = channel
     
-            if src_mac and src_mac != broadcast and src_mac != bssid_mac:
+            tods = display_data.get('mac_hdr.fc.tods')
+            fromds = display_data.get('mac_hdr.fc.fromds')
+            
+            is_data = (frame_type == DATA)
+            
+            if is_data and src_mac and src_mac != broadcast and src_mac != bssid_mac:
+            
                 if src_mac in self.networks:
                     return
-    
-                associated_bssid = self.associations.get(src_mac)
-                if associated_bssid:
-                    channel = self.networks.get(associated_bssid, {}).get('channel', channel)
-    
+            
+                associated_bssid = None
+            
+                if bssid_mac != broadcast:
+                    associated_bssid = bssid_mac
+            
                 if src_mac not in self.clients:
                     self.clients[src_mac] = {
                         'vendor': src_vendor,
@@ -273,12 +296,11 @@ class Tui(App):
                     cli['channel'] = channel
                     cli['signal'] = max(cli['signal'], signal)
                     cli['last_seen'] = time.time()
-    
-                if frame_type == 2 and bssid_mac and bssid_mac != broadcast:
-                    self.associations[src_mac] = bssid_mac
-                else:
-                    if subtype in [10, 12]:
-                        self.associations.pop(src_mac, "N/A")
+            
+                if associated_bssid:
+                    self.associations[src_mac] = associated_bssid
+
+
     
             self.frames_processed += 1
     
@@ -289,14 +311,21 @@ class Tui(App):
     def detect_security(self, capabilities, rsn_info, vendor_specific):
         try:
             wps_detected = False
-            
-            if vendor_specific:
-                for oui, vendor_data in vendor_specific.items():
+        
+            if isinstance(vendor_specific, dict):
+                for _, vendor_data in vendor_specific.items():
+                    oui = get_nested("data.oui.oui", vendor_data)
+                    vendor_type = get_nested("data.vendor_type", vendor_data)
+                    description = get_nested("data.description", vendor_data)
                     if oui == OUI_MICROSOFT:
-                        for entry_id, entry_data in vendor_data.items():
-                            if "WPS" in entry_data.get('description'):
-                                wps_detected = True
-                                break
+                        if vendor_type == 4:
+                            wps_detected = True
+                            break
+        
+                        if description and "WPS" in description:
+                            wps_detected = True
+                            break
+
             if rsn_info:
                 akm_suites = rsn_info.get('akm_suites', {})
                 auth = "PSK"
@@ -497,13 +526,12 @@ class Tui(App):
         logger.info("Network Monitor finished!")
         self.exit()
 
-def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, Operations):
+def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
     app = Tui(
         ifname=ifname,
         dlt=dlt,
         channel_hopping=channel_hopping,
         channel_hopping_interval=channel_hopping_interval,
         timeout=timeout,
-        Operations=Operations
     )
     app.run()
