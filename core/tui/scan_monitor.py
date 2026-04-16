@@ -3,9 +3,10 @@ import threading
 import queue
 import time
 import os
+from logging import getLogger
 from core.common.tui_utils import export_tui_to_txt
 from core.common.parser_utils import freq_to_channel
-from core.common.constants.ieee802_11 import *
+from core.layers.l2.ieee802.dot11.constants import *
 from core.common.function_utils import import_module
 import_module("textual")
 from textual import on
@@ -15,9 +16,9 @@ from textual.widgets import Header, Footer, Static, Label, DataTable
 from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
-from logging import getLogger
 
 logger = getLogger(__name__)
+
 log_filepath = None
 
 for handler in logger.handlers:
@@ -116,7 +117,7 @@ class Tui(App):
         self.sniff_stop_event = None
         self.hopper_stop_event = None
 
-        self.output_filename = "scan-monitor-tui-capture.txt"
+        self.output_fullpath = "scan-monitor-tui-capture.txt"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -173,12 +174,13 @@ class Tui(App):
                     store_callback=None,
                     display_callback=display_callback,
                     stop_event=self.sniff_stop_event,
-                    output_filename="scan-monitor.json"
+                    output_fullpath="scan-monitor.json"
                 )
             except Exception as e:
                 error_msg = "Sniff thread error"
                 self.error_queue.put(error_msg)
                 logger.debug(f"Sniff thread error: {e}")
+
         self.sniff_thread = threading.Thread(target=sniff_thread, daemon=True, name="sniffer")
         self.sniff_thread.start()
         logger.info(f"Sniff thread started: {self.sniff_thread.name}")
@@ -469,7 +471,7 @@ class Tui(App):
         if event.key in ("q", "Q", "ctrl+c"):
             self.exit_application()
         if event.key in ("f12", "ctrl+s"):
-            export_tui_to_txt(self, self.output_filename)
+            export_tui_to_txt(self, self.output_fullpath)
 
     def exit_application(self):
         self.running = False

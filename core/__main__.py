@@ -182,17 +182,18 @@ def should_run_test(name: str) -> bool:
 
 def run_tests():
     test_input = "/home/gus/Documents/framesniff/core/tests/frames.json"
+    store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
+    display_filter = "body.llc.payload"
+    simple_output = True
+
 
     run_test(
         "sniff_offline basic",
         sniff_offline,
         dlt="DLT_IEEE802_11_RADIO",
         input_fullpath=test_input,
-        #count=5
+        simple_output=simple_output
     )
-
-    store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
-    display_filter = "body.llc.payload"
 
     run_test(
         "sniff_offline filter eapol",
