@@ -1,9 +1,7 @@
 ## IDEIAS E IMPLEMENTAÇÕES FUTURAS
-
 Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma está garantida para ser implementada. Elas exigem revisão e pesquisa adicional.
 
 * Permitir com que a função sniff possa ser utilizada por outros parsers, a fim de permitir com que eles façam suas próprias analises, por isso que o resultado original retornado pela função de "parse" contém bytes não convertidos em hexadecimal.
-* Tornar toda a aplicação TUI.
 * Permitir o usuário cerregar arquivo com padrões de filtro de frames.
 * Desenvolver uma TUI para sniffing (semelhante ao termshark).
 * Desenvolver uma TUI para edição de frames de forma semelhante ao mitmproxy.
@@ -25,7 +23,11 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
-* Criar componente de interface TUI padrão, semelahnte ao wireshark. Com uma estrutura: capture (parar, recomeçar), input para filtro de display, e outra para filtro de armazenamento, opção para selecionar interface, opção para selecionar banda e canal e largura, opção para parar ou começar channel hopper, esse channel hopper pode recebe a configuração de channel hopping de um arquivo json gerado por generate channel hopping config, ou o usuário pode gerar um localmente escolhendo a configuraçao (bandas, timeout do channel hopper, dwell time de cada canal, largura de canal).
+* Testar filter_engine para acessar valores por chaves que são inteiros.
+* Tornar iter_packts_from_json mais flexível, possivelmente criar uma função separada apenas ler json, utilizando o mecanismo de fallback de iter_packets_from_json.
+* Adicionar descrição de parse com base nos valores do campo sempre que necessário, por exemplo: adicionar de descrição em parse EAPOL dando informações sobre o frame, indicando se é a mensagem 1, 2 3 ou 4. Ou definir a descrição dando informações sobre a rede, se WPA2 etc... Mas estou na dúvida, pensei aqui, talvez a melhor forma de fazer isso seja: Adicionar descrição de parse daquele campo específico no resultado de parsed que ele irá retornar, mas em seguida adicionar essa descrição em uma nova estrutura que vou criar, essa estrutura vai ser descrever o frame, o dispositivo de origem (se for ap, vai incluir informações sobre a rede), dispositivo destino, 
+* Redefinir estrutura de retorno de parse de mac ou oui, para: {"addr": , "vendor": ,}, e atualizar todos os parsers e arquivos que chamam ".mac" ou ".oui": user_operations, common, scan_monitor, __main__.py, README.md.
+* Criar componente de interface TUI padrão, semelhante ao wireshark. A estrutura pensanda está em docs/.
 * Permitir o usuário encerrar automaticamente a captura após o arquivo de captura atingir um tamanho específico.
 * Corrigir fluxo e apresentação de error de scan_monitor.
 * Criar função em filter_engine que será utilizada por outros módulos para obter os valores de dicionário "parsed" diretamente, sem ter que digita-lo.
@@ -60,6 +62,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Estou tentando ao máximo remover hardcodes, mas em protocolos de padrões de comunicação, muitas vezes não dá para fugir de formatos e números arbitrários.
 
 ## Padrões a serem seguidos
+* Em funções utilitárias que utilizam um parser diretamente, utilizar get_nested sempre que precisar obter valores em parsed.
 * Sempre montar dict ou fazer operações com valores, em memória, armazenando em variáveis antes de seres passada para o dict final, ou seja, não realizar lógica inline no dict. Isso se aplica principalmente para parsers internos usados como argumento de callback para a função unpack.
 * Seguir padrão da função unpack, ou seja, sempre que precisa interpretar um valor desempacotado por struct.unpack ou srtuct.unpack_from passar o parser interno que irá receber os valores binários desempacotados, e irá interpretar eles.
 * Não realizar conversões ou transformações hexadecimais nos resultados de parsed, só _add_metadata faz isso. O encoder json em finish_capture já faz esse trabalho, e filter_engine detecta se o valor é bytes, se for, faz apenas uma conversão local para ser utilizada em operações de comparação. Com exceção de conversão bytes_for_mac ou bytes_for_oui.

@@ -1,0 +1,10 @@
+Ainda estou pensando em como vou implementar os mecanismos de criação de resumo de pacotes, e resumo de trafégo.
+Provavelmente irei criar um dict no ParseContext, apenas para armazenar as informações relevantes do frame.
+Na função de sniff, irá haver um TrafficContext, que irá analisar a estrutura de resumo de cada pacote, e assim alocar uma entrada para aquele dispositivo específico de acordo com o tipo de dele de acordo com sumario dele.
+
+Estrutura de sumário de frames DLT_IEEE802_11_RADIO:
+
+
+
+Estrutura de sumário de trafégo de frames DLT_IEEE802_11_RADIO:
+
