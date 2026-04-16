@@ -1,10 +1,10 @@
 import sys
 import argparse
 from pathlib import Path
+from logging import getLogger
 from core.common.function_utils import (import_module, new_file_path, setup_logging)
 from core.common.constants.hashcat import *
 from core.user_operations import Operations
-from logging import getLogger
 
 operations = Operations()
 
@@ -80,7 +80,7 @@ def main():
         help="Generate hashcat file from json file"
     )
     
-    generate_hashcat_parser.add_argument("format", type=int, choices=[WPA_PBKDF2_PMKID_EAPOL], help="Hashcat output format")
+    generate_hashcat_parser.add_argument("hformat", type=int, choices=[WPA_PBKDF2_PMKID_EAPOL], help="Hashcat output format")
     
     generate_hashcat_parser.add_argument(
         "--bitmask",
@@ -186,13 +186,13 @@ def main():
            output_fullpath=args.output
        )
     elif args.command == "generate-hashcat":
-        line = operations.Hashcat.generate(
-            hformat=args.format,
+        line = operations.generate_hashcat(
+            hformat=args.hformat,
             bitmask=args.bitmask,
             ssid=args.ssid,
             input_fullpath=args.input
         )
-        with open(args.output, "w") as f:
+        with open(new_file_path(args.output, f"hashcat_{args.hformat}_{args.bitmask}"), "w") as f:
             f.write(line)
     elif args.command == "hextopcap":
         operations.write_pcap_from_json(args.dlt, args.input_fullpath, args.output)

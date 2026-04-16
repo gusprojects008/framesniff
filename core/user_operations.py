@@ -10,7 +10,7 @@ import os
 from logging import getLogger
 from typing import Optional, Tuple, List
 from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, check_interface_mode)
-from core.common.parser_utils import iter_packets_from_json, bytes_encoder, normalize_bytes
+from core.common.parser_utils import iter_packets_from_json, bytes_encoder, normalize_bytes, clear_field
 from core.common.filter_engine import apply_filters
 from core.common.sockets import create_raw_socket
 from core.common.constants.hashcat import *
@@ -21,12 +21,70 @@ import dpkt
 logger = getLogger(__name__)
 
 class Hashcat:
+    @staticmethod
+    def _build_eapol_line(ssid: str, input_fullpath: str):
+        eapol_msg1_hex = None
+        eapol_msg2_hex = None
+    
+        for i, (hexstr, _) in enumerate(iter_packets_from_json(input_fullpath)):
+            if i == 0:
+                eapol_msg1_hex = hexstr
+            elif i == 1:
+                eapol_msg2_hex = hexstr
+                break
+    
+        if not eapol_msg1_hex or not eapol_msg2_hex:
+            raise ValueError("Need at least 2 EAPOL frames")
+    
+        parser = get_parser("DLT_IEEE802_11_RADIO")
+    
+        msg1 = parser(bytes.fromhex(eapol_msg1_hex))
+        msg2 = parser(bytes.fromhex(eapol_msg2_hex))
+    
+        msg2_mac = msg2["mac_hdr"]["parsed"]
+    
+        ap_mac = msg2_mac["bssid"]["value"].hex()
+        sta_mac = (msg2_mac["sa"]["value"] or msg2_mac["ta"]["value"]).hex()
+    
+        msg1_eapol = msg1["body"]["llc"]["parsed"]["payload"]
+        msg2_eapol = msg2["body"]["llc"]["parsed"]["payload"]
+    
+        anonce = msg1_eapol.get("parsed").get("key_nonce").hex()
+        mic = msg2_eapol.get("parsed").get("key_mic").hex()
+    
+        if not all([ap_mac, sta_mac, anonce, mic]):
+            raise ValueError("Missing EAPOL data")
+    
+        payload_meta = msg2_eapol.get("_metadata_")
+      
+        fields = list(msg2_eapol.get("parsed").keys())
+
+        try:
+            mic_index = fields.index("key_mic")
+        except ValueError:
+            raise ValueError("'key_mic' not found in EAPOL")
+      
+        eapol_zero_mic = clear_field(payload_meta, mic_index, EAPOL_KEY_MIC_LENGTH)
+
+        return f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{ssid}*{anonce}*{eapol_zero_mic}*00"
+
+    @staticmethod
+    def _build_pmkid_line(ssid: str, input_fullpath: str):
+        with open(input_fullpath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            pmkid = clean_hex_string(data.get("pmkid"))
+            ap_mac = clean_hex_string(data.get("ap_mac"))
+            sta_mac = clean_hex_string(data.get("sta_mac"))
+            if not all([pmkid, ap_mac, sta_mac]):
+                raise ValueError("Missing PMKID data")
+            return f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{ssid}***00"
+
     GENERATORS = {
         WPA_PBKDF2_PMKID_EAPOL: "_generate_22000"
     }
 
     @classmethod
-    def generate(cls, hformat: int, **kwargs):
+    def generate(cls, hformat, **kwargs):
         generator_name = cls.GENERATORS.get(hformat)
 
         if not generator_name:
@@ -36,92 +94,23 @@ class Hashcat:
         return generator(**kwargs)
 
     @staticmethod
-    def generate_22000(bitmask_message_pair: int = MESSAGE_PAIR_M1_M2, ssid: str = None, input_fullpath: str = None, output_fullpath: str = None):
+    def _generate_22000(bitmask: int, ssid: str, input_fullpath: str):
         if not input_fullpath:
             raise ValueError("Input file must be provided.")
-    
-        output_fullpath = str(new_file_path(output_fullpath, f"hashcat.2200{bitmask_message_pair}"))
-        essid = ssid.encode("utf-8", errors="ignore").hex()
-        message_pair = 0
-        line = None
-    
-        with open(input_fullpath, "r") as f:
-            data = json.load(f)
 
-        if bitmask_message_pair == MESSAGE_PAIR_M1_M4:
-            pmkid = clean_hex_string(data.get("pmkid"))
-            ap_mac = clean_hex_string(data.get("ap_mac"))
-            sta_mac = clean_hex_string(data.get("sta_mac"))
-            if not all([ssid, pmkid, ap_mac, sta_mac]):
-                raise ValueError("Missing one or more required keys: pmkid, ap_mac, sta_mac")
-            line = f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{essid}***{message_pair:02x}"
-            logger.info(line)
-    
-        elif bitmask_message_pair == MESSAGE_PAIR_M1_M2:
-            eapol_msg1_hex = None
-            eapol_msg2_hex = None
-            seen = 0
-    
-            for hexstr, _ in iter_packets_from_json(input_fullpath):
-                if seen == 0:
-                    eapol_msg1_hex = hexstr
-                elif seen == 1:
-                    eapol_msg2_hex = hexstr
-                    break
-                seen += 1
-    
-            if eapol_msg1_hex is None:
-                raise ValueError("No frames found in input file")
-            if eapol_msg2_hex is None:
-                raise ValueError("Only one frame found in input file; need two EAPOL frames")
+        if not ssid:
+            raise ValueError("SSID must be provided.")
 
-            parser = get_parser("DLT_IEEE802_11_RADIO")
+        ssid = ssid.encode().hex()
 
-            """
-            msg1 = normalize_bytes(parser(bytes.fromhex(eapol_msg1_hex)))
-            msg2 = normalize_bytes(parser(bytes.fromhex(eapol_msg2_hex)))
-            """
-            msg1 = parser(bytes.fromhex(eapol_msg1_hex))
-            msg2 = parser(bytes.fromhex(eapol_msg2_hex))
-    
-            msg2_mac = msg2["mac_hdr"]["parsed"]
-            
-            ap_mac = msg2_mac.get("bssid", {}).get("parsed", {}).get("mac") \
-                or msg2_mac.get("da", {}).get("parsed", {}).get("mac")
-            
-            sta_mac = msg2_mac.get("sa", {}).get("parsed", {}).get("mac") \
-                or msg2_mac.get("ta", {}).get("parsed", {}).get("mac")
+        if bitmask == MESSAGE_PAIR_M1_M4:
+            return Hashcat._build_pmkid_line(ssid, input_fullpath)
 
-            msg1_eapol = msg1["body"]["llc"]["parsed"]["payload"]["parsed"]
-            msg2_eapol = msg2["body"]["llc"]["parsed"]["payload"]["parsed"]
+        elif bitmask == MESSAGE_PAIR_M1_M2:
+            return Hashcat._build_eapol_line(ssid, input_fullpath)
 
-            anonce = msg1_eapol.get("key_nonce", "")
-            mic = msg2_eapol.get("key_mic", "")
-
-            if not all([ap_mac, sta_mac, anonce, mic]):
-                raise ValueError("Missing essential EAPOL data")
-            if len(mic) != EAPOL_KEY_MIC_LENGTH:
-                raise ValueError(f"Invalid MIC length: {len(mic)}  EAPOL_KEY_MIC_LENGTH={EAPOL_KEY_MIC_LENGTH}")
-            if len(anonce) != EAPOL_KEY_NONCE_LENGTH:
-                raise ValueError(f"Invalid ANonce length: {len(anonce)}")
-    
-            mic_offset = struct.calcsize(f"!BBHBHH{EAPOL_KEY_REPLAY_COUNTER_LENGTH}s{EAPOL_KEY_NONCE_LENGTH}s{EAPOL_KEY_IV_LENGTH}s{EAPOL_KEY_RSC_LENGTH}s{EAPOL_KEY_ID_LENGTH}s")
-
-            msg2_eapol_raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
-
-            #eapol_bytes = bytes.fromhex(msg2_eapol_raw)
-
-            mic = msg2_eapol["key_mic"].hex()
-            anonce = anonce.hex()
-            raw = msg2["body"]["llc"]["parsed"]["payload"]["_metadata_"]["raw"]
-            
-            eapol_zero_mic = raw.replace(mic, "0" * len(mic))
-
-            line = f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{essid}*{anonce}*{eapol_zero_mic}*{message_pair:02x}"
         else:
-            raise ValueError("Unsupported bitmask_message_pair!")
-
-        return line
+            raise ValueError("Unsupported bitmask")
 
 class Operations:
     @staticmethod
@@ -237,6 +226,10 @@ class Operations:
                 sock.close()
                 if stop_event:
                     stop_event.set()
+
+    @staticmethod
+    def generate_hashcat(hformat, **kwargs):
+        return Hashcat.generate(hformat, **kwargs)
 
     @staticmethod
     def write_pcap_from_json(dlt: str, input_fullpath: str, output_fullpath: str):

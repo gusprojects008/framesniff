@@ -24,6 +24,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Estou preucupado em fazer funcionar, depois vou revisar tudo.
 * Revisar os resultados dos parsers, comparar com o resultado do wireshark, e corrigir os parsers se necessário.
 * Corrigir possíveis condições de corrida.
 * Melhorar nomes de variáveis e strings

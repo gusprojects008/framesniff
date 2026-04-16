@@ -1,4 +1,6 @@
-test_
+test_*
+hashcat.*
+hashcat_*
 channel-hooping*
 frames.json
 packets-*
