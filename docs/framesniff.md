@@ -18,7 +18,6 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Documentação para expressões de filtro; recomendar que os usuários capturem frames com `sniff` e analisem a saída JSON.
 * Utilizar GitHub Docs.
 * Adicionar suporte a parse de: FTP, SSH,
-* Fazer com a que a função " _build_eapol_line" detecte os frames eapol (1, 2, 3 e 4) a partir das informações do payload eapol, e se caso houver um frame de management ou data que contenha o bssid e outras informações que indicam que são da mesma origem dos frames eapol, então extrair o ssid automaticamente para gerar o arquivo de hashcat formato 22000, e se houver pmkid no frame eapol, então gerar também o arquivo hashcat formato 22001. Adicionar funcionalidade que irá detectar vários frames eapol e gerar vários arquivos hashcat 22000 ou 220001 (caso detecte pmkid), se nesse arquivo de captura a função não detectar algumas informações básicas como ssid ou sta_mac, então retornar a linha com os valores faltando, mas no lugar deles haverá um texto simples pendindo para inserir o que falta (seja ssid ou sta_mac por exemplo).
 
 ---
 
@@ -26,6 +25,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Testar filter_engine para acessar valores por chaves que são inteiros.
 * Tornar iter_packts_from_json mais flexível, possivelmente criar uma função separada apenas ler json, utilizando o mecanismo de fallback de iter_packets_from_json.
 * Adicionar descrição de parse com base nos valores do campo sempre que necessário, por exemplo: adicionar de descrição em parse EAPOL dando informações sobre o frame, indicando se é a mensagem 1, 2 3 ou 4. Ou definir a descrição dando informações sobre a rede, se WPA2 etc... Mas estou na dúvida, pensei aqui, talvez a melhor forma de fazer isso seja: Adicionar descrição de parse daquele campo específico no resultado de parsed que ele irá retornar, mas em seguida adicionar essa descrição em uma nova estrutura que vou criar, essa estrutura vai ser descrever o frame, o dispositivo de origem (se for ap, vai incluir informações sobre a rede), dispositivo destino, etc... e outras informações relevantes de acordo com padrão e DLT. Essa estrutura vai ser utilizada para montar a resumo de todo o trafégo de rede capturado/analisado.
+* Fazer com a que a função " _build_eapol_line" detecte os frames eapol (1, 2, 3 e 4) a partir das informações do payload eapol, e se caso houver um frame de management ou data que contenha o bssid e outras informações que indicam que são da mesma origem dos frames eapol, então extrair o ssid automaticamente para gerar o arquivo de hashcat formato 22000, e se houver pmkid no frame eapol, então gerar também o arquivo hashcat formato 22001. Adicionar funcionalidade que irá detectar vários frames eapol e gerar vários arquivos hashcat 22000 ou 220001 (caso detecte pmkid), se nesse arquivo de captura a função não detectar algumas informações básicas como ssid ou sta_mac, então retornar a linha com os valores faltando, mas no lugar deles haverá um texto simples pendindo para inserir o que falta (seja ssid ou sta_mac por exemplo).
 * Redefinir estrutura de retorno de parse de mac ou oui, para: {"addr": , "vendor": ,}, e atualizar todos os parsers e arquivos que chamam ".mac" ou ".oui": user_operations, common, scan_monitor, __main__.py, README.md.
 * Criar componente de interface TUI padrão, semelhante ao wireshark. A estrutura pensanda está em docs/.
 * Permitir o usuário encerrar automaticamente a captura após o arquivo de captura atingir um tamanho específico.
@@ -55,6 +55,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Estrutura de diretórios mais compativeis com o modelo OSI, e melhor escalabilidade.
 * A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso 
 * Desenvolvendo __main__.py para padronizar e automatizar testes.
+* Reducing unnecessary exceptions.
 
 ## Explicações e esclarecimentos
 * /core representa o motor de analise do modelo OSI, e o diretório layers representam as diferentes camadas do modelo.
@@ -62,6 +63,8 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Estou tentando ao máximo remover hardcodes, mas em protocolos de padrões de comunicação, muitas vezes não dá para fugir de formatos e números arbitrários.
 
 ## Padrões a serem seguidos
+* Utilizar a função "fail" apenas quando for realmente um erro que pode afetar todo restante do parse.
+* Para nomes de chaves de valores em dicionários como "parsed", é recomendado que sigam o mesmo padrão de outros analisadores/sniffer de rede como scapy e wireshark, abreviados sempre que possível para facilitar o filtro do usuário, a documentação de filtro irá criada justamente para evitar consões.
 * Em funções utilitárias que utilizam um parser diretamente, utilizar get_nested sempre que precisar obter valores em parsed.
 * Sempre montar dict ou fazer operações com valores, em memória, armazenando em variáveis antes de seres passada para o dict final, ou seja, não realizar lógica inline no dict. Isso se aplica principalmente para parsers internos usados como argumento de callback para a função unpack.
 * Seguir padrão da função unpack, ou seja, sempre que precisa interpretar um valor desempacotado por struct.unpack ou srtuct.unpack_from passar o parser interno que irá receber os valores binários desempacotados, e irá interpretar eles.

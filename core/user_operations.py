@@ -174,7 +174,7 @@ class Operations:
                                 parsed_frame = parser(frame)
                             except Exception as e:
                                 logger.debug(
-                                    f"Sniff: parser frame error: {e}\nframe: {hex_frame}\nframe counter: {frame_counter}",
+                                    f"Sniff: parser frame error: {e}\nframe: {frame_hex}\nframe counter: {frame_counter}",
                                     exc_info=True,
                                 )
                                 continue

@@ -3,7 +3,7 @@ from uuid import UUID
 from logging import getLogger
 from core.layers.l2.ieee802.dot11.constants import *
 from core.layers.l2.constants import *
-from core.common.parser_utils import (ParseContext, unpack, run_dispatch, bytes_for_mac, bytes_for_oui)
+from core.common.parser_utils import (ParseContext, unpack, run_dispatch, bytes_for_oui)
 
 logger = getLogger(__name__)
 
@@ -160,7 +160,7 @@ def _parse_wps_attribute(attr_type: int, attr_data: bytes) -> dict:
     elif attr_type == WPS_ATTRIBUTE_IDS.get("primary_device_type"):
         if len(attr_data) >= 8:
             category = int.from_bytes(attr_data[0:2], 'big')
-            oui = bytes_for_mac(attr_data[2:6])
+            oui = bytes_for_oui(attr_data[2:6]).get("oui")
             subtype = int.from_bytes(attr_data[6:8], 'big')
             result["primary_device_type"] = f"{category}-{oui}-{subtype}"
             category_desc = next(
@@ -359,7 +359,7 @@ def vendor_specific(tag_length: int, **kwargs) -> dict:
         )
 
         result = {
-            "oui": oui,
+            **oui,
             "vendor_type": vtype,
             "description": description,
             "data": data
@@ -443,7 +443,7 @@ def country_code(tag_length: int, **kwargs) -> dict:
 
         remaining = end - ctx.offset
         if remaining > 0:
-            unpack(f"{remaining}s", metadata=False)
+            unpack(f"{remaining}s")
 
         result = {"country_code": country_str, "environment": environment}
         if sub_elements:
@@ -719,9 +719,9 @@ def rsn_information(tag_length: int, **kwargs) -> dict:
     if ctx.offset + 4 <= end:
         def _group_parser(value: tuple, **kwargs):
             oui, ctype = value
-            oui = bytes_for_mac(oui), 
+            oui = bytes_for_oui(oui)
             return {
-                "oui": oui, 
+                **oui, 
                 "cipher_type": ctype
             }
         result["group_cipher"] = unpack("3sB", parser=_group_parser)
@@ -732,7 +732,7 @@ def rsn_information(tag_length: int, **kwargs) -> dict:
                 oui, ctype = value
                 oui = bytes_for_oui(oui)
                 return {
-                    "oui": oui,
+                    **oui,
                     "cipher_type": ctype
                 }
                 
@@ -749,8 +749,9 @@ def rsn_information(tag_length: int, **kwargs) -> dict:
         def _akm_parser(akm_count: int, **kwargs):
             def __akm_item_parser(value: tuple, **kwargs):
                 oui, a_type = value
+                oui = bytes_for_oui(oui)
                 return {
-                    "oui": bytes_for_mac(oui),
+                    **oui,
                     "akm_type": a_type
                 }
             

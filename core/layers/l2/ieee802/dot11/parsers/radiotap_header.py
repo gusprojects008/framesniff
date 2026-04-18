@@ -1,6 +1,6 @@
 from logging import getLogger
 from core.common.parser_utils import (
-    ParseContext, unpack, bitmap_value_for_dict, freq_to_channel
+    ParseContext, unpack, bitmap_value_for_dict, freq_to_channel, fail
 )
 
 logger = getLogger(__name__)
@@ -141,11 +141,7 @@ def _parse_timestamp(value):
     }}
 
 def _parse_he(value):
-    d1, d2, d3, d4, d5, d6 = value
-    return {'he': {
-        'data1': d1, 'data2': d2, 'data3': d3,
-        'data4': d4, 'data5': d5, 'data6': d6,
-    }}
+    return {'he': {i + 1: v for i, v in enumerate(value)}}
 
 def _parse_he_mu(value):
     flags1, flags2, ru_ch1_0, ru_ch1_1, ru_ch1_2, ru_ch1_3, ru_ch2_0, ru_ch2_1, ru_ch2_2, ru_ch2_3 = value
@@ -155,35 +151,34 @@ def _parse_he_mu(value):
         'ru_channel2': [ru_ch2_0, ru_ch2_1, ru_ch2_2, ru_ch2_3],
     }}
 
-
 RADIOTAP_FIELDS = [
     # bit  name                   fmt              align  parser
-    (0,  "tsft",                  "<Q",            8,     lambda v: {"tsft": v}),
-    (1,  "flags",                 "<B",            1,     _parse_flags),
-    (2,  "rate",                  "<B",            1,     lambda v: {"rate_mbps": v * 0.5}),
-    (3,  "channel",               "<HH",           2,     _parse_channel),
-    (4,  "fhss",                  "<BB",           1,     _parse_fhss),
-    (5,  "dbm_antenna_signal",    "<b",            1,     lambda v: {"dbm_antenna_signal": v}),
-    (6,  "dbm_antenna_noise",     "<b",            1,     lambda v: {"dbm_antenna_noise": v}),
-    (7,  "lock_quality",          "<H",            2,     lambda v: {"lock_quality": v}),
-    (8,  "tx_attenuation",        "<H",            2,     lambda v: {"tx_attenuation": v}),
-    (9,  "db_tx_attenuation",     "<H",            2,     lambda v: {"db_tx_attenuation": v}),
-    (10, "dbm_tx_power",          "<b",            1,     lambda v: {"dbm_tx_power": v}),
-    (11, "antenna",               "<B",            1,     lambda v: {"antenna": v}),
-    (12, "db_antenna_signal",     "<B",            1,     lambda v: {"db_antenna_signal": v}),
-    (13, "db_antenna_noise",      "<B",            1,     lambda v: {"db_antenna_noise": v}),
-    (14, "rx_flags",              "<H",            2,     _parse_rx_flags),
-    (15, "tx_flags",              "<H",            2,     _parse_tx_flags),
-    (16, "rts_retries",           "<B",            1,     lambda v: {"rts_retries": v}),
-    (17, "data_retries",          "<B",            1,     lambda v: {"data_retries": v}),
+    (0,  "tsft",               "<Q",           8,  lambda v, **_: {"tsft": v}),
+    (1,  "flags",              "<B",           1,  lambda v, **_: _parse_flags(v)),
+    (2,  "rate",               "<B",           1,  lambda v, **_: {"rate_mbps": v * 0.5}),
+    (3,  "channel",            "<HH",          2,  lambda v, **_: _parse_channel(v)),
+    (4,  "fhss",               "<BB",          1,  lambda v, **_: _parse_fhss(v)),
+    (5,  "dbm_antenna_signal", "<b",           1,  lambda v, **_: {"dbm_antenna_signal": v}),
+    (6,  "dbm_antenna_noise",  "<b",           1,  lambda v, **_: {"dbm_antenna_noise": v}),
+    (7,  "lock_quality",       "<H",           2,  lambda v, **_: {"lock_quality": v}),
+    (8,  "tx_attenuation",     "<H",           2,  lambda v, **_: {"tx_attenuation": v}),
+    (9,  "db_tx_attenuation",  "<H",           2,  lambda v, **_: {"db_tx_attenuation": v}),
+    (10, "dbm_tx_power",       "<b",           1,  lambda v, **_: {"dbm_tx_power": v}),
+    (11, "antenna",            "<B",           1,  lambda v, **_: {"antenna": v}),
+    (12, "db_antenna_signal",  "<B",           1,  lambda v, **_: {"db_antenna_signal": v}),
+    (13, "db_antenna_noise",   "<B",           1,  lambda v, **_: {"db_antenna_noise": v}),
+    (14, "rx_flags",           "<H",           2,  lambda v, **_: _parse_rx_flags(v)),
+    (15, "tx_flags",           "<H",           2,  lambda v, **_: _parse_tx_flags(v)),
+    (16, "rts_retries",        "<B",           1,  lambda v, **_: {"rts_retries": v}),
+    (17, "data_retries",       "<B",           1,  lambda v, **_: {"data_retries": v}),
     # bit 18: XChannel (obsolete Atheros extension, skip)
-    (19, "mcs",                   "<BBB",          1,     _parse_mcs),
-    (20, "ampdu_status",          "<IHBB",         4,     _parse_ampdu_status),
-    (21, "vht",                   "<HBBBBBBBBxH",  2,     _parse_vht),
-    (22, "timestamp",             "<QHBB",         8,     _parse_timestamp),
+    (19, "mcs",                "<BBB",         1,  lambda v, **_: _parse_mcs(v)),
+    (20, "ampdu_status",       "<IHBB",        4,  lambda v, **_: _parse_ampdu_status(v)),
+    (21, "vht",                "<HBBBBBBBBxH", 2,  lambda v, **_: _parse_vht(v)),
+    (22, "timestamp",          "<QHBB",        8,  lambda v, **_: _parse_timestamp(v)),
     # bits 23–28: HE, HE-MU, HE-MU other user, 0-length PSDU, L-SIG, TLV
-    (23, "he",                    "<HHHHHH",       2,     _parse_he),
-    (24, "he_mu",                 "<HHBBBBBBBB",   2,     _parse_he_mu),
+    (23, "he",                 "<HHHHHH",      2,  lambda v, **_: _parse_he(v)),
+    (24, "he_mu",              "<HHBBBBBBBB",  2,  lambda v, **_: _parse_he_mu(v)),
     # bits 25-28 omitted (rare / very new)
 ]
 
@@ -191,13 +186,9 @@ _FIELD_BY_BIT = {bit: (name, fmt, align, pfunc) for bit, name, fmt, align, pfunc
 
 def parser(**kwargs) -> dict:
     def _parser(value: tuple, **kwargs) -> dict:
+        ctx = ParseContext.current()
+        frame_len = len(ctx.frame)
         rth_version, rth_pad, rth_length = value
-
-        if rth_version != 0:
-            raise ValueError(
-                "Radiotap parser error: malformed frame — possibly an "
-                "Ethernet frame captured on an 802.11 monitor interface."
-            )
 
         result = {
             "version": rth_version,
@@ -205,39 +196,28 @@ def parser(**kwargs) -> dict:
             "length": rth_length,
         }
 
-        ctx = ParseContext.current()
-        frame_len = len(ctx.frame)
-
-        if rth_length > frame_len:
-            logger.warning(
-                f"Radiotap length exceeds frame size: "
-                f"rth_length={rth_length} frame_len={frame_len}"
-            )
-            raise ValueError(
-                "Radiotap parser error: malformed frame — possibly an "
-                "Ethernet frame captured on an 802.11 monitor interface."
-            )
+        if rth_version != 0 or rth_length > frame_len:
+            logger.debug(f"Radiotap: invalid header ver={rth_version} len={rth_length} frame_len={frame_len}")
+            return fail(result, rth_length, "Invalid radiotap header")
 
         present_bitmaps = {}
         combined_present = 0
 
         try:
             for word_index in range(32):
-                present_data = unpack("<I", parser=lambda v, **kw: v, metadata=False)
+                present_data = unpack("<I", parser=lambda v, **kw: v)
                 word_val = present_data["parsed"]
                 present_bitmaps[word_index] = word_val
 
-                if word_index == 0:
-                    combined_present = word_val
+                combined_present |= (word_val & 0x7FFFFFFF)
 
                 if not (word_val & (1 << 31)):
                     break
+
         except Exception as e:
-            logger.debug(f"Radiotap: error reading present bitmaps: {e} — trusting rth_length")
+            logger.debug(f"Radiotap: error reading present bitmaps: {e}")
             result["present_bitmaps"] = present_bitmaps
-            result["parse_error"] = f"present_bitmap read failed: {e}"
-            ctx.offset = rth_length
-            return result
+            return fail(result, rth_length, "Invalid radiotap header")
 
         result["present_bitmaps"] = present_bitmaps
 
@@ -245,12 +225,9 @@ def parser(**kwargs) -> dict:
             if not (combined_present & (1 << bit_index)):
                 continue
             if bit_index not in _FIELD_BY_BIT:
-                logger.debug(
-                    f"Radiotap: unknown bit {bit_index} set — "
-                    f"cannot parse remaining fields reliably"
-                )
+                logger.debug(f"Radiotap: unknown bit {bit_index} at offset {ctx.offset}, stopping")
                 break
-
+              
             name, fmt, alignment, pfunc = _FIELD_BY_BIT[bit_index]
 
             try:
@@ -258,7 +235,7 @@ def parser(**kwargs) -> dict:
                     pad = (alignment - (ctx.offset % alignment)) % alignment
                     ctx.offset += pad
 
-                field_result = unpack(fmt, parser=pfunc, metadata=False)
+                field_result = unpack(fmt, parser=pfunc)
 
                 if pfunc is None:
                     result[name] = field_result["value"]
@@ -266,14 +243,18 @@ def parser(**kwargs) -> dict:
                     result.update(field_result["parsed"])
             except Exception as e:
                 logger.debug(
-                    f"Radiotap: error parsing field bit={bit_index} "
-                    f"name={name}: {e} — trusting rth_length to continue"
+                    f"Radiotap: error parsing field bit={bit_index} name={name}: {e}"
                 )
-                result.setdefault("field_errors", {})[name] = str(e)
                 break
 
-        ctx.offset = rth_length
-
+        ctx.offset = min(rth_length, frame_len)
         return result
 
-    return unpack("<BBH", parser=_parser)
+    result = {}
+
+    try:
+        result = unpack("<BBH", parser=_parser)
+    except Exception as e:
+        logger.debug(f"Parser radiotap header error: {e}")
+
+    return result

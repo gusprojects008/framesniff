@@ -6,16 +6,16 @@ def mgmt_beacon(**kwargs) -> dict:
     fp = fixed_parameters()
     tp = tagged_parameters()
     return {
-        "fixed_parameters": fp,
-        "tagged_parameters": tp
+        "fp": fp,
+        "tp": tp
     }
 
 def mgmt_probe_response(**kwargs) -> dict:
     fp = fixed_parameters()
     tp = tagged_parameters()
     return {
-        "fixed_parameters": fp,
-        "tagged_parameters": tp
+        "fp": fp,
+        "tp": tp
     }
 
 def mgmt_atim(**kwargs) -> dict:
@@ -40,7 +40,7 @@ def mgmt_authentication(**kwargs) -> dict:
         }
 
         if ctx.offset < len(ctx.frame):
-            res["tagged_parameters"] = tagged_parameters()
+            res["tp"] = tagged_parameters()
             
         return res
 

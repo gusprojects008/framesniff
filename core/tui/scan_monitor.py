@@ -85,15 +85,15 @@ class Tui(App):
         "rt_hdr.dbm_antenna_signal",
         "mac_hdr.fc.type", 
         "mac_hdr.fc.subtype",
-        "mac_hdr.bssid.mac",
+        "mac_hdr.bssid.addr",
         "mac_hdr.bssid.vendor", 
-        "mac_hdr.sa.mac",
+        "mac_hdr.sa.addr",
         "mac_hdr.sa.vendor",
-        "body.tagged_parameters.ssid.data",
-        "body.tagged_parameters.current_channel",
-        "body.fixed_parameters.capabilities_information",
-        "body.tagged_parameters.rsn_information",
-        "body.tagged_parameters.vendor_specific"
+        "body.tp.ssid.data",
+        "body.tp.current_channel",
+        "body.fp.capabilities_information",
+        "body.tp.rsn_information",
+        "body.tp.vendor_specific"
     ]
     
     def __init__(self, ifname: str, dlt: str = "DLT_IEEE802_11_RADIO", channel_hopping: bool = True, bands: list[int | float] = [2.4], channel_hopping_interval: float = 4.0, channel_width: int = 20, timeout: float = None):
@@ -228,14 +228,14 @@ class Tui(App):
             signal = display_data.get('rt_hdr.dbm_antenna_signal') or -100
             frame_type = display_data.get('mac_hdr.fc.type')
             subtype = display_data.get('mac_hdr.fc.subtype')
-            bssid_mac = display_data.get('mac_hdr.bssid.mac') or "N/A"
+            bssid_mac = display_data.get('mac_hdr.bssid.addr') or "N/A"
             bssid_vendor = display_data.get('mac_hdr.bssid.vendor')
-            src_mac = display_data.get('mac_hdr.sa.mac') or "N/A"
+            src_mac = display_data.get('mac_hdr.sa.addr') or "N/A"
             src_vendor = display_data.get('mac_hdr.sa.vendor')
-            ssid = display_data.get('body.tagged_parameters.ssid.data') or 'N/A'
-            capabilities = display_data.get('body.fixed_parameters.capabilities_information') or 0
-            rsn_info = display_data.get('body.tagged_parameters.rsn_information')
-            vendor_specific = display_data.get('body.tagged_parameters.vendor_specific', {})
+            ssid = display_data.get('body.tp.ssid.data') or 'N/A'
+            capabilities = display_data.get('body.fp.capabilities_information') or 0
+            rsn_info = display_data.get('body.tp.rsn_information')
+            vendor_specific = display_data.get('body.tp.vendor_specific', {})
             freq = display_data.get('rt_hdr.channel_freq')
 
             if freq:
@@ -314,7 +314,7 @@ class Tui(App):
         
             if isinstance(vendor_specific, dict):
                 for _, vendor_data in vendor_specific.items():
-                    oui = get_nested("data.oui.oui", vendor_data)
+                    oui = get_nested("data.oui", vendor_data)
                     vendor_type = get_nested("data.vendor_type", vendor_data)
                     description = get_nested("data.description", vendor_data)
                     if oui == OUI_MICROSOFT:

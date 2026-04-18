@@ -31,7 +31,7 @@ class MacVendorResolver:
         if not self._vendor_map or not mac_address:
             return None
         oui = mac_address.upper()[:8]
-        return {"mac": mac_address, "vendor": self._vendor_map.get(oui)}
+        return {"addr": mac_address, "vendor": self._vendor_map.get(oui)}
     
     def oui_resolver(self, oui_bytes: bytes):
         oui = ':'.join(format(byte, "02x") for byte in oui_bytes)
@@ -128,7 +128,7 @@ def size_to_struct_fmt(size: int) -> str:
         raise ValueError(f"Unsupported struct size: {size}")
     return mapping[size]
 
-def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
+def _add_metadata(raw: bytes, start_offset: int, end_offset: int, fmt: str | dict, tokens: str | dict, sizes: int | dict, size: int):
     raw_hex = raw[start_offset:end_offset].hex()
     length = end_offset - start_offset
     return {
@@ -137,13 +137,17 @@ def _add_metadata(raw: bytes, start_offset: int, end_offset: int, **kwargs):
             "end": end_offset,
             "length": length,
             "raw": raw_hex,
-            **kwargs
+            "fmt": fmt,
+            "size": size,
+            "sizes": tokens
         }
     }
 
-def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kwargs) -> dict:
+def unpack(fmt: str = None, parser: callable = None, **kwargs) -> dict:
     def value_to_dict(value):
         return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
+
+    result = {}
 
     ctx = ParseContext.current()
     raw = ctx.frame
@@ -153,44 +157,32 @@ def unpack(fmt: str = None, parser: callable = None, metadata: bool = True, **kw
     sizes, tokens, s = _parse_fmt_tokens(fmt)
     size = s.size
 
+    fmt = value_to_dict(fmt)
+    sizes = value_to_dict(sizes)
+    tokens = value_to_dict(tokens)
+    future_offset = start + size
+    result.update(_add_metadata(raw, start, future_offset, fmt, tokens, sizes, size))
+
     if offset + size > len(raw):
-        raise ValueError(f"Truncated raw: offset={offset} fmt={fmt}")
+        logger.debug(f"Truncated raw: start_offset={offset} fmt={fmt} sizes={sizes} size={size}")
+        return fail(result, future_offset, "Unpack error truncated")
 
     value = s.unpack_from(raw, offset)
 
-    offset += s.size
-
     value = value[0] if len(value) == 1 else value
 
-    ctx.offset = offset
+    ctx.offset = future_offset
 
-    result = {"value": value}
+    result["value"] = value_to_dict(value)
 
     if parser:
         result["parsed"] = parser(value, **kwargs)
 
-    result["value"] = value_to_dict(value)
-    fmt = value_to_dict(fmt)
-    size = value_to_dict(size)
-    sizes = value_to_dict(sizes)
-    tokens = value_to_dict(tokens)
-
-    if metadata:
-        result.update(
-            _add_metadata(
-                raw,
-                start,
-                offset,
-                fmt=fmt,
-                size=size,
-                sizes=sizes,
-                tokens=tokens
-            )
-        )
-
     return result
 
 def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, **kwargs):
+    logger.debug(f"run dispatch")
+
     entry = dispatch_table.get(dispatch_id)
 
     dispatch_ctx = {
@@ -221,10 +213,12 @@ def run_dispatch(dispatch_table: dict, dispatch_id, fallback: callable = None, *
     return unpack(**kwargs)
 
 def detect_fcs(**kwargs) -> bytes | None:
+    logger.debug("detect_fcs function")
     ctx = ParseContext.current()
     frame = ctx.frame
     offset = ctx.offset
     flen = len(frame)
+    logger.debug(f"detect_fcs function: frame:{frame} offset={offset} flen={flen}")
 
     if offset is None or offset < 0 or offset >= flen:
         return None
@@ -244,6 +238,38 @@ def detect_fcs(**kwargs) -> bytes | None:
         return fcs_bytes.hex()
     else:
         return None
+
+def insert_item(container: dict, key: str | int, val: dict | str | int):
+    if key not in container:
+        container[key] = val
+        return
+    if not isinstance(container[key], dict) or not all(k.isdigit() for k in container[key]):
+        container[key] = {"1": container[key]}
+    idx = str(len(container[key]) + 1)
+    container[key][idx] = val
+
+def fail(result: dict, expected_size: int, e: str = "Parser error", debug_msg: str = "Parse error"):
+    logger.debug("fail function")
+    ctx = ParseContext.current()
+    insert_item(result, "_fail_", e)
+    frame_len = len(ctx.frame)
+    if expected_size is not None:
+        ctx.offset = min(expected_size, frame_len)
+    logger.debug(f"{debug_msg} frame_len={frame_len} ctx.offset={ctx.offset} expected_size={expected_size} result={result}")
+    return result
+
+def bitmap_dict_to_hex(bitmap_dict: dict):
+    result = 0
+    for i, (field, active) in enumerate(bitmap_dict.items()):
+        if active:
+            result |= (1 << i)
+    return result
+
+def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
+    result = {}
+    for i, name in enumerate(field_names):
+        result[name] = bool(bitmap_value & (1 << i))
+    return result
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
@@ -283,25 +309,12 @@ def freq_to_channel(freq_mhz) -> int:
         return (freq_mhz - 5000) // 5
     return "Unknown"
 
-def bitmap_dict_to_hex(bitmap_dict: dict):
-    result = 0
-    for i, (field, active) in enumerate(bitmap_dict.items()):
-        if active:
-            result |= (1 << i)
-    return result
-
 def calc_rates(rates):
     list_rates_transmition = []
     for rate in rates:   
         value_rate = (rate & 0x7f) * 500
         list_rates_transmition.append(value_rate)
     return list_rates_transmition
-
-def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
-    result = {}
-    for i, name in enumerate(field_names):
-        result[name] = bool(bitmap_value & (1 << i))
-    return result
 
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
@@ -397,4 +410,3 @@ def clear_field(raw: bytes, metadata: dict, field_index: int, field_length: int)
     buffer = bytearray(raw)
     buffer[offset : offset + field_length] = b"\x00" * field_length
     return bytes(buffer)
-

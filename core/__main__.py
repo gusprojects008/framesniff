@@ -182,7 +182,7 @@ def should_run_test(name: str) -> bool:
 
 def run_tests():
     test_input = "/home/gus/Documents/framesniff/core/tests/frames.json"
-    store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.mac in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.mac == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
+    #store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.addr == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
     display_filter = "body.llc.payload"
     simple_output = False
 
@@ -243,6 +243,12 @@ def run_tests():
         run_test(
             "interface info",
             Operations.list_network_interface,
+            TEST_INTERFACE
+        )
+
+        run_test(
+            "set station mode",
+            Operations.set_station,
             TEST_INTERFACE
         )
 
