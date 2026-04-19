@@ -22,7 +22,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
-* Testar filter_engine para acessar valores por chaves que são inteiros.
+* Corrigir a forma como scan_monitor obtém os canais de cada frame.
 * Tornar iter_packts_from_json mais flexível, possivelmente criar uma função separada apenas ler json, utilizando o mecanismo de fallback de iter_packets_from_json.
 * Adicionar descrição de parse com base nos valores do campo sempre que necessário, por exemplo: adicionar de descrição em parse EAPOL dando informações sobre o frame, indicando se é a mensagem 1, 2 3 ou 4. Ou definir a descrição dando informações sobre a rede, se WPA2 etc... Mas estou na dúvida, pensei aqui, talvez a melhor forma de fazer isso seja: Adicionar descrição de parse daquele campo específico no resultado de parsed que ele irá retornar, mas em seguida adicionar essa descrição em uma nova estrutura que vou criar, essa estrutura vai ser descrever o frame, o dispositivo de origem (se for ap, vai incluir informações sobre a rede), dispositivo destino, etc... e outras informações relevantes de acordo com padrão e DLT. Essa estrutura vai ser utilizada para montar a resumo de todo o trafégo de rede capturado/analisado.
 * Fazer com a que a função " _build_eapol_line" detecte os frames eapol (1, 2, 3 e 4) a partir das informações do payload eapol, e se caso houver um frame de management ou data que contenha o bssid e outras informações que indicam que são da mesma origem dos frames eapol, então extrair o ssid automaticamente para gerar o arquivo de hashcat formato 22000, e se houver pmkid no frame eapol, então gerar também o arquivo hashcat formato 22001. Adicionar funcionalidade que irá detectar vários frames eapol e gerar vários arquivos hashcat 22000 ou 220001 (caso detecte pmkid), se nesse arquivo de captura a função não detectar algumas informações básicas como ssid ou sta_mac, então retornar a linha com os valores faltando, mas no lugar deles haverá um texto simples pendindo para inserir o que falta (seja ssid ou sta_mac por exemplo).
@@ -50,12 +50,16 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Revisar toda a arquitetura, avaliar e decidir.
 
 ## Melhorias:
-* Aplicando boas práticas clean code, eficiência em memória e processamente, removendo boa parte de números mágicos, removendo vários IFs por mecanismo de dispatcher.
-* Formato de paths de arquivos de log
+* Aplicando boas práticas clean code, eficiência em memória e processamento, removendo boa parte de números mágicos, removendo vários IFs por mecanismo de dispatcher.
+* Formato de paths de arquivos de log.
 * Estrutura de diretórios mais compativeis com o modelo OSI, e melhor escalabilidade.
-* A maioria dos hardcodes foram removidos, queria remover todos mas dá muito trabalho, se por algum acaso 
 * Desenvolvendo __main__.py para padronizar e automatizar testes.
-* Reducing unnecessary exceptions.
+* Utilizando mecanismo de contexto em funções principais de parse de padrões de comunicação.
+* Reestruturação de core/ para ser mais conceitualmente compativel com os conceitos de padrões de comunicação e modelo OSI.
+* Macanismo de filtro aprimorado.
+* Redução de exceptions durante o parse.
+* Começando a implementar estruturas de dados básicas para permitir a construção de uma TUI de sniff completa, com visualização e navegação binária sobre o frame.
+* Começando a desenvolver a arquitetura da TUI do framesniff. Com a maioria das funcionalidades do wireshark, e até algumas adicionais.
 
 ## Explicações e esclarecimentos
 * /core representa o motor de analise do modelo OSI, e o diretório layers representam as diferentes camadas do modelo.
@@ -67,7 +71,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Para nomes de chaves de valores em dicionários como "parsed", é recomendado que sigam o mesmo padrão de outros analisadores/sniffer de rede como scapy e wireshark, abreviados sempre que possível para facilitar o filtro do usuário, a documentação de filtro irá criada justamente para evitar consões.
 * Em funções utilitárias que utilizam um parser diretamente, utilizar get_nested sempre que precisar obter valores em parsed.
 * Sempre montar dict ou fazer operações com valores, em memória, armazenando em variáveis antes de seres passada para o dict final, ou seja, não realizar lógica inline no dict. Isso se aplica principalmente para parsers internos usados como argumento de callback para a função unpack.
-* Seguir padrão da função unpack, ou seja, sempre que precisa interpretar um valor desempacotado por struct.unpack ou srtuct.unpack_from passar o parser interno que irá receber os valores binários desempacotados, e irá interpretar eles.
+* Seguir padrão da função unpack, ou seja, sempre que precisa interpretar um valor desempacotado por struct.unpack ou struct.unpack_from passar o parser interno que irá receber os valores binários desempacotados, e irá interpretar eles.
 * Não realizar conversões ou transformações hexadecimais nos resultados de parsed, só _add_metadata faz isso. O encoder json em finish_capture já faz esse trabalho, e filter_engine detecta se o valor é bytes, se for, faz apenas uma conversão local para ser utilizada em operações de comparação. Com exceção de conversão bytes_for_mac ou bytes_for_oui.
 
 # Decisões de arquitetura pendentes:
