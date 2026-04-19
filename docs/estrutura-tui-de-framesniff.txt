@@ -154,4 +154,6 @@ Full Traffic report:
 
 ### Protocol Preferences
 > Configurações por protocolo — quais IEs parsear, quais payloads descriptografar (fornecendo PSK + BSSID), habilitar/desabilitar parsers específicos, thresholds de análise.
+
+> Talvez integrar a ideia scan_monitor diretamente na TUIm, permitindo o usuário visualizar.
 ```
