@@ -1,0 +1,157 @@
+```markdown
+# framesniff: Network Analyzer — TUI Layout
+
+## Visão Geral da Interface
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  framesniff: Network Analyzer                                                          v1.0.0   │
+├──────────────┬──────────────┬────────────────────────────┬────────────┬────────┬───────────────┤
+│ Interface    │   Capture    │  Band / Channel / Width    │  Ch Hopper │Traffic │   Protocol    │
+│ [wlan0    ▼] │ [▶ Start]    │  Band [2.4▼] Ch [6▼]      │ [▶ Start ] │[     ] │  Preferences  │
+│              │ [■ Stop ]    │  Width [20MHz▼]            │ [Load JSON]│       │  [          ] │
+│              │              │  ⚠ locked if hopping       │ [Config.. ]│       │               │
+├──────────────┴──────────────┴────────────────────────────┴────────────┴────────┴───────────────┤
+│ Display Filter  : [                                                                           ] │
+│ Storage Filter  : [                                                                           ] │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  #   │  Time     │  Src MAC            │  Dst MAC            │  Protocol  │  Info               │
+│──────┼───────────┼─────────────────────┼─────────────────────┼────────────┼─────────────────────│
+│  1   │  0.000000 │  2e:c9:fb:6b:0c:d1  │  ff:ff:ff:ff:ff:ff  │  Beacon    │  SSID="HomeNet" ch6 │
+│  2   │  0.001243 │  a4:f9:33:ed:5b:75  │  2e:c9:fb:6b:0c:d1  │  EAPOL     │  Key (Msg 1 of 4)   │
+│  3   │  0.001891 │  2e:c9:fb:6b:0c:d1  │  a4:f9:33:ed:5b:75  │  EAPOL     │  Key (Msg 2 of 4)   │
+│  4   │  0.002100 │  a4:f9:33:ed:5b:75  │  2e:c9:fb:6b:0c:d1  │  QoS Data  │  EAPOL Key (Msg 3)  │
+│▶ 5   │  0.002340 │  2e:c9:fb:6b:0c:d1  │  a4:f9:33:ed:5b:75  │  QoS Data  │  EAPOL Key (Msg 4)  │
+│  6   │  0.003010 │  a4:f9:33:ed:5b:75  │  ff:ff:ff:ff:ff:ff  │  ARP       │  Who has 192.168.1.1│
+│  .   │  ...      │  ...                │  ...                │  ...       │  ...                │
+│                                                                                                 │
+├─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                              [ Frame 5 selected ]                                               │
+├───────────────────────────────────────────┬─────────────────────────────────────────────────────┤
+│  Frame Tree                    [options▼] │  Hex Dump                              [options▼]  │
+│                                           │                                                     │
+│  ▼ Radiotap Header                        │  0000  00 00 1a 00 2f 48 00 00  ..../ H..           │
+│    ├ Version        : 0                   │  0008  e0 8e 14 18 00 00 00 00  ........            │
+│    ├ Length         : 26                  │  0010  02 6c 09 a0 00 e1 00 00  .l......            │
+│    ├ Signal         : -31 dBm             │  0018  00 88 02 3a 01 a4 f9 33  ...:..:3            │
+│    ├ Channel        : 2412 MHz (ch 6)     │  0020  ed 5b 75 2e c9 fb 6b 0c  .[u...k.            │
+│    └ Rate           : 1.0 Mbps            │  0028 [d1 2e c9 fb 6b 0c d1 10] .....k..  ◀ seleção │
+│  ▼ MAC Header                             │  0030  00 06 00 aa aa 03 00 00  ........            │
+│    ▼ Frame Control                        │  0038  00 88 8e 02 03 00 97 02  ........            │
+│      ├ Type         : Data (2)            │  0040  13 ca 00 10 00 00 00 00  ........            │
+│      ├ Subtype      : QoS Data (8)        │  0048  00 00 00 02 eb 56 bc a5  .....V..            │
+│      ├ ToDS         : 1                   │  0050  47 fa 04 a5 d4 97 27 1b  G.....'..           │
+│      └ Protected    : false               │  0058  93 3c 0b 1a c1 66 ed 65  .<...f.e            │
+│    ├ BSSID          : 2e:c9:fb:6b:0c:d1   │  0060  ef af 6a 4e 4f 3d 52 7e  ..jNO=R~            │
+│    ├ Src (SA)       : a4:f9:33:ed:5b:75   │  0068  58 12 24 13 00 00 00 00  X.$.....            │
+│    └ Dst (DA)       : 2e:c9:fb:6b:0c:d1   │  ...                                               │
+│  ▼ LLC                                    │                                                     │
+│    ├ DSAP           : 0xaa                │                                                     │
+│    ├ SSAP           : 0xaa                │                                                     │
+│    └ Type           : 0x888e (EAPOL)      │                                                     │
+│  ▼ EAPOL                      ◀ seleção   │                                                     │
+│    ├ Auth Version   : 2 (WPA2/RSN)        │                                                     │
+│    ├ Type           : 3 (Key)             │                                                     │
+│    ▼ Key Information                      │                                                     │
+│      ├ Key Desc Ver : 2 (HMAC-SHA1+AES)   │                                                     │
+│      ├ Key ACK      : true                │                                                     │
+│      ├ Key MIC      : true                │                                                     │
+│      └ Install      : true                │                                                     │
+│    ├ Key Nonce      : eb56bca5...         │                                                     │
+│    └ Key MIC        : 56422a73...         │                                                     │
+│                                           │                                                     │
+├───────────────────────────────────────────┴─────────────────────────────────────────────────────┤
+```
+
+---
+
+## Menus e Opções Detalhadas
+
+### Toolbar — Channel Hopper Config (modal/popup)
+
+```
+┌─ Channel Hopper Configuration ──────────────────┐
+│                                                  │
+│  Source:  (•) Generate locally  ( ) Load JSON    │
+│                                                  │
+│  Bands:   [x] 2.4 GHz  [x] 5 GHz  [ ] 6 GHz    │
+│  Width:   [ 20 MHz ▼ ]                           │
+│  Dwell:   [ 2.0 ] seconds per channel            │
+│  Timeout: [ --  ] seconds (blank = no limit)     │
+│                                                  │
+│            [ Cancel ]  [ Apply & Start ]         │
+└──────────────────────────────────────────────────┘
+```
+
+### Frame Tree — Context Menu (`[options▼]`)
+
+```
+┌─ Frame Tree Options ──────────────────┐
+│  Decode as...                         │
+│  ─────────────────────────────────── │
+│  Export packet bytes                  │
+│    ├ as .pcap                         │
+│    ├ as .pcapng                       │
+│    └ as .json                         │
+│        ├ Readable (indented)          │
+│        └ Simple format (compact)      │
+│  ─────────────────────────────────── │
+│  Copy                                 │
+│    ├ Field name                       │
+│    ├ Value                            │
+│    ├ Description                      │
+│    ├ All visible selected tree fields │
+│    ├ All visible fields               │
+│    ├ As filter expression             │
+│    └ Raw bytes (hex)                  │
+└───────────────────────────────────────┘
+```
+
+### Hex Dump — Context Menu (`[options▼]`)
+
+```
+┌─ Hex Dump Options ──────────────────┐
+│  Show bytes as                       │
+│    (•) Hexadecimal                   │
+│    ( ) Decimal                       │
+│    ( ) Octal                         │
+│    ( ) Bits                          │
+│  ─────────────────────────────────  │
+│  Show text in frame as               │
+│    (•) ASCII                         │
+│    ( ) EBCDIC                        │
+└──────────────────────────────────────┘
+```
+
+---
+
+## Regras de Negócio (UX)
+
+| Condição                        | Comportamento                                                  |
+|---------------------------------|----------------------------------------------------------------|
+| Channel Hopper **ativo**        | Campos Band, Channel e Width ficam **desabilitados** (locked) |
+| Channel Hopper **inativo**      | Campos Band, Channel e Width ficam **editáveis**              |
+| Campo selecionado na **Tree**   | Bytes correspondentes são **destacados** no Hex Dump          |
+| Bytes selecionados no **Hexdump** | Campo correspondente é **destacado** na Tree               |
+| Frame selecionado na lista      | Tree e Hexdump atualizam para o frame selecionado             |
+| Filtro de display aplicado      | Lista exibe apenas frames que correspondem ao filtro          |
+| Filtro de armazenamento aplicado| Apenas frames correspondentes são gravados no arquivo JSON    |
+| Interface selecionada | De acordo com a interface selecionada algumas opções não poderão ser utilizadas, então terei que tomar a decisão se devo remover ou manter elas, mas lembrando que se manter elas, pode ocupar espaço desnecessário na interface, ou talvez eu possa mover as opções de trafégo como channel hopper para uma área "options" de captura, onde haverá opções de configuração de captura de acordo com a interface ou não, ou seja, eu posso manter as opções na interface mas desabilitadas de acordo com a interface, ou remover elas, então vou ter que decidir isso |
+
+---
+
+## Estruturas Pendentes (a definir)
+
+### Traffic
+A estrutura que pensei para Traffic:
+Exemplo de conteúdo apresentado quando usuário entrar em "Traffic":
+Layers:
+    L2: 
+        "mac ou ip ou identificador único na rede": Estrutura de DeviceEntry.
+    ...
+Full Traffic report:
+   Relatório completo (ainda vou pensar na estrutura).
+
+### Protocol Preferences
+> Configurações por protocolo — quais IEs parsear, quais payloads descriptografar (fornecendo PSK + BSSID), habilitar/desabilitar parsers específicos, thresholds de análise.
+```
