@@ -5,6 +5,7 @@ import struct
 from logging import getLogger
 from functools import lru_cache
 from contextvars import ContextVar
+from contextlib import contextmanager
 from core.layers.l2.ieee802.dot11.constants import *
 from core.layers.l2.constants import *
 
@@ -84,6 +85,41 @@ class ParseContext:
     def update(self, data):
         self.result.update(data)
 
+def find_path(root, target, path=None):
+    if path is None:
+        path = []
+
+    if root is target:
+        return path
+
+    if isinstance(root, dict):
+        for k, v in root.items():
+            res = find_path(v, target, path + [k])
+            if res:
+                return res
+
+    elif isinstance(root, list):
+        for i, v in enumerate(root):
+            res = find_path(v, target, path + [str(i)])
+            if res:
+                return res
+
+    return None
+
+def clean_path(path):
+    return ".".join([p for p in path if p != "parsed"])
+
+def size_to_struct_fmt(size: int) -> str:
+    mapping = {
+        1: "B",
+        2: "H",
+        4: "I",
+        8: "Q"
+    }
+    if size not in mapping:
+        raise ValueError(f"Unsupported struct size: {size}")
+    return mapping[size]
+
 @lru_cache(maxsize=256)
 def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
     s = struct.Struct(fmt)
@@ -117,17 +153,6 @@ def _parse_fmt_tokens(fmt: str) -> tuple[tuple[int, ...], tuple[str, ...]]:
 
     return sizes, tuple(tokens), s
 
-def size_to_struct_fmt(size: int) -> str:
-    mapping = {
-        1: "B",
-        2: "H",
-        4: "I",
-        8: "Q"
-    }
-    if size not in mapping:
-        raise ValueError(f"Unsupported struct size: {size}")
-    return mapping[size]
-
 def _add_metadata(raw: bytes, start_offset: int, end_offset: int, fmt: str | dict, tokens: str | dict, sizes: int | dict, size: int):
     raw_hex = raw[start_offset:end_offset].hex()
     length = end_offset - start_offset
@@ -138,11 +163,13 @@ def _add_metadata(raw: bytes, start_offset: int, end_offset: int, fmt: str | dic
             "length": length,
             "raw": raw_hex,
             "fmt": fmt,
-            "size": size,
-            "sizes": tokens
+            "tokens": tokens,
+            "sizes": sizes,
+            "size": size
         }
     }
 
+#def unpack(fmt: str = None, parser: callable = None, descriptor: str | callable = None, **kwargs) -> dict:
 def unpack(fmt: str = None, parser: callable = None, **kwargs) -> dict:
     def value_to_dict(value):
         return {i: v for i, v in enumerate(value)} if isinstance(value, tuple) else value
@@ -176,7 +203,9 @@ def unpack(fmt: str = None, parser: callable = None, **kwargs) -> dict:
     result["value"] = value_to_dict(value)
 
     if parser:
-        result["parsed"] = parser(value, **kwargs)
+        parser_result = parser(value, **kwargs)
+        result["parsed"] = parser_result
+        #result["description"] = descriptor(parser_result, **kwargs) if callable(descriptor) else descriptor
 
     return result
 
@@ -271,54 +300,36 @@ def bitmap_value_for_dict(bitmap_value: int, field_names: list[str]) -> dict:
         result[name] = bool(bitmap_value & (1 << i))
     return result
 
-wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
-
-index_pack = lambda index : struct.pack("<I", index)
-
-def freq_converter(freq_unit: tuple, to_unit: str):
-    freq, unit = freq_unit
-    unit = unit.lower()
-    to_unit = to_unit.lower()
-    
-    if  unit == 'khz':
-        base_freq = freq
-    elif unit == 'mhz':
-         base_freq = freq * 1000
-    elif unit == 'ghz':
-         base_freq = freq * 1000000
-    else:
-        raise ValueError(f"Invalid source unit: {unit} Use 'kHz', 'MHz' ou 'GHz'")
-    
-    if to_unit == 'khz':
-       return base_freq
-    elif to_unit == 'mhz':
-         return base_freq / 1000
-    elif to_unit == 'ghz':
-         return base_freq / 1000000
-    else:
-        raise ValueError(f"Destiny unit invalid: {to_unit}. Use 'kHz', 'MHz' ou 'GHz'")
-
-def freq_to_channel(freq_mhz) -> int:
-    if not freq_mhz:
-        return freq_mhz
-    if 2412 <= freq_mhz <= 2472:
-        return (freq_mhz - 2407) // 5
-    if freq_mhz == 2484:
-        return 14
-    if 5000 <= freq_mhz <= 5895:
-        return (freq_mhz - 5000) // 5
-    return "Unknown"
-
-def calc_rates(rates):
-    list_rates_transmition = []
-    for rate in rates:   
-        value_rate = (rate & 0x7f) * 500
-        list_rates_transmition.append(value_rate)
-    return list_rates_transmition
-
 def clean_hex_string(s: str) -> str:
     s = s.strip().strip("'").strip('"')
     return re.sub(r'[^0-9a-fA-F]', '', s).lower()
+
+def bytes_encoder(obj):
+    if isinstance(obj, bytes):
+        return obj.hex()
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+def normalize_bytes(obj):
+    if isinstance(obj, dict):
+        return {k: normalize_bytes(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [normalize_bytes(v) for v in obj]
+    elif isinstance(obj, bytes):
+        return obj.hex()
+    return obj
+
+def calc_offset_from_fmt(tokens: dict, field_index: int) -> int:
+    offset = 0
+    for i in range(field_index):
+        offset += struct.calcsize(tokens[i])
+    return offset
+
+def clear_field(raw: bytes, metadata: dict, field_index: int, field_length: int) -> bytes:
+    tokens = metadata["tokens"]
+    offset = calc_offset_from_fmt(tokens, field_index)
+    buffer = bytearray(raw)
+    buffer[offset : offset + field_length] = b"\x00" * field_length
+    return bytes(buffer)
 
 def iter_packets_from_json(path: str):
     key = "raw"
@@ -384,29 +395,45 @@ def iter_packets_from_json(path: str):
     except Exception as error:
         raise RuntimeError(f"Could not open or process file {path}: {error}")
 
-def bytes_encoder(obj):
-    if isinstance(obj, bytes):
-        return obj.hex()
-    raise TypeError(f"Type {type(obj)} not serializable")
+wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
-def normalize_bytes(obj):
-    if isinstance(obj, dict):
-        return {k: normalize_bytes(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [normalize_bytes(v) for v in obj]
-    elif isinstance(obj, bytes):
-        return obj.hex()
-    return obj
+def freq_converter(freq_unit: tuple, to_unit: str):
+    freq, unit = freq_unit
+    unit = unit.lower()
+    to_unit = to_unit.lower()
+    
+    if  unit == 'khz':
+        base_freq = freq
+    elif unit == 'mhz':
+         base_freq = freq * 1000
+    elif unit == 'ghz':
+         base_freq = freq * 1000000
+    else:
+        raise ValueError(f"Invalid source unit: {unit} Use 'kHz', 'MHz' ou 'GHz'")
+    
+    if to_unit == 'khz':
+       return base_freq
+    elif to_unit == 'mhz':
+         return base_freq / 1000
+    elif to_unit == 'ghz':
+         return base_freq / 1000000
+    else:
+        raise ValueError(f"Destiny unit invalid: {to_unit}. Use 'kHz', 'MHz' ou 'GHz'")
 
-def calc_offset_from_fmt(tokens: dict, field_index: int) -> int:
-    offset = 0
-    for i in range(field_index):
-        offset += struct.calcsize(tokens[i])
-    return offset
+def freq_to_channel(freq_mhz) -> int:
+    if not freq_mhz:
+        return freq_mhz
+    if 2412 <= freq_mhz <= 2472:
+        return (freq_mhz - 2407) // 5
+    if freq_mhz == 2484:
+        return 14
+    if 5000 <= freq_mhz <= 5895:
+        return (freq_mhz - 5000) // 5
+    return "Unknown"
 
-def clear_field(raw: bytes, metadata: dict, field_index: int, field_length: int) -> bytes:
-    tokens = metadata["tokens"]
-    offset = calc_offset_from_fmt(tokens, field_index)
-    buffer = bytearray(raw)
-    buffer[offset : offset + field_length] = b"\x00" * field_length
-    return bytes(buffer)
+def calc_rates(rates):
+    list_rates_transmition = []
+    for rate in rates:   
+        value_rate = (rate & 0x7f) * 500
+        list_rates_transmition.append(value_rate)
+    return list_rates_transmition

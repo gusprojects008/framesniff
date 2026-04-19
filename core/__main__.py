@@ -8,6 +8,8 @@ from core.common.parser_utils import iter_packets_from_json, bytes_encoder
 from core.layers.registry import get_parser
 from core.user_operations import Operations, Hashcat
 
+operations = Operations()
+
 setup_logging(True)
 logger = getLogger(__name__)
 
@@ -182,10 +184,11 @@ def should_run_test(name: str) -> bool:
 
 def run_tests():
     test_input = "/home/gus/Documents/framesniff/core/tests/frames.json"
-    #store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.addr == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
-    display_filter = "body.llc.payload"
+    eapol_store_filter = "mac_hdr.fc.type == 2 and mac_hdr.sa.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.addr == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'"
+    eapol_display_filter = "body.llc.payload"
+    test_display_filter = "rt_hdr.present_bitmaps.0"
+    test_store_filter = "rt_hdr.present_bitmaps.0"
     simple_output = False
-
 
     run_test(
         "sniff_offline basic",
@@ -195,39 +198,61 @@ def run_tests():
         simple_output=simple_output
     )
 
+    """
     run_test(
         "sniff_offline filter eapol",
         sniff_offline,
         dlt="DLT_IEEE802_11_RADIO",
         input_fullpath=test_input,
-        store_filter=store_filter,
-        display_filter=display_filter,
+        store_filter=eapol_store_filter,
+        display_filter=eapol_display_filter,
+    )
+    """
+
+    run_test(
+        "sniff_offline filter test",
+        sniff_offline,
+        dlt="DLT_IEEE802_11_RADIO",
+        input_fullpath=test_input,
+        store_filter=test_store_filter,
+        display_filter=test_display_filter,
     )
 
     run_test(
         "write_pcap_from_json",
-        Operations.write_pcap_from_json,
+        operations.write_pcap_from_json,
         dlt="DLT_IEEE802_11_RADIO",
         input_fullpath=test_input,
         output_fullpath="test_output"
     )
 
     run_test(
-        "generate hashcat format",
-        Hashcat.generate_22000,
+        "generate hashcat format 22000 (PMKID)",
+        operations.generate_hashcat,
+        hformat=22000,
+        htype=1,
+        ssid="LOPES",
+        input_fullpath="/home/gus/Documents/framesniff/core/tests/test_pmkid.json"
+    )
+
+    run_test(
+        "generate hashcat format 22000 (EAPOL M1+M2)",
+        operations.generate_hashcat,
+        hformat=22000,
+        htype=2,
         ssid="LOPES",
         input_fullpath=test_input
     )
 
     run_test(
         "get_channels",
-        Operations.get_channels,
+        operations.get_channels,
         bands=[2.4, 5]
     )
 
     run_test(
         "generate_channel_hopping_config",
-        Operations.generate_channel_hopping_config,
+        operations.generate_channel_hopping_config,
         bands=[2.4],
         output_fullpath="test_channel_config.json"
     )
@@ -237,58 +262,58 @@ def run_tests():
 
         run_test(
             "list interfaces",
-            Operations.list_network_interfaces
+            operations.list_network_interfaces
         )
 
         run_test(
             "interface info",
-            Operations.list_network_interface,
+            operations.list_network_interface,
             TEST_INTERFACE
         )
 
         run_test(
             "set station mode",
-            Operations.set_station,
+            operations.set_station,
             TEST_INTERFACE
         )
 
         run_test(
             "set monitor mode",
-            Operations.set_monitor,
+            operations.set_monitor,
             TEST_INTERFACE
         )
 
         run_test(
             "set channel",
-            Operations.set_frequency,
+            operations.set_frequency,
             TEST_INTERFACE,
             channel=6
         )
 
         run_test(
             "set frequency",
-            Operations.set_frequency,
+            operations.set_frequency,
             TEST_INTERFACE,
             frequency_mhz=2437
         )
 
         run_test(
             "channel hopping config (runtime)",
-            Operations.generate_channel_hopping_config,
+            operations.generate_channel_hopping_config,
             bands=[2.4]
         )
 
         run_test(
             "channel hopper (short run)",
-            Operations.channel_hopper,
+            operations.channel_hopper,
             ifname=TEST_INTERFACE,
-            channel_hopping_config=Operations.generate_channel_hopping_config([2.4]),
+            channel_hopping_config=operations.generate_channel_hopping_config([2.4]),
             timeout=5
         )
 
         run_test(
             "send_raw (1 frame)",
-            Operations.send_raw,
+            operations.send_raw,
             ifname=TEST_INTERFACE,
             input_fullpath=test_input,
             count=1
@@ -296,7 +321,7 @@ def run_tests():
 
         run_blocking_test(
             "sniff (live test)",
-            Operations.sniff,
+            operations.sniff,
             timeout=10,
             dlt="DLT_IEEE802_11_RADIO",
             ifname=TEST_INTERFACE,
@@ -306,7 +331,7 @@ def run_tests():
 
         run_blocking_test(
             "scan_monitor (TUI)",
-            Operations.scan_monitor,
+            operations.scan_monitor,
             ifname=TEST_INTERFACE,
             dlt="DLT_IEEE802_11_RADIO",
             channel_hopping=True,

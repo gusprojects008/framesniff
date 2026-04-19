@@ -103,7 +103,7 @@ sudo .venv/bin/python framesniff.py set-frequency wlan0 2417
 Capture EAPOL frames:
 
 ```bash
-sudo .venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter  "mac_hdr.fc.type == 2 and mac_hdr.sa.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.da.addr in ('5c:62:8b:80:83:8a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.addr == '5c:62:8b:80:83:8a' and body.llc.name == 'eapol'" --display-filter "body.llc.payload" -o eapol-frames-attack.json
+sudo .venv/bin/python framesniff.py sniff wlan0 --dlt DLT_IEEE802_11_RADIO --store-filter  "mac_hdr.fc.type == 2 and mac_hdr.sa.addr in ('6c:22:8b:90:63:2a', '56:8e:aa:1c:37:87') and mac_hdr.da.addr in ('6c:22:8b:90:63:2a', '56:8e:aa:1c:37:87') and mac_hdr.bssid.addr == '6c:22:8b:90:63:2a' and body.llc.name == 'eapol'" --display-filter "body.llc.payload" -o eapol-frames-attack.json
 ```
 
 Generate hashcat 22000 file:
@@ -112,14 +112,14 @@ Generate hashcat 22000 file:
 
 Example 1:
 ```bash
-.venv/bin/python framesniff.py generate-hashcat --bitmask 0 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
-hashcat -m 22000 hashcat.22000 wordlist.txt --show
+.venv/bin/python framesniff.py generate-hashcat --htype 1 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
+hashcat -m 22001 hashcat.22001 wordlist.txt --show
 ```
 
 Example 2:
 ```bash
-.venv/bin/python framesniff.py generate-hashcat --bitmask 1 --ssid MyNetwork --input docs/eapol-attack-hashcat-22001-example.json --output hashcat.22001
-hashcat -m 22001 hashcat.22001 wordlist.txt --show
+.venv/bin/python framesniff.py generate-hashcat --htype 2 --ssid MyNetwork --input docs/eapol-attack-hashcat-22000-example.json --output hashcat.22000
+hashcat -m 22000 hashcat.22000 wordlist.txt --show
 ```
 ---
 
@@ -153,7 +153,18 @@ sudo .venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 1
 
 ### `generate-hashcat`
 #### format 22000:
-##### bitmask 0 (raw EAPOL messages (Message pair 1 and 2))
+
+##### htype 1 (PMKID) (faster)
+
+```json
+{
+  "ap_mac": "aa:bb:cc:dd:ee:ff",
+  "sta_mac": "11:22:33:44:55:66",
+  "pmkid": "e4f3... (32 hex chars)"
+}
+```
+
+##### htype 2 (raw EAPOL messages (Message pair 1 and 2))
 
 ```json
 {
@@ -161,15 +172,5 @@ sudo .venv/bin/python framesniff.py send-raw wlan0 -i raw_packets.json --count 1
     "0103005f02030a...",
     "0103005f02030a..."
   ]
-}
-```
-
-##### bitmask 1 (PMKID) (faster)
-
-```json
-{
-  "ap_mac": "aa:bb:cc:dd:ee:ff",
-  "sta_mac": "11:22:33:44:55:66",
-  "pmkid": "e4f3... (32 hex chars)"
 }
 ```

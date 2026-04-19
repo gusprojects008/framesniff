@@ -21,68 +21,6 @@ import dpkt
 logger = getLogger(__name__)
 
 class Hashcat:
-    @staticmethod
-    def _build_eapol_line(ssid: str, input_fullpath: str):
-        eapol_msg1 = None
-        eapol_msg2 = None
-    
-        for i, (_, fbytes) in enumerate(iter_packets_from_json(input_fullpath)):
-            if i == 0:
-                eapol_msg1 = fbytes
-            elif i == 1:
-                eapol_msg2 = fbytes
-                break
-    
-        if not eapol_msg1 or not eapol_msg2:
-            raise ValueError("Need at least 2 EAPOL frames")
-    
-        parser = get_parser("DLT_IEEE802_11_RADIO")
-    
-        msg1 = parser(eapol_msg1)
-        msg2 = parser(eapol_msg2)
-    
-        msg2_mac = get_nested("mac_hdr", msg2)
-    
-        ap_mac = msg2_mac["bssid"]["value"].hex()
-        sta_mac = (msg2_mac["sa"]["value"] or msg2_mac["ta"]["value"]).hex()
-    
-        msg1_eapol = get_nested("body.llc.payload", msg1)
-        msg2_eapol = get_nested("body.llc.payload", msg2)
-    
-        logger.warning(f"{msg1_eapol}\n{msg2_eapol}")
-
-        anonce = get_nested("key_nonce", msg1_eapol)
-        mic = get_nested("key_mic", msg2_eapol)
-        key_data = get_nested("key_data._metadata_.raw", msg2_eapol) 
-
-        payload_meta = get_nested("body.llc.payload._metadata_", msg2)
-        fields = list(msg2_eapol.keys())
-
-        try:
-            mic_index = fields.index("key_mic")
-        except ValueError:
-            raise ValueError("'key_mic' not found in EAPOL")
-        
-        tokens = payload_meta["tokens"]
-        eapol_len = calc_offset_from_fmt(tokens, len(tokens)) 
-
-        full_eapol = bytes.fromhex(payload_meta["raw"] + key_data)
-        
-        eapol_zero_mic_bytes = clear_field(full_eapol, payload_meta, mic_index, EAPOL_KEY_MIC_LENGTH)
-
-        return f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{ssid}*{anonce}*{eapol_zero_mic_bytes.hex()}*00"
-
-    @staticmethod
-    def _build_pmkid_line(ssid: str, input_fullpath: str):
-        with open(input_fullpath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            pmkid = clean_hex_string(data.get("pmkid"))
-            ap_mac = clean_hex_string(data.get("ap_mac"))
-            sta_mac = clean_hex_string(data.get("sta_mac"))
-            if not all([pmkid, ap_mac, sta_mac]):
-                raise ValueError("Missing PMKID data")
-            return f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{ssid}***00"
-
     GENERATORS = {
         WPA_PBKDF2_PMKID_EAPOL: "_generate_22000"
     }
@@ -98,23 +36,84 @@ class Hashcat:
         return generator(**kwargs)
 
     @staticmethod
-    def _generate_22000(bitmask: int, ssid: str, input_fullpath: str):
+    def _generate_22000(htype: int, ssid: str, input_fullpath: str):
+        def _build_eapol_line(ssid: str, input_fullpath: str):
+            eapol_msg1 = None
+            eapol_msg2 = None
+        
+            for i, (_, fbytes) in enumerate(iter_packets_from_json(input_fullpath)):
+                if i == 0:
+                    eapol_msg1 = fbytes
+                elif i == 1:
+                    eapol_msg2 = fbytes
+                    break
+        
+            if not eapol_msg1 or not eapol_msg2:
+                raise ValueError("Need at least 2 EAPOL frames")
+        
+            parser = get_parser("DLT_IEEE802_11_RADIO")
+        
+            msg1 = parser(eapol_msg1)
+            msg2 = parser(eapol_msg2)
+        
+            msg2_mac = get_nested("mac_hdr", msg2)
+        
+            ap_mac = msg2_mac["bssid"]["value"].hex()
+            sta_mac = (msg2_mac["sa"]["value"] or msg2_mac["ta"]["value"]).hex()
+        
+            msg1_eapol = get_nested("body.llc.payload", msg1)
+            msg2_eapol = get_nested("body.llc.payload", msg2)
+        
+            logger.warning(f"{msg1_eapol}\n{msg2_eapol}")
+
+            anonce = get_nested("key_nonce", msg1_eapol)
+            mic = get_nested("key_mic", msg2_eapol)
+            key_data = get_nested("key_data._metadata_.raw", msg2_eapol) 
+
+            payload_meta = get_nested("body.llc.payload._metadata_", msg2)
+            fields = list(msg2_eapol.keys())
+
+            try:
+                mic_index = fields.index("key_mic")
+            except ValueError:
+                raise ValueError("'key_mic' not found in EAPOL")
+            
+            tokens = payload_meta["tokens"]
+            eapol_len = calc_offset_from_fmt(tokens, len(tokens)) 
+
+            full_eapol = bytes.fromhex(payload_meta["raw"] + key_data)
+            
+            eapol_zero_mic_bytes = clear_field(full_eapol, payload_meta, mic_index, EAPOL_KEY_MIC_LENGTH)
+
+            return f"WPA*02*{mic}*{ap_mac}*{sta_mac}*{ssid}*{anonce}*{eapol_zero_mic_bytes.hex()}*00"
+
+        def _build_pmkid_line(ssid: str, input_fullpath: str):
+            with open(input_fullpath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                pmkid = clean_hex_string(data.get("pmkid"))
+                ap_mac = clean_hex_string(data.get("ap_mac"))
+                sta_mac = clean_hex_string(data.get("sta_mac"))
+                if not all([pmkid, ap_mac, sta_mac]):
+                    raise ValueError("Missing PMKID data")
+                return f"WPA*01*{pmkid}*{ap_mac}*{sta_mac}*{ssid}***00"
+
+        HTYPE_GENERATORS = {
+            HC22000_PMKID: _build_pmkid_line,
+            HC22000_EAPOL: _build_eapol_line
+        }
+        
         if not input_fullpath:
             raise ValueError("Input file must be provided.")
-
+        
         if not ssid:
             raise ValueError("SSID must be provided.")
-
+        
         ssid = ssid.encode().hex()
-
-        if bitmask == MESSAGE_PAIR_M1_M4:
-            return Hashcat._build_pmkid_line(ssid, input_fullpath)
-
-        elif bitmask == MESSAGE_PAIR_M1_M2:
-            return Hashcat._build_eapol_line(ssid, input_fullpath)
-
-        else:
-            raise ValueError("Unsupported bitmask")
+        
+        try:
+            return HTYPE_GENERATORS[htype](ssid, input_fullpath)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
 class Operations:
     @staticmethod
@@ -487,9 +486,9 @@ class Operations:
     def set_monitor(ifname: str):
         logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         try:
-            subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             logger.info(f"{ifname} configured for monitor mode!")
         except Exception as e:
             logger.error(f"error configure {ifname} to monitor mode: {e}")
@@ -498,9 +497,9 @@ class Operations:
     def set_station(ifname: str):
         logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
         try:
-            subprocess.run(["sudo", "ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["sudo", "iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["sudo", "ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(["ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
             logger.info(f"{ifname} configured for station/management mode!")
         except Exception as e:
             logger.error(f"error configure {ifname} to station mode: {e}")
@@ -513,7 +512,7 @@ class Operations:
         
         try:
             result = subprocess.run(
-                ["sudo", "iw", "dev", ifname, "scan"],
+                ["iw", "dev", ifname, "scan"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,

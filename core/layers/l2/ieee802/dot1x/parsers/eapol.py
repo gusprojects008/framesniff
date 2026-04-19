@@ -8,8 +8,62 @@ logger = getLogger(__name__)
 
 # Parsers payloads LLC of the IEEE 80211 standard
 def parser(**kwargs) -> dict:
-    logger.debug("EAPOL Parser")
-    result = {}
+    def describe_eapol(parsed: dict) -> dict:
+        def _classify_eapol_message(parsed: dict) -> int:
+            ki = eapol.get("key_information", {})
+            ack  = ki.get("key_ack", False)
+            mic  = ki.get("key_mic", False)
+            inst = ki.get("install", False)
+            sec  = ki.get("secure", False)
+            enc  = ki.get("encrypted_key_data", False)
+            klen = eapol.get("key_data_length", 0)
+        
+            if     ack and not mic and not sec:  return 1  # AP → STA, ANonce
+            if not ack and     mic and not sec:  return 2  # STA → AP, SNonce + MIC
+            if     ack and     mic and inst:     return 3  # AP → STA, GTK cifrado
+            if not ack and     mic and sec:      return 4  # STA → AP, confirmação
+    
+            return 0
+    
+        eapol_msg = _classify_eapol_message(parsed)
+    
+        ki = parsed["key_information"]
+        enc = "WPA3" if parsed["authentication_version"] == 3 else \
+              "WPA2/RSN" if parsed["authentication_version"] == 2 else "WPA1"
+    
+        kd_ver = ki["key_descriptor_version"]["value"]
+        cipher_desc = {
+            1: "RC4 (WPA1/TKIP)",
+            2: "AES-CCM (WPA2/CCMP)",
+            3: "AES-GCM (WPA3/GCMP)"
+        }.get(kd_ver, f"unknown({kd_ver})")
+    
+        msg_desc = {
+            1: "AP → STA: ANonce (início do 4-way handshake)",
+            2: "STA → AP: SNonce + MIC (resposta com credencial)",
+            3: "AP → STA: GTK cifrado (instalação de chave)",
+            4: "STA → AP: Confirmação (handshake completo)",
+        }.get(eapol_msg, "Mensagem EAPOL desconhecida")
+    
+        flags = []
+        if eapol_msg in (1, 2):
+            flags.append("HANDSHAKE_CAPTURABLE")   # par M1+M2 → hashcat 22000
+        if ki.get("encrypted_key_data"):
+            flags.append("KEY_DATA_ENCRYPTED")
+        if not ki.get("key_mic") and eapol_msg == 1:
+            flags.append("NO_MIC")                 # esperado no msg1
+    
+        return {
+            "summary": f"EAPOL Key (Message {eapol_msg} of 4) [{enc}]",
+            "details": {
+                "message": eapol_msg,
+                "encryption": enc,
+                "cipher_suite": cipher_desc,
+                "direction": "AP→STA" if eapol_msg in (1, 3) else "STA→AP",
+            },
+            "flags": flags
+        }
+
     def _parser(value: tuple, **kwargs) -> dict:
         logger.debug("EAPOL _parser")
         auth_ver, eapol_type, length, desc_type, key_info, key_len, replay, nonce, iv, rsc, key_id, mic, key_data_len = value
@@ -71,6 +125,9 @@ def parser(**kwargs) -> dict:
 
         return result
 
+    logger.debug("EAPOL Parser")
+    result = {}
+
     try:
         fmt = (
             "!BBHBHH"
@@ -82,6 +139,7 @@ def parser(**kwargs) -> dict:
 
         logger.debug(f"EAPOL fmt: {fmt!r}")
 
+        #result = unpack(fmt, parser=_parser, descriptor=describe_eapol)
         result = unpack(fmt, parser=_parser)
 
     except Exception as e:

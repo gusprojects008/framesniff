@@ -83,16 +83,15 @@ def main():
     generate_hashcat_parser.add_argument("hformat", type=int, choices=[WPA_PBKDF2_PMKID_EAPOL], help="Hashcat output format")
     
     generate_hashcat_parser.add_argument(
-        "--bitmask",
+        "--htype",
         type=int,
-        choices=[MESSAGE_PAIR_M1_M2, MESSAGE_PAIR_M1_M4],
+        choices=[HC22000_PMKID, HC22000_EAPOL],
         help=(
-            f"Bitmask message pair ({MESSAGE_PAIR_M1_M2} or {MESSAGE_PAIR_M1_M4})\n"
-            f"bitmask {MESSAGE_PAIR_M1_M2} format:\n"
-            "  {'raw': ['eapol message 1', 'eapol message 2']}\n"
-            "  e.g. {'raw': ['000038002f...', '000038002f...']}"
-            f"bitmask {MESSAGE_PAIR_M1_M4} format:\n"
+            f"Hash type {HC22000_PMKID} (PMKID) format:\n"
             "  {'ap_mac': '', 'sta_mac': '', 'pmkid': ''}\n"
+            f"Hash type {HC22000_EAPOL} (EAPOL) format:\n"
+            "  {'raw': ['frame eapol message 1', 'frame eapol message 2']}\n"
+            "  e.g. {'raw': ['000038002f...', '000038002f...']}"
         )
     )
     
@@ -188,11 +187,11 @@ def main():
     elif args.command == "generate-hashcat":
         line = operations.generate_hashcat(
             hformat=args.hformat,
-            bitmask=args.bitmask,
+            htype=args.htype,
             ssid=args.ssid,
             input_fullpath=args.input
         )
-        with open(new_file_path(args.output, f"hashcat_{args.hformat}_{args.bitmask}"), "w") as f:
+        with open(new_file_path(args.output, f"hashcat_{args.hformat}_{args.htype}"), "w") as f:
             f.write(line)
     elif args.command == "hextopcap":
         operations.write_pcap_from_json(args.dlt, args.input_fullpath, args.output)
