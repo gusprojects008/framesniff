@@ -1,5 +1,3 @@
-from core.common.function_utils import import_module
-import_module("dpkt")
 import dpkt
 from core.layers.l2.ieee802.dot11.parse import parse as dot11_parser
 

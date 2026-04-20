@@ -1022,22 +1022,20 @@ Nos parsers, você passa a descrição onde faz sentido:
 ```python
 # mac_header.py
 duration = unpack("<H",
-    description="Duration/ID — tempo em µs reservado no meio")
+    descriptor="Duration/ID — tempo em µs reservado no meio")
 
 # eapol.py — description dinâmica baseada no valor
 result = unpack(fmt, parser=_parser,
-    description=lambda v: f"EAPOL Key Frame — versão {v[0]}")
+    descriptor=lambda v: f"EAPOL Key Frame — versão {v[0]}")
 ```
 
 ---
 
 ## Estrutura final de um campo parseado
 
-Juntando tudo, um campo como o `key_mic` do EAPOL ficaria:
-
 ```python
 {
-    "_meta_": {
+    "_metadata_": {
         "start": 89,
         "end": 105,
         "length": 16,
@@ -1048,12 +1046,8 @@ Juntando tudo, um campo como o `key_mic` do EAPOL ficaria:
         "path": "body.llc._parsed_.eapol._parsed_.key_mic",
         "description": "Key MIC — autenticação HMAC do handshake"
     },
-    "_value_": b"\xcc\xb5\xeb...",
-    "_parsed_": "ccb5ebbdc7bea0cd40b7b0610da35f2b"
+    "value": b"\xcc\xb5\xeb...",
+    "parsed": "ccb5ebbdc7bea0cd40b7b0610da35f2b",
+    "description": {}
 }
 ```
-
-E a TUI consegue, com um clique no nó `key_mic`:
-- Destacar bytes 89–105 no hexdump
-- Preencher o input de filtro com `body.llc._parsed_.eapol._parsed_.key_mic`
-- Mostrar no rodapé: `"Key MIC — autenticação HMAC do handshake"`

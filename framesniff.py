@@ -1,14 +1,20 @@
-import sys
-import argparse
 from pathlib import Path
 from logging import getLogger
-from core.common.function_utils import (import_module, new_file_path, setup_logging)
+import argparse
+
+from core.common.function_utils import (check_dependencies, new_file_path, setup_logging)
+
+module_dependencies = ["rich", "dpkt", "textual"]
+executable_dependencies = ["ip", "iw"]
+check_dependencies(module_dependencies=module_dependencies, executable_dependencies=executable_dependencies)
+
 from core.common.constants.hashcat import *
 from core.user_operations import Operations
 
 operations = Operations()
 
 def main():
+
     parser = argparse.ArgumentParser(
         description="A simple tool for exploring networks, their protocols and devices."
     )

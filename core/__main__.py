@@ -2,7 +2,13 @@ import time
 import json
 import threading
 from logging import getLogger
-from core.common.function_utils import (new_file_path, setup_logging)
+
+from core.common.function_utils import (check_dependencies, new_file_path, setup_logging)
+
+module_dependencies = ["rich", "dpkt", "textual"]
+executable_dependencies = ["ip", "iw"]
+check_dependencies(module_dependencies=module_dependencies, executable_dependencies=executable_dependencies)
+
 from core.common.filter_engine import apply_filters
 from core.common.parser_utils import iter_packets_from_json, bytes_encoder
 from core.layers.registry import get_parser

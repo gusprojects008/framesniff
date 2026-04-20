@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 
-RED_BOLD='\033[1;31m'
-YELLOW_BOLD='\033[1;33m'
-GREEN_BOLD='\033[1;32m'
 RESET='\033[0m'
+
+BOLD='\033[1m'
+DIM='\033[2m'
+UNDERLINE='\033[4m'
+REVERSE='\033[7m'
+
+RED='\033[31m'
+YELLOW='\033[33m'
+GREEN='\033[32m'
+BLUE='\033[34m'
 
 set -euo pipefail
 
 PROJECT_NAME="framesniff"
+PROGRAM_EXTENSION=".py"
 VENV_DIR=".venv"
 VENV_PYTHON="$VENV_DIR/bin/python"
 
@@ -23,6 +31,44 @@ print_ok() {
 print_error() {
     echo "✖ $1"
     exit 1
+}
+
+print_header() {
+    echo
+    echo -e "${REVERSE} $1 ${RESET}"
+    echo
+}
+
+print_section() {
+    echo -e "${BOLD}$1:${RESET}"
+}
+
+print_info() {
+    echo -e "  ${BLUE}$1${RESET}"
+}
+
+print_success() {
+    echo -e "  ${GREEN}$1${RESET}"
+}
+
+print_warning() {
+    echo -e "  ${YELLOW}$1${RESET}"
+}
+
+print_error() {
+    echo -e "  ${RED}$1${RESET}"
+}
+
+print_command() {
+    echo -e "  ${GREEN}$1${RESET}"
+}
+
+print_comment() {
+    echo -e "  ${DIM}# $1${RESET}"
+}
+
+print_separator() {
+   echo -e "$RED========================================$RESET"
 }
 
 print_step "Checking required system dependencies..."
@@ -60,15 +106,15 @@ fi
 
 print_step "Setup completed successfully!"
 
-echo
-echo -e "${YELLOW_BOLD}========================================${RESET}"
-echo -e "${RED_BOLD}IMPORTANT:${RESET}"
-echo -e "${RED_BOLD}Use the Python interpreter inside:${RESET}"
-echo -e "${GREEN_BOLD}$VENV_PYTHON${RESET}"
-echo -e "${YELLOW_BOLD}========================================${RESET}"
+print_header "$RED IMPORTANT"
+
+print_section "Interpreter"
+print_info "$VENV_PYTHON"
 echo
 
-echo -e "${YELLOW_BOLD}Run normally:${RESET}"
-echo -e "  ${GREEN_BOLD}source $VENV_DIR/bin/activate${RESET}"
-echo -e "  ${GREEN_BOLD}sudo $VENV_PYTHON framesniff.py --help${RESET}"
+print_section "Usage"
+print_comment "activate virtual environment"
+print_command "source \"$VENV_DIR/bin/activate\""
 echo
+print_comment "run the program"
+print_command "sudo \"$VENV_PYTHON\" \"$PROJECT_NAME.py\" --help"

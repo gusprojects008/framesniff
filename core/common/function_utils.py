@@ -1,4 +1,18 @@
 import sys
+import os
+import subprocess
+import re
+import logging
+from logging import FileHandler, Formatter, getLogger
+import time
+from pathlib import Path
+import json
+import tempfile
+import shutil
+
+logger = getLogger(__name__)
+
+ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
 
 def import_module(module_name):
     try:
@@ -6,27 +20,20 @@ def import_module(module_name):
     except ImportError:
         raise ImportError(f'''\n
     Error when trying to import {module_name}, run the following commands:\n
-    python -m venv venv
-    source venv/bin/activate
-    pip install {module_name}
-    ./venv/bin/python {' '.join(sys.argv)}
+    python -m venv .venv
+    source .venv/bin/activate
+    pip install -r requirements.txt
+    .venv/bin/python {' '.join(sys.argv)}
 ''')
 
-import os
-import subprocess
-import re
-import logging
-from logging import FileHandler, Formatter, getLogger
-import_module("rich")
-from rich.logging import RichHandler
-import time
-from pathlib import Path
-import json
-import tempfile
-
-logger = getLogger(__name__)
-
-ifname_to_ifindex = lambda ifname : index_pack(socket.if_nametoindex(ifname))
+def check_dependencies(module_dependencies: list = None, executable_dependencies: list = None):
+    if module_dependencies:
+        for dependency in module_dependencies:
+            import_module(dependency)
+    if executable_dependencies:
+        for dependency in executable_dependencies:
+            if not shutil.which(dependency):
+                raise FileNotFoundError(f"{dependency} not found...")
 
 def check_root():
     if os.geteuid() != 0:
@@ -69,6 +76,8 @@ def new_file_path(fullpath: str = None, fullpath_fallback: str = "framesniff") -
     return Path(f"{stem}-{timestamp}{suffix}")
 
 def setup_logging(verbose: bool) -> Path | None:
+    from rich.logging import RichHandler
+
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()

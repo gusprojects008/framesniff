@@ -9,7 +9,7 @@ import struct
 import os
 from logging import getLogger
 from typing import Optional, Tuple, List
-from core.common.function_utils import (verify_supported_dlts, import_module, new_file_path, check_root, check_interface_mode)
+from core.common.function_utils import (verify_supported_dlts, check_dependencies, new_file_path, check_root, check_interface_mode)
 from core.common.parser_utils import iter_packets_from_json, bytes_encoder, normalize_bytes, calc_offset_from_fmt, clear_field, clean_hex_string
 from core.common.filter_engine import apply_filters, get_nested
 from core.common.sockets import create_raw_socket

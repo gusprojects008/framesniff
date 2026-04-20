@@ -1,4 +1,3 @@
-```markdown
 # framesniff: Network Analyzer — TUI Layout
 
 ## Visão Geral da Interface
@@ -156,4 +155,3 @@ Full Traffic report:
 > Configurações por protocolo — quais IEs parsear, quais payloads descriptografar (fornecendo PSK + BSSID), habilitar/desabilitar parsers específicos, thresholds de análise.
 
 > Talvez integrar a ideia scan_monitor diretamente na TUIm, permitindo o usuário visualizar.
-```

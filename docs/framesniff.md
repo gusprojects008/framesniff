@@ -22,6 +22,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 ---
 
 ## O QUE ESTÁ FALTANDO? PARA CORRIGIR / ADICIONAR
+* Adicionar auto-complete de comandos.
 * Corrigir a forma como scan_monitor obtém os canais de cada frame.
 * Tornar iter_packts_from_json mais flexível, possivelmente criar uma função separada apenas ler json, utilizando o mecanismo de fallback de iter_packets_from_json.
 * Adicionar descrição de parse com base nos valores do campo sempre que necessário, por exemplo: adicionar de descrição em parse EAPOL dando informações sobre o frame, indicando se é a mensagem 1, 2 3 ou 4. Ou definir a descrição dando informações sobre a rede, se WPA2 etc... Mas estou na dúvida, pensei aqui, talvez a melhor forma de fazer isso seja: Adicionar descrição de parse daquele campo específico no resultado de parsed que ele irá retornar, mas em seguida adicionar essa descrição em uma nova estrutura que vou criar, essa estrutura vai ser descrever o frame, o dispositivo de origem (se for ap, vai incluir informações sobre a rede), dispositivo destino, etc... e outras informações relevantes de acordo com padrão e DLT. Essa estrutura vai ser utilizada para montar a resumo de todo o trafégo de rede capturado/analisado.
