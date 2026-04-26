@@ -3,7 +3,7 @@ from uuid import UUID
 from logging import getLogger
 from core.layers.l2.ieee802.dot11.constants import *
 from core.layers.l2.constants import *
-from core.common.parser_utils import (ParseContext, unpack, run_dispatch, bytes_for_oui)
+from core.common.parser import (ParseContext, unpack, run_dispatch, bytes_for_oui)
 
 logger = getLogger(__name__)
 

@@ -2,129 +2,30 @@ import time
 import json
 import threading
 from logging import getLogger
-
-from core.common.function_utils import (check_dependencies, new_file_path, setup_logging)
-
-module_dependencies = ["rich", "dpkt", "textual"]
-executable_dependencies = ["ip", "iw"]
-check_dependencies(module_dependencies=module_dependencies, executable_dependencies=executable_dependencies)
-
+from cli_core.log import setup_logging
+from cli_core.deps import check_dependencies
+from cli_core.files import new_file_path
 from core.common.filter_engine import apply_filters
-from core.common.parser_utils import iter_packets_from_json, bytes_encoder
-from core.layers.registry import get_parser
-from core.user_operations import Operations, Hashcat
+from core.common.parser import iter_packets_from_json, bytes_encoder
+from core.common.constants.hashcat import *
 
-operations = Operations()
+from core.bootstrap import init
 
-setup_logging(True)
-logger = getLogger(__name__)
+config = {
+    "module_dependencies": ["rich", "dpkt", "textual"],
+    "system_dependencies": ["ip", "iw"],
+    "args": None
+}
+
+result = init(config)
+operations = result.operations
 
 ENABLE_SYSTEM_TESTS = True
 TEST_INTERFACE = "wlp0s20f3"
 RUN_ALL = False
 INTERACTIVE_MODE = True
 
-def sniff_offline(
-    dlt: str = "DLT_IEEE802_11_RADIO",
-    input_fullpath: str = None,
-    store_filter: str = None,
-    display_filter: str = None,
-    count: int = None,
-    timeout: float = None,
-    display_interval: float = 0.0,
-    store_callback: callable = None,
-    display_callback: callable = None,
-    stop_event: threading.Event = None,
-    simple_output: bool = False,
-    output_fullpath: str = None,
-):
-    if not input_fullpath:
-        raise ValueError("Input file path (input_fullpath) is required.")
-
-    try:
-        parser = get_parser(dlt)
-    except ValueError as e:
-        logger.error(f"Error getting parser: {e}")
-        return
-
-    output_fullpath = new_file_path(output_fullpath, "framesniff-offline-capture.json")
-    
-    frame_counter = 0
-    last_display_time = 0.0
-    start_time = time.time()
-
-    logger.info(
-        f"Starting OFFLINE processing...\n"
-        f"Input: {input_fullpath}\n"
-        f"Store Filter: {store_filter}\n"
-        f"Display Filter: {display_filter}\n"
-        f"Output: {output_fullpath}"
-    )
-
-    try:
-        with open(output_fullpath, "a") as f:
-            for cleaned_hex, raw_bytes in iter_packets_from_json(input_fullpath):
-                
-                if stop_event and stop_event.is_set():
-                    logger.info("Stop event received, finishing...")
-                    break
-
-                if timeout and (time.time() - start_time) >= timeout:
-                    logger.info(f"Timeout of {timeout}s reached.")
-                    break
-
-                try:
-                    parsed_frame = parser(raw_bytes)
-                except Exception as e:
-                    logger.debug(f"Parser error (Frame {frame_counter}): {e}")
-                    continue
-
-                parsed_frame["counter"] = frame_counter
-                parsed_frame["raw"] = cleaned_hex
-                
-                store_result, display_result = apply_filters(store_filter, display_filter, parsed_frame)
-
-                if store_result:
-                    if simple_output:
-                        dump = json.dumps(parsed_frame, default=bytes_encoder, separators=(",", ":"))
-                    else:
-                        dump = json.dumps(parsed_frame, default=bytes_encoder, indent=2)
-
-                    f.write(dump + "\n")
-                    
-                    if frame_counter % 100 == 0:
-                        f.flush()
-  
-                    frame_counter += 1
-
-                    if store_callback:
-                        store_callback(parsed_frame)
-
-                if display_result:
-                    if display_callback:
-                        display_callback(display_result)
-                    else:
-                        current_time = time.time()
-                        if current_time - last_display_time >= display_interval:
-                            try:
-                                log_out = json.dumps(display_result, default=bytes_encoder, ensure_ascii=False)
-                                logger.info(f"[{frame_counter}] {log_out}")
-                            except Exception as log_err:
-                                logger.warning(f"[{frame_counter}] {display_result}")
-                            
-                            last_display_time = current_time
-
-                if count is not None and frame_counter >= count:
-                    break
-
-    except KeyboardInterrupt:
-        logger.info("Processing interrupted by user.")
-    except Exception as e:
-        logger.critical(f"Unexpected error in sniff_offline: {e}", exc_info=True)
-    finally:
-        logger.info(f"Offline processing completed. {frame_counter} frames analyzed.")
-        if stop_event:
-            stop_event.set()
+logger = getLogger(__name__)
 
 def run_test(name: str, func, *args, **kwargs):
     if not should_run_test(name):
@@ -152,7 +53,7 @@ def run_blocking_test(name: str, func, timeout: float = 10, **kwargs):
 
     def target():
         try:
-            func(stop_event=stop_event, **kwargs)
+            func(timeout=timeout, stop_event=stop_event, **kwargs)
         except Exception as e:
             logger.error(f"[THREAD ERROR] {name}: {e}", exc_info=True)
 
@@ -197,31 +98,31 @@ def run_tests():
     simple_output = False
 
     run_test(
-        "sniff_offline basic",
-        sniff_offline,
-        dlt="DLT_IEEE802_11_RADIO",
+        "sniff test basic",
+        operations.sniff,
+        simple_output=simple_output,
+        test=True,
         input_fullpath=test_input,
-        simple_output=simple_output
     )
 
-    """
     run_test(
-        "sniff_offline filter eapol",
-        sniff_offline,
-        dlt="DLT_IEEE802_11_RADIO",
-        input_fullpath=test_input,
-        store_filter=eapol_store_filter,
-        display_filter=eapol_display_filter,
-    )
-    """
-
-    run_test(
-        "sniff_offline filter test",
-        sniff_offline,
-        dlt="DLT_IEEE802_11_RADIO",
-        input_fullpath=test_input,
+        "sniff test filter test",
+        operations.sniff,
+        simple_output=simple_output,
         store_filter=test_store_filter,
         display_filter=test_display_filter,
+        test=True,
+        input_fullpath=test_input,
+    )
+
+    run_test(
+        "sniff test filter eapol test",
+        operations.sniff,
+        simple_output=simple_output,
+        store_filter=eapol_store_filter,
+        display_filter=eapol_display_filter,
+        test=True,
+        input_fullpath=test_input,
     )
 
     run_test(
@@ -268,12 +169,12 @@ def run_tests():
 
         run_test(
             "list interfaces",
-            operations.list_network_interfaces
+            operations.list_interfaces
         )
 
         run_test(
             "interface info",
-            operations.list_network_interface,
+            operations.list_interface,
             TEST_INTERFACE
         )
 
@@ -337,7 +238,7 @@ def run_tests():
 
         run_blocking_test(
             "scan_monitor (TUI)",
-            operations.scan_monitor,
+            operations.scan_monitor_mode,
             ifname=TEST_INTERFACE,
             dlt="DLT_IEEE802_11_RADIO",
             channel_hopping=True,

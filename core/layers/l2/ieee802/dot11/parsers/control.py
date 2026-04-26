@@ -1,4 +1,4 @@
-from core.common.parser_utils import (unpack, run_dispatch)
+from core.common.parser import (unpack, run_dispatch)
 from core.layers.l2.ieee802.dot11.constants import *
 
 def ctrl_block_ack_request(**kwargs) -> dict:

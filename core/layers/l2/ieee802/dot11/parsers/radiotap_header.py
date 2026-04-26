@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (
+from core.common.parser import (
     ParseContext, unpack, bitmap_value_for_dict, freq_to_channel, fail
 )
 

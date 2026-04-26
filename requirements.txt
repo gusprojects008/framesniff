@@ -1,3 +1,5 @@
 dpkt==1.9.8
 textual==6.2.1
 rich==14.3.3
+argcomplete
+cli-core @ git+https://github.com/gusprojects008/cli-core.git@v1.0.0

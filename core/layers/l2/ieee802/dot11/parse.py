@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (ParseContext, unpack, run_dispatch, detect_fcs)
+from core.common.parser import (ParseContext, unpack, run_dispatch, detect_fcs)
 from core.layers.l2.ieee802.dot11.parsers import (radiotap_header, mac_header, body)
 from core.layers.l2.ieee802.dot11.constants import *
 

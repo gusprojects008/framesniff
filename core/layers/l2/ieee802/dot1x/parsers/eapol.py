@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (unpack, bytes_for_oui)
+from core.common.parser import (unpack, bytes_for_oui)
 from core.layers.l2.ieee802.dot11.parsers.common import tagged_parameters
 from core.layers.l2.ieee802.dot1x.constants import *
 from core.layers.l2.ieee802.llc.constants import *

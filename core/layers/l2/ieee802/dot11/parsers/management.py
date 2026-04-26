@@ -1,4 +1,4 @@
-from core.common.parser_utils import (ParseContext, unpack, run_dispatch)
+from core.common.parser import (ParseContext, unpack, run_dispatch)
 from core.layers.l2.ieee802.dot11.parsers.common import (fixed_parameters, tagged_parameters)
 from core.layers.l2.ieee802.dot11.constants import *
 

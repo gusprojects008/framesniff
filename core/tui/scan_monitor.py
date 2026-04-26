@@ -4,14 +4,6 @@ import queue
 import time
 import os
 from logging import getLogger
-from core.user_operations import Operations
-from core.common.tui_utils import export_tui_to_txt
-from core.common.parser_utils import freq_to_channel
-from core.layers.l2.ieee802.dot11.constants import *
-from core.layers.l2.ieee802.dot11.parsers.ies import OUI_MICROSOFT
-from core.common.function_utils import import_module
-import_module("textual")
-from core.common.filter_engine import get_nested
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
@@ -19,6 +11,12 @@ from textual.widgets import Header, Footer, Static, Label, DataTable
 from textual.reactive import reactive
 from textual.worker import Worker
 from textual import work
+from core.app import Operations
+from core.common.tui import export_tui_to_txt
+from core.common.parser import freq_to_channel
+from core.layers.l2.ieee802.dot11.constants import *
+from core.layers.l2.ieee802.dot11.parsers.ies import OUI_MICROSOFT
+from core.common.filter_engine import get_nested
 
 logger = getLogger(__name__)
 
@@ -96,7 +94,7 @@ class Tui(App):
         "body.tp.vendor_specific"
     ]
     
-    def __init__(self, ifname: str, dlt: str = "DLT_IEEE802_11_RADIO", channel_hopping: bool = True, bands: list[int | float] = [2.4], channel_hopping_interval: float = 4.0, channel_width: int = 20, timeout: float = None):
+    def __init__(self, ifname: str, dlt: str = "DLT_IEEE802_11_RADIO", channel_hopping: bool = True, bands: list[int | float] = [2.4], channel_hopping_interval: float = 4.0, channel_width: int = 20, timeout: float = None, stop_event=None):
 
         super().__init__()
         self.ifname = ifname
@@ -108,6 +106,7 @@ class Tui(App):
         self.channel_hopping_config = operations.generate_channel_hopping_config(bands=self.bands, dwell=self.channel_hopping_interval, channel_width=self.channel_width)
         self.timeout = timeout
         self.operations = operations
+        self.stop_event = stop_event
         
         self.display_queue = queue.Queue()
         self.error_queue = queue.Queue()
@@ -526,12 +525,13 @@ class Tui(App):
         logger.info("Network Monitor finished!")
         self.exit()
 
-def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout):
+def scan_monitor(ifname, dlt, channel_hopping, channel_hopping_interval, timeout, stop_event):
     app = Tui(
         ifname=ifname,
         dlt=dlt,
         channel_hopping=channel_hopping,
         channel_hopping_interval=channel_hopping_interval,
         timeout=timeout,
+        stop_event=stop_event
     )
     app.run()

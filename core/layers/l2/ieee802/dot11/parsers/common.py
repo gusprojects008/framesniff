@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (ParseContext, unpack, read_oui, bitmap_value_for_dict, insert_item)
+from core.common.parser import (ParseContext, unpack, read_oui, bitmap_value_for_dict, insert_item)
 from core.layers.l2.ieee802.dot11.constants import *
 from core.layers.l2.ieee802.dot11.parsers.ies import ie_dispatch
 

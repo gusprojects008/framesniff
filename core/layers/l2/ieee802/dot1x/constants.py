@@ -1,4 +1,4 @@
-from core.common.parser_utils import size_to_struct_fmt
+from core.common.parser import size_to_struct_fmt
 
 EAPOL_KEY_REPLAY_COUNTER_LENGTH = 8
 EAPOL_KEY_NONCE_LENGTH = 32

@@ -1,4 +1,4 @@
-from core.common.function_utils import new_file_path
+from cli_core.files import new_file_path
 
 def export_tui_to_txt(app, output_filename: str = None):
     out_path = str(new_file_path(fullpath=output_filename))

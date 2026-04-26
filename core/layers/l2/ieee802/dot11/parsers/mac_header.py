@@ -1,5 +1,5 @@
 from logging import getLogger
-from core.common.parser_utils import (unpack, read_mac)
+from core.common.parser import (unpack, read_mac)
 from core.layers.l2.ieee802.dot11.constants import *
 
 logger = getLogger(__name__)

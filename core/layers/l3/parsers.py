@@ -1,5 +1,5 @@
 import socket
-from core.common.parser_utils import (unpack)
+from core.common.parser import (unpack)
 
 def ip(frame: bytes, offset: int):
     result = {}
