@@ -2,11 +2,7 @@ import time
 import json
 import threading
 from logging import getLogger
-from cli_core.log import setup_logging
-from cli_core.deps import check_dependencies
-from cli_core.files import new_file_path
 from core.common.filter_engine import apply_filters
-from core.common.parser import iter_packets_from_json, bytes_encoder
 from core.common.constants.hashcat import *
 
 from core.bootstrap import init

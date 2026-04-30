@@ -10,9 +10,9 @@ import os
 from logging import getLogger
 import dpkt
 from cli_core.system import check_root
-from cli_core.files import new_file_path
+from cli_core.files import new_file_path, iter_from_json
 from core.common.validation import (verify_supported_dlts, check_interface_mode)
-from core.common.parser import iter_packets_from_json, bytes_encoder, normalize_bytes, calc_offset_from_fmt, clear_field, clean_hex_string
+from core.common.parser import raw_packet_extractor, bytes_encoder, normalize_bytes, calc_offset_from_fmt, clear_field, clean_hex_string
 from core.common.filter_engine import apply_filters, get_nested
 from core.common.sockets import create_raw_socket
 from core.common.constants.hashcat import *
@@ -42,7 +42,7 @@ class Hashcat:
             eapol_msg1 = None
             eapol_msg2 = None
         
-            for i, (_, fbytes) in enumerate(iter_packets_from_json(input_fullpath)):
+            for i, (_, fbytes) in enumerate(iter_from_json(input_fullpath, raw_packet_extractor())):
                 if i == 0:
                     eapol_msg1 = fbytes
                 elif i == 1:
@@ -311,7 +311,7 @@ class Operations:
 
             try:
                 with open(output_fullpath, "a") as output_file:
-                    for _cleaned_hex, frame in iter_packets_from_json(input_fullpath):
+                    for _cleaned_hex, frame in iter_from_json(input_fullpath, raw_packet_extractor()):
                         if _should_stop():
                             break
                         _process_frame(frame, output_file)
@@ -366,7 +366,7 @@ class Operations:
         with open(output_fullpath, "wb") as out:
             writer = dpkt.pcap.Writer(out, linktype=linktype)
             count = 0
-            for hexstr, b in iter_packets_from_json(input_fullpath):
+            for hexstr, b in iter_from_json(input_fullpath, raw_packet_extractor()):
                 writer.writepkt(b, ts=time.time())
                 count += 1
                 logger.info(f"{count} packet writed: {b[:50]}...")
@@ -378,7 +378,7 @@ class Operations:
         if timeout is not None:
             sock.settimeout(timeout)
         try:
-            for cleaned, raw_bytes in iter_packets_from_json(input_fullpath):
+            for cleaned, raw_bytes in iter_from_json(input_fullpath, raw_packet_extractor()):
                 for i in range(count):
                     try:
                         bytes_sent = sock.send(raw_bytes)
@@ -397,7 +397,6 @@ class Operations:
     def scan_monitor_mode(self, ifname: str, dlt: str = "DLT_IEEE802_11_RADIO", channel_hopping: bool = True, channel_hopping_interval: float = 4.0, timeout: float = None, stop_event=None):
         from core.tui.scan_monitor import scan_monitor
         logger.info("press ctrl+s or <F12> to save tui information!")
-        logger.error("Error aqui")
         scan_monitor(ifname=ifname, dlt=dlt, channel_hopping=channel_hopping,
             channel_hopping_interval=channel_hopping_interval, timeout=timeout, stop_event=stop_event)
 
@@ -604,24 +603,10 @@ class Operations:
         logger.info(result.stdout.strip())
 
     def set_monitor(self, ifname: str):
-        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
-        try:
-            subprocess.run(["ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["iw", "dev", ifname, "set", "type", "monitor"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            logger.info(f"{ifname} configured for monitor mode!")
-        except Exception as e:
-            logger.error(f"error configure {ifname} to monitor mode: {e}")
+        self._set_interface_mode("monitor", ifname)
 
     def set_station(self, ifname: str):
-        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
-        try:
-            subprocess.run(["ip", "link", "set", ifname, "down"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["iw", "dev", ifname, "set", "type", "managed"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            subprocess.run(["ip", "link", "set", ifname, "up"], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, check=True)
-            logger.info(f"{ifname} configured for station/management mode!")
-        except Exception as e:
-            logger.error(f"error configure {ifname} to station mode: {e}")
+        self._set_interface_mode("station", ifname)
 
     def scan_station_mode(self, ifname: str = None, output_fullpath: str = None):
         logger.info(" In development, see https://github.com/gusprojects008/wnlpy\n")
@@ -733,3 +718,20 @@ class Operations:
                 _print_network_summary(block, network_count)
 
             logger.info(f"\nTotal networks found: {network_count}")
+
+    def _set_interface_mode(self, mode: str, ifname: str):
+        logger.info(" In development, see https://github.com/gusprojects008/wnlpy")
+        try:
+            commands = [
+                ["ip", "link", "set", ifname, "down"],
+                ["iw", "dev", ifname, "set", "type", mode],
+                ["ip", "link", "set", ifname, "up"],
+            ]
+            for cmd in commands:
+                subprocess.run(cmd, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(
+                f"{e.stderr.strip() if e.stderr else 'Unknown error'}"
+            )
+        except Exception as e:
+            logger.error(f"error configure {ifname} to {mode} mode: {e}")

@@ -331,69 +331,22 @@ def clear_field(raw: bytes, metadata: dict, field_index: int, field_length: int)
     buffer[offset : offset + field_length] = b"\x00" * field_length
     return bytes(buffer)
 
-def iter_packets_from_json(path: str):
-    key = "raw"
+def raw_packet_extractor(key="raw"):
+    def extractor(data):
+        value = data.get(key)
 
-    def _extract_values(data_obj):
-        if isinstance(data_obj, dict):
-            value = data_obj.get(key)
-            if isinstance(value, str):
-                cleaned = clean_hex_string(value)
-                if cleaned:
-                    yield (cleaned, bytes.fromhex(cleaned))
-            elif isinstance(value, list):
-                for entry in value:
-                    if isinstance(entry, str):
-                        cleaned = clean_hex_string(entry)
-                        if cleaned:
-                            yield (cleaned, bytes.fromhex(cleaned))
-        elif isinstance(data_obj, list):
-            for item in data_obj:
-                yield from _extract_values(item)
+        if isinstance(value, str):
+            cleaned = clean_hex_string(value)
+            if cleaned:
+                yield (cleaned, bytes.fromhex(cleaned))
 
-    is_jsonl = str(path).lower().endswith(".jsonl")
-
-    try:
-        with open(path, "r", encoding="utf-8") as file:
-            if is_jsonl:
-                for line_num, line in enumerate(file, start=1):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line)
-                        yield from _extract_values(data)
-                    except json.JSONDecodeError as error:
-                        raise ValueError(f"Erro decodificando JSONL na linha {line_num}: {error}")
-            else:
-                content = file.read()
-                try:
-                    data = json.loads(content)
-                    yield from _extract_values(data)
-                except json.JSONDecodeError as original_error:
-                    decoder = json.JSONDecoder()
-                    idx = 0
-                    length = len(content)
-                    parsed_at_least_one = False
-
-                    while idx < length:
-                        while idx < length and content[idx].isspace():
-                            idx += 1
-                        if idx >= length:
-                            break
-
-                        try:
-                            data, idx = decoder.raw_decode(content, idx)
-                            yield from _extract_values(data)
-                            parsed_at_least_one = True
-                        except json.JSONDecodeError:
-                            break
-
-                    if not parsed_at_least_one:
-                        raise ValueError(f"Error trying to load json file: {original_error}")
-
-    except Exception as error:
-        raise RuntimeError(f"Could not open or process file {path}: {error}")
+        elif isinstance(value, list):
+            for entry in value:
+                if isinstance(entry, str):
+                    cleaned = clean_hex_string(entry)
+                    if cleaned:
+                        yield (cleaned, bytes.fromhex(cleaned))
+    return extractor
 
 wireshark_format = lambda packet_bytes : ":".join(f"{byte:02x}" for byte in packet_bytes)
 
