@@ -51,6 +51,7 @@ Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma e
 * Revisar toda a arquitetura, avaliar e decidir.
 
 ## Melhorias:
+* Arquitetura melhorada, maior escalabilidade, está explicada em cli-core/templates/python.
 * Aplicando boas práticas clean code, eficiência em memória e processamento, removendo boa parte de números mágicos, removendo vários IFs por mecanismo de dispatcher.
 * Formato de paths de arquivos de log.
 * Estrutura de diretórios mais compativeis com o modelo OSI, e melhor escalabilidade.

@@ -9,17 +9,17 @@ class BootstrapResult:
 def init(config: dict) -> BootstrapResult:
     MODULE_DEPENDENCIES = config.get("module_dependencies")
     SYSTEM_DEPENDENCIES = config.get("system_dependencies")
-    args = config.get("argparse").get("args")
 
     check_dependencies(MODULE_DEPENDENCIES, SYSTEM_DEPENDENCIES)
 
     from cli_core.log import setup_logging, build_logging_config
 
-    if args:
+    if config.get("argparse"):
+        args = config.get("argparse").get("args")
         logging_config = build_logging_config(args.verbose, args.output)
         log_filepath = setup_logging(logging_config=logging_config)
     else:
-        log_filepath = setup_logging(args.verbose, output_fullpath="framesniff-debug.log")
+        log_filepath = setup_logging(verbose=True, output_fullpath="framesniff-debug.log")
 
     from core.context import AppContext
     from core.app import Operations

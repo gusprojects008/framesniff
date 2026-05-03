@@ -122,7 +122,7 @@ class Hashcat:
             logger.error(f"Exception: {e}")
 
 class Operations:
-    def __init__(self, context):
+    def __init__(self, context: object = None):
         self.ctx = context
         self.dispatch_table = {
             "list-interfaces": lambda args: self.list_interfaces(),
