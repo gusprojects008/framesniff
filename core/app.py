@@ -122,8 +122,9 @@ class Hashcat:
             logger.error(f"Exception: {e}")
 
 class Operations:
-    def __init__(self):
-        self._dispatch = {
+    def __init__(self, context):
+        self.ctx = context
+        self.dispatch_table = {
             "list-interfaces": lambda args: self.list_interfaces(),
             "list-interface": lambda args: self.list_interface(args.ifname),
             "set-monitor": lambda args: self.set_monitor(args.ifname),
@@ -187,8 +188,9 @@ class Operations:
             ),
         }
 
-    def dispatch(self, args):
-        handler = self._dispatch.get(args.command)
+    def dispatch(self):
+        args = self.ctx.config["argparse"]["args"]
+        handler = self.dispatch_table.get(args.command)
 
         if not handler:
             raise ValueError(f"Unknown command: {args.command}")

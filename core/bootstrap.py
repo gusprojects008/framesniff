@@ -3,23 +3,30 @@ from cli_core.deps import check_dependencies
 
 @dataclass
 class BootstrapResult:
-    log_filename: str
+    context: object
     operations: object
 
 def init(config: dict) -> BootstrapResult:
     MODULE_DEPENDENCIES = config.get("module_dependencies")
     SYSTEM_DEPENDENCIES = config.get("system_dependencies")
-    args = config.get("args")
+    args = config.get("argparse").get("args")
+
     check_dependencies(MODULE_DEPENDENCIES, SYSTEM_DEPENDENCIES)
-    from cli_core.log import (setup_logging, build_logging_config)
-    from core.app import Operations
-    
+
+    from cli_core.log import setup_logging, build_logging_config
+
     if args:
         logging_config = build_logging_config(args.verbose, args.output)
-        log_filename = str(setup_logging(logging_config=logging_config))
+        log_filepath = setup_logging(logging_config=logging_config)
     else:
-        log_filename = str(setup_logging(verbose=True, output_fullpath="framesniff-test.log"))
+        log_filepath = setup_logging(args.verbose, output_fullpath="framesniff-debug.log")
 
-    operations = Operations()
-    
-    return BootstrapResult(log_filename, operations)
+    from core.context import AppContext
+    from core.app import Operations
+
+    config["log_filepath"] = log_filepath
+
+    context = AppContext(config)
+    operations = Operations(context)
+
+    return BootstrapResult(context, operations)
