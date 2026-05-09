@@ -2,6 +2,7 @@
 
 Esta seção contém percepções coletadas durante o desenvolvimento; nenhuma está garantida para ser implementada. Elas exigem revisão e pesquisa adicional.
 
+* Criar o repo framesniff-parsers que centralizará todos os parsers de todos os protocolos dos padrões de comunicação que o framesniff suporta.
 * Permitir com que a função sniff possa ser utilizada por outros parsers, a fim de permitir com que eles façam suas próprias analises, por isso que o resultado original retornado pela função de "parse" contém bytes não convertidos em hexadecimal.
 * Permitir o usuário cerregar arquivo com padrões de filtro de frames.
 * Desenvolver uma TUI para sniffing (semelhante ao termshark).
