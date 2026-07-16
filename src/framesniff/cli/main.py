@@ -7,13 +7,8 @@ from pathlib import Path
 from logging import getLogger
 from core.common.constants.hashcat import *
 from core.common.cli import interfaces_completer
-from core.bootstrap import init
-
-config = {
-    "module_dependencies": ["rich", "dpkt", "textual"],
-    "system_dependencies": ["ip", "iw"],
-    "argparse": {}
-}
+from cli_core.app import bootstrap
+from framesniff.app import app
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -130,13 +125,13 @@ def parse_args():
     return parser
 
 def main():
+    config = app.make_config()
     parser = parse_args()
-    config["argparse"]["parser"] = parser
-    config["argparse"]["args"] = parser.parse_args()
-    result = init(config)
-    operations = result.operations
-    logger = getLogger(__name__)
-    operations.dispatch()
+    args = parser.parse_args()
+    config.argparse.parser = parser
+    config.argparse.args = args
+    bootstrap_result = bootstrap(config)
+    bootstrap_result.operations.dispatch()
 
 if __name__ == "__main__":
     main()

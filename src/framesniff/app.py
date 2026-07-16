@@ -169,7 +169,7 @@ class Operations:
             ),
             "hextopcap": lambda args: self.write_pcap_from_json(
                 dlt=args.dlt,
-                input_fullpath=args.input_fullpath,
+                input_fullpath=args.input,
                 output_fullpath=args.output
             ),
             "send-raw": lambda args: self.send_raw(
